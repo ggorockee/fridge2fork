@@ -18,6 +18,7 @@ void main() async {
 
   // Firebase 초기화 (네이티브 설정 파일 사용)
   await Firebase.initializeApp();
+  debugPrint('🔥 Firebase Initialized successfully!');
   
   // 환경 설정 초기화
   final environment = kReleaseMode ? AppEnvironment.production : AppEnvironment.development;
