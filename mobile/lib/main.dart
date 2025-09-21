@@ -70,7 +70,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: AppConfig.appName,
-      debugShowCheckedModeBanner: !AppConfig.isProduction,
+      debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       home: const SplashScreen(),
       onGenerateRoute: (settings) {
