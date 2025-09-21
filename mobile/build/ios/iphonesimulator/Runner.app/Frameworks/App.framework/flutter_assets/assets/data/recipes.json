@@ -1,0 +1,699 @@
+[
+  {
+    "id": "R001",
+    "name": "계란찜",
+    "description": "탱글탱글 부드러운 계란찜 by 아라리맘",
+    "imageUrl": "https://picsum.photos/400/250?random=1",
+    "cookingTimeMinutes": 15,
+    "servings": 2,
+    "difficulty": "easy",
+    "category": "sideDish",
+    "rating": 4.8,
+    "reviewCount": 120,
+    "isPopular": true,
+    "ingredients": [
+      {"name": "계란", "amount": "3개"},
+      {"name": "물", "amount": "150ml"},
+      {"name": "소금", "amount": "약간"}
+    ],
+    "steps": [
+      {"stepNumber": 1, "description": "계란을 잘 풀어줍니다."},
+      {"stepNumber": 2, "description": "물을 넣고 소금으로 간을 합니다."},
+      {"stepNumber": 3, "description": "찜기에 넣고 10분간 쪄줍니다."}
+    ]
+  },
+  {
+    "id": "R002",
+    "name": "삼각김밥전",
+    "description": "고오급지게♥ 삼각김밥전 by 만개의레시피",
+    "imageUrl": "https://picsum.photos/400/250?random=2",
+    "cookingTimeMinutes": 10,
+    "servings": 1,
+    "difficulty": "easy",
+    "category": "rice",
+    "rating": 4.5,
+    "reviewCount": 88,
+    "isPopular": true,
+    "ingredients": [
+      {"name": "삼각김밥", "amount": "1개"},
+      {"name": "계란", "amount": "1개"},
+      {"name": "식용유", "amount": "약간"}
+    ],
+    "steps": [
+      {"stepNumber": 1, "description": "삼각김밥을 으깨줍니다."},
+      {"stepNumber": 2, "description": "계란물을 입혀 팬에 부쳐줍니다."}
+    ]
+  },
+  {
+    "id": "R003",
+    "name": "달걀미트볼",
+    "description": "달걀미트볼 1편의점 재료로 만드는 반숙란 미트볼 ★",
+    "imageUrl": "https://picsum.photos/400/250?random=3",
+    "cookingTimeMinutes": 25,
+    "servings": 2,
+    "difficulty": "medium",
+    "category": "stirFry",
+    "rating": 4.9,
+    "reviewCount": 230,
+    "isPopular": false,
+    "ingredients": [
+      {"name": "삶은 계란", "amount": "2개"},
+      {"name": "돼지고기 다짐육", "amount": "200g"},
+      {"name": "빵가루", "amount": "1/2컵"},
+      {"name": "우유", "amount": "2큰술"},
+      {"name": "토마토 소스", "amount": "1컵"}
+    ],
+    "steps": [
+      {"stepNumber": 1, "description": "다진 돼지고기에 빵가루와 우유를 섞어 반죽합니다."},
+      {"stepNumber": 2, "description": "삶은 계란을 고기 반죽으로 감싸줍니다."},
+      {"stepNumber": 3, "description": "기름에 튀기거나 오븐에 구워줍니다."},
+      {"stepNumber": 4, "description": "토마토 소스와 함께 끓여 완성합니다."}
+    ]
+  },
+  {
+    "id": "R004",
+    "name": "오픈달걀토스트",
+    "description": "TV요리 ) 오픈달걀토스트 넘나 간단하자나?",
+    "imageUrl": "https://picsum.photos/400/250?random=4",
+    "cookingTimeMinutes": 10,
+    "servings": 1,
+    "difficulty": "easy",
+    "category": "rice",
+    "rating": 4.6,
+    "reviewCount": 95,
+    "isPopular": false,
+    "ingredients": [
+      {"name": "식빵", "amount": "1조각"},
+      {"name": "계란", "amount": "1개"},
+      {"name": "베이컨", "amount": "1줄"},
+      {"name": "치즈", "amount": "1장"},
+      {"name": "마요네즈", "amount": "약간"}
+    ],
+    "steps": [
+      {"stepNumber": 1, "description": "식빵 테두리에 마요네즈를 두릅니다."},
+      {"stepNumber": 2, "description": "가운데에 계란을 깨뜨려 넣고 베이컨과 치즈를 올립니다."},
+      {"stepNumber": 3, "description": "오븐이나 에어프라이어에 굽습니다."}
+    ]
+  },
+  {
+    "id": "R005",
+    "name": "김치볶음밥",
+    "description": "집에서 쉽게 만드는 김치볶음밥",
+    "imageUrl": "https://picsum.photos/400/250?random=5",
+    "cookingTimeMinutes": 15,
+    "servings": 2,
+    "difficulty": "easy",
+    "category": "rice",
+    "rating": 4.7,
+    "reviewCount": 150,
+    "isPopular": false,
+    "ingredients": [
+      {"name": "김치", "amount": "1컵"},
+      {"name": "밥", "amount": "2공기"},
+      {"name": "돼지고기", "amount": "100g"},
+      {"name": "계란", "amount": "1개"}
+    ],
+    "steps": [
+      {"stepNumber": 1, "description": "팬에 기름을 두르고 돼지고기를 볶습니다."},
+      {"stepNumber": 2, "description": "김치를 넣고 볶다가 밥을 넣어 볶습니다."},
+      {"stepNumber": 3, "description": "계란을 올려 완성합니다."}
+    ]
+  },
+  {
+    "id": "R006",
+    "name": "된장찌개",
+    "description": "구수한 된장찌개",
+    "imageUrl": "https://picsum.photos/400/250?random=6",
+    "cookingTimeMinutes": 20,
+    "servings": 3,
+    "difficulty": "easy",
+    "category": "soup",
+    "rating": 4.8,
+    "reviewCount": 200,
+    "isPopular": false,
+    "ingredients": [
+      {"name": "된장", "amount": "2큰술"},
+      {"name": "두부", "amount": "1/2모"},
+      {"name": "애호박", "amount": "1/2개"},
+      {"name": "대파", "amount": "1대"}
+    ],
+    "steps": [
+      {"stepNumber": 1, "description": "물에 된장을 풀어줍니다."},
+      {"stepNumber": 2, "description": "두부와 호박을 넣고 끓입니다."},
+      {"stepNumber": 3, "description": "대파를 넣고 마무리합니다."}
+    ]
+  },
+  {
+    "id": "R007",
+    "name": "불고기",
+    "description": "달콤한 한국식 불고기",
+    "imageUrl": "https://picsum.photos/400/250?random=7",
+    "cookingTimeMinutes": 30,
+    "servings": 4,
+    "difficulty": "medium",
+    "category": "stirFry",
+    "rating": 4.9,
+    "reviewCount": 300,
+    "isPopular": true,
+    "ingredients": [
+      {"name": "소고기", "amount": "400g"},
+      {"name": "양파", "amount": "1개"},
+      {"name": "당근", "amount": "1/2개"},
+      {"name": "간장", "amount": "3큰술"},
+      {"name": "설탕", "amount": "2큰술"}
+    ],
+    "steps": [
+      {"stepNumber": 1, "description": "소고기를 양념에 재워둡니다."},
+      {"stepNumber": 2, "description": "팬에 고기와 야채를 함께 볶습니다."}
+    ]
+  },
+  {
+    "id": "R008",
+    "name": "닭볶음탕",
+    "description": "매콤달콤한 닭볶음탕",
+    "imageUrl": "https://picsum.photos/400/250?random=8",
+    "cookingTimeMinutes": 45,
+    "servings": 4,
+    "difficulty": "medium",
+    "category": "stirFry",
+    "rating": 4.6,
+    "reviewCount": 180,
+    "isPopular": false,
+    "ingredients": [
+      {"name": "닭고기", "amount": "1마리"},
+      {"name": "감자", "amount": "2개"},
+      {"name": "당근", "amount": "1개"},
+      {"name": "고추장", "amount": "2큰술"}
+    ],
+    "steps": [
+      {"stepNumber": 1, "description": "닭고기를 손질하고 야채를 썰어줍니다."},
+      {"stepNumber": 2, "description": "고추장 양념을 만들어 함께 볶습니다."}
+    ]
+  },
+  {
+    "id": "R009",
+    "name": "비빔밥",
+    "description": "건강한 비빔밥",
+    "imageUrl": "https://picsum.photos/400/250?random=9",
+    "cookingTimeMinutes": 25,
+    "servings": 2,
+    "difficulty": "medium",
+    "category": "rice",
+    "rating": 4.7,
+    "reviewCount": 220,
+    "isPopular": false,
+    "ingredients": [
+      {"name": "밥", "amount": "2공기"},
+      {"name": "시금치", "amount": "100g"},
+      {"name": "콩나물", "amount": "100g"},
+      {"name": "고사리", "amount": "50g"},
+      {"name": "고추장", "amount": "2큰술"}
+    ],
+    "steps": [
+      {"stepNumber": 1, "description": "각종 나물을 삶아 양념합니다."},
+      {"stepNumber": 2, "description": "밥 위에 나물을 올리고 고추장을 넣습니다."}
+    ]
+  },
+  {
+    "id": "R010",
+    "name": "잡채",
+    "description": "맛있는 잡채",
+    "imageUrl": "https://picsum.photos/400/250?random=10",
+    "cookingTimeMinutes": 35,
+    "servings": 4,
+    "difficulty": "medium",
+    "category": "sideDish",
+    "rating": 4.8,
+    "reviewCount": 250,
+    "isPopular": true,
+    "ingredients": [
+      {"name": "당면", "amount": "200g"},
+      {"name": "시금치", "amount": "100g"},
+      {"name": "당근", "amount": "1개"},
+      {"name": "소고기", "amount": "100g"}
+    ],
+    "steps": [
+      {"stepNumber": 1, "description": "당면을 삶아줍니다."},
+      {"stepNumber": 2, "description": "야채와 고기를 볶아 당면과 섞습니다."}
+    ]
+  },
+  {
+    "id": "R011",
+    "name": "김치찌개",
+    "description": "얼큰한 김치찌개",
+    "imageUrl": "https://picsum.photos/400/250?random=11",
+    "cookingTimeMinutes": 25,
+    "servings": 3,
+    "difficulty": "easy",
+    "category": "soup",
+    "rating": 4.9,
+    "reviewCount": 280,
+    "isPopular": true,
+    "ingredients": [
+      {"name": "김치", "amount": "2컵"},
+      {"name": "돼지고기", "amount": "200g"},
+      {"name": "두부", "amount": "1/2모"},
+      {"name": "대파", "amount": "1대"}
+    ],
+    "steps": [
+      {"stepNumber": 1, "description": "김치와 돼지고기를 볶습니다."},
+      {"stepNumber": 2, "description": "물을 넣고 끓인 후 두부를 넣습니다."}
+    ]
+  },
+  {
+    "id": "R012",
+    "name": "갈비찜",
+    "description": "부드러운 갈비찜",
+    "imageUrl": "https://picsum.photos/400/250?random=12",
+    "cookingTimeMinutes": 90,
+    "servings": 6,
+    "difficulty": "hard",
+    "category": "stirFry",
+    "rating": 4.8,
+    "reviewCount": 150,
+    "isPopular": false,
+    "ingredients": [
+      {"name": "갈비", "amount": "1kg"},
+      {"name": "무", "amount": "1/2개"},
+      {"name": "당근", "amount": "1개"},
+      {"name": "간장", "amount": "1/2컵"}
+    ],
+    "steps": [
+      {"stepNumber": 1, "description": "갈비를 찬물에 담가 핏물을 뺍니다."},
+      {"stepNumber": 2, "description": "양념을 만들어 갈비와 함께 조립니다."}
+    ]
+  },
+  {
+    "id": "R013",
+    "name": "된장국",
+    "description": "시원한 된장국",
+    "imageUrl": "https://picsum.photos/400/250?random=13",
+    "cookingTimeMinutes": 15,
+    "servings": 2,
+    "difficulty": "easy",
+    "category": "soup",
+    "rating": 4.5,
+    "reviewCount": 120,
+    "isPopular": false,
+    "ingredients": [
+      {"name": "된장", "amount": "1큰술"},
+      {"name": "두부", "amount": "1/4모"},
+      {"name": "파", "amount": "1대"}
+    ],
+    "steps": [
+      {"stepNumber": 1, "description": "물에 된장을 풀어 끓입니다."},
+      {"stepNumber": 2, "description": "두부와 파를 넣어 마무리합니다."}
+    ]
+  },
+  {
+    "id": "R014",
+    "name": "순두부찌개",
+    "description": "얼큰한 순두부찌개",
+    "imageUrl": "https://picsum.photos/400/250?random=14",
+    "cookingTimeMinutes": 20,
+    "servings": 2,
+    "difficulty": "easy",
+    "category": "soup",
+    "rating": 4.7,
+    "reviewCount": 190,
+    "isPopular": false,
+    "ingredients": [
+      {"name": "순두부", "amount": "1모"},
+      {"name": "김치", "amount": "1/2컵"},
+      {"name": "계란", "amount": "1개"},
+      {"name": "고춧가루", "amount": "1큰술"}
+    ],
+    "steps": [
+      {"stepNumber": 1, "description": "김치를 볶다가 물을 넣고 끓입니다."},
+      {"stepNumber": 2, "description": "순두부와 계란을 넣어 완성합니다."}
+    ]
+  },
+  {
+    "id": "R015",
+    "name": "떡볶이",
+    "description": "매콤달콤한 떡볶이",
+    "imageUrl": "https://picsum.photos/400/250?random=15",
+    "cookingTimeMinutes": 20,
+    "servings": 2,
+    "difficulty": "easy",
+    "category": "stirFry",
+    "rating": 4.6,
+    "reviewCount": 300,
+    "isPopular": true,
+    "ingredients": [
+      {"name": "떡", "amount": "300g"},
+      {"name": "어묵", "amount": "100g"},
+      {"name": "고추장", "amount": "2큰술"},
+      {"name": "설탕", "amount": "1큰술"}
+    ],
+    "steps": [
+      {"stepNumber": 1, "description": "물에 고추장 양념을 만들어 끓입니다."},
+      {"stepNumber": 2, "description": "떡과 어묵을 넣고 볶습니다."}
+    ]
+  },
+  {
+    "id": "R016",
+    "name": "제육볶음",
+    "description": "매콤한 제육볶음",
+    "imageUrl": "https://picsum.photos/400/250?random=16",
+    "cookingTimeMinutes": 25,
+    "servings": 3,
+    "difficulty": "medium",
+    "category": "stirFry",
+    "rating": 4.8,
+    "reviewCount": 220,
+    "isPopular": false,
+    "ingredients": [
+      {"name": "돼지고기", "amount": "300g"},
+      {"name": "양파", "amount": "1개"},
+      {"name": "고추장", "amount": "2큰술"},
+      {"name": "마늘", "amount": "3쪽"}
+    ],
+    "steps": [
+      {"stepNumber": 1, "description": "돼지고기를 양념에 재워둡니다."},
+      {"stepNumber": 2, "description": "팬에 고기와 양파를 볶습니다."}
+    ]
+  },
+  {
+    "id": "R017",
+    "name": "미역국",
+    "description": "구수한 미역국",
+    "imageUrl": "https://picsum.photos/400/250?random=17",
+    "cookingTimeMinutes": 30,
+    "servings": 4,
+    "difficulty": "easy",
+    "category": "soup",
+    "rating": 4.4,
+    "reviewCount": 100,
+    "isPopular": false,
+    "ingredients": [
+      {"name": "미역", "amount": "20g"},
+      {"name": "소고기", "amount": "100g"},
+      {"name": "참기름", "amount": "1큰술"}
+    ],
+    "steps": [
+      {"stepNumber": 1, "description": "미역을 불려서 참기름에 볶습니다."},
+      {"stepNumber": 2, "description": "소고기와 함께 끓입니다."}
+    ]
+  },
+  {
+    "id": "R018",
+    "name": "오징어볶음",
+    "description": "매콤한 오징어볶음",
+    "imageUrl": "https://picsum.photos/400/250?random=18",
+    "cookingTimeMinutes": 20,
+    "servings": 2,
+    "difficulty": "medium",
+    "category": "stirFry",
+    "rating": 4.7,
+    "reviewCount": 160,
+    "isPopular": false,
+    "ingredients": [
+      {"name": "오징어", "amount": "1마리"},
+      {"name": "양파", "amount": "1개"},
+      {"name": "고추장", "amount": "1큰술"},
+      {"name": "마늘", "amount": "2쪽"}
+    ],
+    "steps": [
+      {"stepNumber": 1, "description": "오징어를 손질하고 야채를 썰어줍니다."},
+      {"stepNumber": 2, "description": "고추장 양념으로 볶습니다."}
+    ]
+  },
+  {
+    "id": "R019",
+    "name": "계란말이",
+    "description": "부드러운 계란말이",
+    "imageUrl": "https://picsum.photos/400/250?random=19",
+    "cookingTimeMinutes": 10,
+    "servings": 2,
+    "difficulty": "medium",
+    "category": "sideDish",
+    "rating": 4.5,
+    "reviewCount": 140,
+    "isPopular": false,
+    "ingredients": [
+      {"name": "계란", "amount": "4개"},
+      {"name": "우유", "amount": "2큰술"},
+      {"name": "소금", "amount": "약간"},
+      {"name": "식용유", "amount": "약간"}
+    ],
+    "steps": [
+      {"stepNumber": 1, "description": "계란에 우유와 소금을 넣고 풀어줍니다."},
+      {"stepNumber": 2, "description": "팬에 부어가며 돌돌 말아줍니다."}
+    ]
+  },
+  {
+    "id": "R020",
+    "name": "콩나물국",
+    "description": "시원한 콩나물국",
+    "imageUrl": "https://picsum.photos/400/250?random=20",
+    "cookingTimeMinutes": 15,
+    "servings": 3,
+    "difficulty": "easy",
+    "category": "soup",
+    "rating": 4.3,
+    "reviewCount": 90,
+    "isPopular": false,
+    "ingredients": [
+      {"name": "콩나물", "amount": "200g"},
+      {"name": "대파", "amount": "1대"},
+      {"name": "마늘", "amount": "2쪽"},
+      {"name": "소금", "amount": "약간"}
+    ],
+    "steps": [
+      {"stepNumber": 1, "description": "물에 콩나물을 넣고 끓입니다."},
+      {"stepNumber": 2, "description": "파와 마늘을 넣고 간을 맞춥니다."}
+    ]
+  },
+  {
+    "id": "R021",
+    "name": "감자탕",
+    "description": "얼큰한 감자탕",
+    "imageUrl": "https://picsum.photos/400/250?random=21",
+    "cookingTimeMinutes": 60,
+    "servings": 4,
+    "difficulty": "medium",
+    "category": "soup",
+    "rating": 4.8,
+    "reviewCount": 200,
+    "isPopular": false,
+    "ingredients": [
+      {"name": "돼지등뼈", "amount": "1kg"},
+      {"name": "감자", "amount": "3개"},
+      {"name": "우거지", "amount": "100g"},
+      {"name": "고춧가루", "amount": "2큰술"}
+    ],
+    "steps": [
+      {"stepNumber": 1, "description": "등뼈를 삶아 육수를 만듭니다."},
+      {"stepNumber": 2, "description": "감자와 우거지를 넣고 끓입니다."}
+    ]
+  },
+  {
+    "id": "R022",
+    "name": "육개장",
+    "description": "매운 육개장",
+    "imageUrl": "https://picsum.photos/400/250?random=22",
+    "cookingTimeMinutes": 50,
+    "servings": 4,
+    "difficulty": "medium",
+    "category": "soup",
+    "rating": 4.7,
+    "reviewCount": 180,
+    "isPopular": false,
+    "ingredients": [
+      {"name": "소고기", "amount": "300g"},
+      {"name": "고사리", "amount": "50g"},
+      {"name": "콩나물", "amount": "100g"},
+      {"name": "고춧가루", "amount": "3큰술"}
+    ],
+    "steps": [
+      {"stepNumber": 1, "description": "소고기를 삶아 살을 발라줍니다."},
+      {"stepNumber": 2, "description": "나물과 함께 끓여 완성합니다."}
+    ]
+  },
+  {
+    "id": "R023",
+    "name": "삼계탕",
+    "description": "보양식 삼계탕",
+    "imageUrl": "https://picsum.photos/400/250?random=23",
+    "cookingTimeMinutes": 80,
+    "servings": 2,
+    "difficulty": "medium",
+    "category": "soup",
+    "rating": 4.9,
+    "reviewCount": 250,
+    "isPopular": true,
+    "ingredients": [
+      {"name": "닭", "amount": "1마리"},
+      {"name": "찹쌀", "amount": "1/2컵"},
+      {"name": "인삼", "amount": "2뿌리"},
+      {"name": "마늘", "amount": "5쪽"}
+    ],
+    "steps": [
+      {"stepNumber": 1, "description": "닭 배에 찹쌀과 인삼을 넣습니다."},
+      {"stepNumber": 2, "description": "물에 넣고 오래 끓여줍니다."}
+    ]
+  },
+  {
+    "id": "R024",
+    "name": "파전",
+    "description": "바삭한 파전",
+    "imageUrl": "https://picsum.photos/400/250?random=24",
+    "cookingTimeMinutes": 15,
+    "servings": 2,
+    "difficulty": "easy",
+    "category": "sideDish",
+    "rating": 4.6,
+    "reviewCount": 170,
+    "isPopular": false,
+    "ingredients": [
+      {"name": "대파", "amount": "5대"},
+      {"name": "부침가루", "amount": "1컵"},
+      {"name": "물", "amount": "1컵"},
+      {"name": "식용유", "amount": "적당량"}
+    ],
+    "steps": [
+      {"stepNumber": 1, "description": "파를 썰고 반죽을 만듭니다."},
+      {"stepNumber": 2, "description": "팬에 부쳐 바삭하게 구워줍니다."}
+    ]
+  },
+  {
+    "id": "R025",
+    "name": "물냉면",
+    "description": "시원한 물냉면",
+    "imageUrl": "https://picsum.photos/400/250?random=25",
+    "cookingTimeMinutes": 20,
+    "servings": 2,
+    "difficulty": "medium",
+    "category": "noodles",
+    "rating": 4.5,
+    "reviewCount": 130,
+    "isPopular": false,
+    "ingredients": [
+      {"name": "냉면", "amount": "2인분"},
+      {"name": "육수", "amount": "2컵"},
+      {"name": "오이", "amount": "1/2개"},
+      {"name": "계란", "amount": "1개"}
+    ],
+    "steps": [
+      {"stepNumber": 1, "description": "냉면을 삶아 찬물에 헹굽니다."},
+      {"stepNumber": 2, "description": "차가운 육수와 고명을 올립니다."}
+    ]
+  },
+  {
+    "id": "R026",
+    "name": "비빔냉면",
+    "description": "매콤한 비빔냉면",
+    "imageUrl": "https://picsum.photos/400/250?random=26",
+    "cookingTimeMinutes": 15,
+    "servings": 2,
+    "difficulty": "easy",
+    "category": "noodles",
+    "rating": 4.7,
+    "reviewCount": 200,
+    "isPopular": false,
+    "ingredients": [
+      {"name": "냉면", "amount": "2인분"},
+      {"name": "고추장", "amount": "2큰술"},
+      {"name": "오이", "amount": "1/2개"},
+      {"name": "계란", "amount": "1개"}
+    ],
+    "steps": [
+      {"stepNumber": 1, "description": "냉면을 삶아 찬물에 헹굽니다."},
+      {"stepNumber": 2, "description": "양념장과 고명을 올려 비빕니다."}
+    ]
+  },
+  {
+    "id": "R027",
+    "name": "라면",
+    "description": "간단한 라면",
+    "imageUrl": "https://picsum.photos/400/250?random=27",
+    "cookingTimeMinutes": 5,
+    "servings": 1,
+    "difficulty": "easy",
+    "category": "noodles",
+    "rating": 4.2,
+    "reviewCount": 500,
+    "isPopular": false,
+    "ingredients": [
+      {"name": "라면", "amount": "1개"},
+      {"name": "계란", "amount": "1개"},
+      {"name": "파", "amount": "약간"}
+    ],
+    "steps": [
+      {"stepNumber": 1, "description": "물을 끓이고 라면을 넣습니다."},
+      {"stepNumber": 2, "description": "계란과 파를 넣어 완성합니다."}
+    ]
+  },
+  {
+    "id": "R028",
+    "name": "짜장면",
+    "description": "달콤한 짜장면",
+    "imageUrl": "https://picsum.photos/400/250?random=28",
+    "cookingTimeMinutes": 25,
+    "servings": 2,
+    "difficulty": "medium",
+    "category": "noodles",
+    "rating": 4.8,
+    "reviewCount": 300,
+    "isPopular": true,
+    "ingredients": [
+      {"name": "중면", "amount": "2인분"},
+      {"name": "짜장소스", "amount": "4큰술"},
+      {"name": "양파", "amount": "1개"},
+      {"name": "돼지고기", "amount": "100g"}
+    ],
+    "steps": [
+      {"stepNumber": 1, "description": "면을 삶아줍니다."},
+      {"stepNumber": 2, "description": "짜장소스로 볶아 면에 올립니다."}
+    ]
+  },
+  {
+    "id": "R029",
+    "name": "짬뽕",
+    "description": "얼큰한 짬뽕",
+    "imageUrl": "https://picsum.photos/400/250?random=29",
+    "cookingTimeMinutes": 30,
+    "servings": 2,
+    "difficulty": "medium",
+    "category": "noodles",
+    "rating": 4.7,
+    "reviewCount": 220,
+    "isPopular": false,
+    "ingredients": [
+      {"name": "중면", "amount": "2인분"},
+      {"name": "오징어", "amount": "100g"},
+      {"name": "새우", "amount": "5마리"},
+      {"name": "고춧가루", "amount": "2큰술"}
+    ],
+    "steps": [
+      {"stepNumber": 1, "description": "해물을 볶아 국물을 만듭니다."},
+      {"stepNumber": 2, "description": "면을 넣고 끓여 완성합니다."}
+    ]
+  },
+  {
+    "id": "R030",
+    "name": "탕수육",
+    "description": "바삭한 탕수육",
+    "imageUrl": "https://picsum.photos/400/250?random=30",
+    "cookingTimeMinutes": 40,
+    "servings": 4,
+    "difficulty": "hard",
+    "category": "stirFry",
+    "rating": 4.9,
+    "reviewCount": 350,
+    "isPopular": true,
+    "ingredients": [
+      {"name": "돼지고기", "amount": "400g"},
+      {"name": "감자전분", "amount": "1/2컵"},
+      {"name": "양파", "amount": "1개"},
+      {"name": "당근", "amount": "1개"},
+      {"name": "식초", "amount": "3큰술"},
+      {"name": "설탕", "amount": "4큰술"}
+    ],
+    "steps": [
+      {"stepNumber": 1, "description": "고기에 전분을 묻혀 튀깁니다."},
+      {"stepNumber": 2, "description": "소스를 만들어 부어줍니다."}
+    ]
+  }
+]

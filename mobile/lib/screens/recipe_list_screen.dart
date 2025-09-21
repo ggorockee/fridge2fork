@@ -5,6 +5,7 @@ import '../widgets/ad_banner_widget.dart';
 import '../models/recipe.dart';
 import '../services/recipe_data.dart';
 import '../services/interstitial_ad_manager.dart';
+import '../services/analytics_service.dart';
 import 'recipe_detail_screen.dart';
 
 /// 검색 결과 화면 (LIST-01)
@@ -33,6 +34,7 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
   @override
   void initState() {
     super.initState();
+    AnalyticsService().logScreenView('recipe_list');
     _loadRecipes();
   }
 
@@ -42,9 +44,13 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
     if (widget.category != null) {
       // 카테고리별 레시피
       recipes = await getRecipesByCategory(widget.category!);
+      // Firebase Analytics 이벤트 기록
+      AnalyticsService().logSelectCategory(widget.category!.name);
     } else if (widget.userIngredients.isNotEmpty) {
       // 재료 기반 검색
       recipes = await searchRecipesByIngredients(widget.userIngredients);
+      // Firebase Analytics 이벤트 기록
+      AnalyticsService().logSearchByIngredients(widget.userIngredients);
     } else {
       // 전체 레시피 또는 인기 레시피
       recipes = widget.title == '인기 레시피' 
@@ -78,6 +84,9 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
   void _navigateToRecipeDetail(Recipe recipe) async {
     // 🎯 수익성 극대화: 레시피 상세보기 전 전면 광고 기회
     await InterstitialAdManager().onRecipeViewed();
+
+    // Firebase Analytics 이벤트 기록
+    AnalyticsService().logViewRecipe(recipe.name, recipe.id);
     
     if (mounted) {
       Navigator.of(context).push(

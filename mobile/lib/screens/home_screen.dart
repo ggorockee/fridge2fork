@@ -6,6 +6,7 @@ import '../widgets/widgets.dart';
 import '../widgets/ad_banner_widget.dart';
 import '../providers/ingredients_provider.dart';
 import '../services/interstitial_ad_manager.dart';
+import '../services/analytics_service.dart';
 import 'add_ingredient_screen.dart';
 import 'my_fridge_screen.dart';
 
@@ -35,6 +36,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         '${result.length}개의 식재료가 추가되었습니다!',
         backgroundColor: AppTheme.primaryOrange,
       );
+
+      //  Firebase Analytics 이벤트 기록
+      AnalyticsService().logAddIngredients(result);
       
       // 🎯 수익성 극대화: 식재료 추가 완료 후 전면 광고 기회
       for (int i = 0; i < result.length; i++) {

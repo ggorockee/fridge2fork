@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_core/firebase_core.dart'; // Firebase Core 패키지 임포트
 import 'config/app_config.dart';
 import 'providers/app_state_provider.dart';
 import 'screens/splash_screen.dart';
@@ -14,6 +15,9 @@ import 'services/interstitial_ad_manager.dart';
 void main() async {
   // Flutter 엔진과 위젯 바인딩 초기화
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Firebase 초기화 (네이티브 설정 파일 사용)
+  await Firebase.initializeApp();
   
   // 환경 설정 초기화
   final environment = kReleaseMode ? AppEnvironment.production : AppEnvironment.development;
