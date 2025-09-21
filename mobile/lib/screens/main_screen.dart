@@ -1,0 +1,193 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:showcaseview/showcaseview.dart';
+import '../providers/app_state_provider.dart';
+import '../theme/app_theme.dart';
+import 'home_screen.dart';
+import 'my_fridge_screen.dart';
+import 'recipe_screen.dart';
+import 'feedback_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+/// 메인 화면 - 탭 기반 네비게이션
+/// 하단 네비게이션 바가 항상 표시되는 메인 컨테이너 화면
+class MainScreen extends ConsumerStatefulWidget {
+  const MainScreen({super.key});
+
+  @override
+  ConsumerState<MainScreen> createState() => _MainScreenState();
+}
+
+class _MainScreenState extends ConsumerState<MainScreen> {
+  int _selectedIndex = 0;
+  late PageController _pageController;
+
+  // Showcase를 위한 GlobalKey 선언
+  final GlobalKey _fridgeTabKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _onBottomNavTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  void _onPageChanged(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ShowCaseWidget(
+      onFinish: () async {
+        // 온보딩 완료 후 isFirstLaunch 상태를 false로 변경
+        ref.read(isFirstLaunchProvider.notifier).state = false;
+        
+        // SharedPreferences에 온보딩 완료 상태 저장
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('isFirstLaunch', false);
+      },
+      builder: (context) {
+        // 온보딩 시작을 위해 context를 전달
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final isFirstLaunch = ref.read(isFirstLaunchProvider);
+          if (isFirstLaunch) {
+            ShowCaseWidget.of(context).startShowCase([
+              homeScreenAddButtonKey,
+              _fridgeTabKey,
+            ]);
+          }
+        });
+
+        return Scaffold(
+          backgroundColor: AppTheme.backgroundWhite,
+          body: PageView(
+            controller: _pageController,
+            onPageChanged: _onPageChanged,
+            children: [
+              // 홈 화면
+              const HomeScreen(),
+              
+              // 나의냉장고 화면
+              const MyFridgeScreen(),
+              
+              // 요리하기 화면
+              const RecipeScreen(),
+              
+              // 의견보내기 화면
+              const FeedbackScreen(),
+            ],
+          ),
+          
+          // 하단 네비게이션 바 (항상 표시)
+          bottomNavigationBar: Container(
+            height: 80,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              border: Border(
+                top: BorderSide(
+                  color: Color(0xFFF0F0F0),
+                  width: 1,
+                ),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildBottomNavItem(
+                  icon: Icons.home,
+                  label: '홈',
+                  isSelected: _selectedIndex == 0,
+                  onTap: () => _onBottomNavTapped(0),
+                ),
+                _buildBottomNavItem(
+                  key: _fridgeTabKey, // Showcase 아이템에 GlobalKey 전달
+                  icon: Icons.kitchen,
+                  label: '나의냉장고',
+                  description: '추가한 식재료들을 이곳에서 확인하고 관리할 수 있어요.',
+                  isSelected: _selectedIndex == 1,
+                  onTap: () => _onBottomNavTapped(1),
+                ),
+                _buildBottomNavItem(
+                  icon: Icons.restaurant_menu,
+                  label: '요리하기',
+                  isSelected: _selectedIndex == 2,
+                  onTap: () => _onBottomNavTapped(2),
+                ),
+                _buildBottomNavItem(
+                  icon: Icons.feedback,
+                  label: '의견보내기',
+                  isSelected: _selectedIndex == 3,
+                  onTap: () => _onBottomNavTapped(3),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// 하단 네비게이션 아이템 위젯
+  Widget _buildBottomNavItem({
+    GlobalKey? key, // Showcase를 위해 Key 타입 수정
+    required IconData icon,
+    required String label,
+    String? description, // Showcase 설명
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    Widget content = GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 24,
+              color: isSelected ? AppTheme.primaryOrange : AppTheme.iconPrimary,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                color: isSelected ? AppTheme.primaryOrange : AppTheme.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (description != null) {
+      return Showcase(
+        key: key!,
+        description: description,
+        child: content,
+      );
+    }
+    return content;
+  }
+}

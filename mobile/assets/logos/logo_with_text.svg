@@ -1,0 +1,31 @@
+
+<svg width="400" height="120" viewBox="0 0 400 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 냉장고 아이콘 배경 -->
+  <rect width="120" height="120" rx="16" fill="#FF7F32"/>
+  
+  <!-- 냉장고 아이콘 (app_icon_512.svg 비율 참고하여 배치) -->
+  <g transform="translate(20, 15) scale(1.33)">
+    <!-- 냉장고 본체 -->
+    <rect x="10" y="5" width="40" height="60" rx="4" fill="white"/>
+    
+    <!-- 냉장고 상단 구역 (냉동실) -->
+    <rect x="10" y="5" width="40" height="22" rx="4" fill="white"/>
+    
+    <!-- 냉장고 하단 구역 (냉장실) -->
+    <rect x="10" y="27" width="40" height="38" rx="4" fill="white"/>
+    
+    <!-- 상단 손잡이 -->
+    <rect x="13" y="12" width="3" height="8" rx="1.5" fill="#FF7F32"/>
+    
+    <!-- 하단 손잡이 -->
+    <rect x="13" y="38" width="3" height="12" rx="1.5" fill="#FF7F32"/>
+    
+    <!-- 중간 구분선 -->
+    <line x1="10" y1="27" x2="50" y2="27" stroke="#FF7F32" stroke-width="2"/>
+  </g>
+  
+  <!-- 앱 이름 텍스트 (오른쪽 배치) -->
+  <text x="150" y="50" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#333333">냉털레시피</text>
+  <text x="150" y="80" font-family="Arial, sans-serif" font-size="16" font-weight="400" fill="#5D577E">냉장고 털어서 만드는 레시피</text>
+</svg>
+

@@ -1,0 +1,7 @@
+#include "Generated.xcconfig"
+
+// Development Environment Configuration
+PRODUCT_BUNDLE_IDENTIFIER = com.woohalabs.fridge2fork.dev
+PRODUCT_NAME = 냉털레시피 Dev
+FLUTTER_BUILD_NAME = 1.0.0
+FLUTTER_BUILD_NUMBER = 1

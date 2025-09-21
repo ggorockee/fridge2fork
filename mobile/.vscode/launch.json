@@ -1,0 +1,29 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "냉털레시피 (개발)",
+            "request": "launch",
+            "type": "dart",
+            "args": ["--flavor", "dev"]
+        },
+        {
+            "name": "냉털레시피 (운영)",
+            "request": "launch", 
+            "type": "dart",
+            "args": ["--flavor", "prod"]
+        },
+        {
+            "name": "냉털레시피 (개발 - Release)",
+            "request": "launch",
+            "type": "dart",
+            "args": ["--flavor", "dev", "--release"]
+        },
+        {
+            "name": "냉털레시피 (운영 - Release)",
+            "request": "launch",
+            "type": "dart", 
+            "args": ["--flavor", "prod", "--release"]
+        }
+    ]
+}
