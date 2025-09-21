@@ -157,7 +157,7 @@ class _AdNativeWidgetState extends State<AdNativeWidget> {
       margin: const EdgeInsets.symmetric(horizontal: AppTheme.spacingM),
       decoration: BoxDecoration(
         color: AppTheme.backgroundWhite,
-        borderRadius: BorderRadius.circular(AppTheme.radiusM),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
         border: Border.all(
           color: AppTheme.textPlaceholder.withOpacity(0.3),
           width: 0.5,
@@ -171,7 +171,7 @@ class _AdNativeWidgetState extends State<AdNativeWidget> {
         ],
       ),
       child: Column(
-        crossAxisSize: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 광고 표시 라벨
           Container(
@@ -180,8 +180,8 @@ class _AdNativeWidgetState extends State<AdNativeWidget> {
             decoration: BoxDecoration(
               color: AppTheme.backgroundGray,
               borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(AppTheme.radiusM),
-                topRight: Radius.circular(AppTheme.radiusM),
+                topLeft: Radius.circular(AppTheme.radiusMedium),
+                topRight: Radius.circular(AppTheme.radiusMedium),
               ),
             ),
             child: Row(
