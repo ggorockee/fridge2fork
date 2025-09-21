@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:showcaseview/showcaseview.dart';
 import '../theme/app_theme.dart';
 import '../widgets/widgets.dart';
+import '../widgets/ad_banner_widget.dart';
 import '../providers/ingredients_provider.dart';
+import '../services/interstitial_ad_manager.dart';
 import 'add_ingredient_screen.dart';
 import 'my_fridge_screen.dart';
 
@@ -33,6 +35,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         '${result.length}개의 식재료가 추가되었습니다!',
         backgroundColor: AppTheme.primaryOrange,
       );
+      
+      // 🎯 수익성 극대화: 식재료 추가 완료 후 전면 광고 기회
+      for (int i = 0; i < result.length; i++) {
+        await InterstitialAdManager().onIngredientAdded();
+      }
     }
   }
 
@@ -64,6 +71,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: [
           Column(
             children: [
+              // 상단 배너 광고 (수익성 극대화 - 첫 화면 최상단)
+              const AdBannerWidget(isTop: true),
+              
               // 냉장고 부분 - 전체 화면의 2/3
               Expanded(
                 flex: 2,

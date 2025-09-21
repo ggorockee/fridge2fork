@@ -9,6 +9,7 @@ import 'screens/recipe_detail_screen.dart';
 import 'models/recipe.dart';
 import 'theme/app_theme.dart';
 import 'services/ad_service.dart';
+import 'services/interstitial_ad_manager.dart';
 
 void main() async {
   // Flutter 엔진과 위젯 바인딩 초기화
@@ -23,8 +24,13 @@ void main() async {
     AppConfig.printConfig();
   }
   
-  // AdMob 초기화
-  await AdService().initialize();
+  // AdMob 초기화 및 전면 광고 프리로드 (수익성 극대화)
+  final adService = AdService();
+  await adService.initialize();
+  await adService.preloadInterstitialAd();
+  
+  // 전면 광고 관리자 초기화 (앱 시작 후 광고 기회 제공)
+  InterstitialAdManager().onAppLaunched();
   
   // SharedPreferences 인스턴스 로드
   final prefs = await SharedPreferences.getInstance();

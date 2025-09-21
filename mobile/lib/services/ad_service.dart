@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import '../config/app_config.dart';
 
@@ -14,7 +15,7 @@ class AdService {
   factory AdService() => _instance;
   AdService._internal();
 
-  // 광고 인스턴스
+  // 광고 인스턴스 (수익성 극대화: 4가지 타입 모두 활용)
   BannerAd? _bannerTopAd;
   BannerAd? _bannerBottomAd;
   InterstitialAd? _interstitialAd;
@@ -25,7 +26,7 @@ class AdService {
   bool _isInterstitialLoaded = false;
   DateTime? _lastInterstitialShown;
   
-  // 광고 ID 가져오기 (플랫폼별)
+  // 광고 ID 가져오기 (플랫폼별) - 수익성 극대화: 모든 타입 지원
   String get _bannerTopAdUnitId {
     if (Platform.isAndroid) {
       return AppConfig.admobAndroidBannerTopId;
@@ -85,7 +86,7 @@ class AdService {
     }
   }
 
-  /// 상단 배너 광고 생성
+  /// 상단 배너 광고 생성 (홈 화면용 - 높은 가시성)
   BannerAd? createBannerTopAd() {
     if (!_isInitialized || _bannerTopAdUnitId.isEmpty) return null;
     
@@ -109,7 +110,7 @@ class AdService {
     return _bannerTopAd;
   }
 
-  /// 하단 배너 광고 생성
+  /// 하단 배너 광고 생성 (목록 화면용 - 지속적 노출)
   BannerAd? createBannerBottomAd() {
     if (!_isInitialized || _bannerBottomAdUnitId.isEmpty) return null;
     
@@ -134,11 +135,12 @@ class AdService {
   }
 
   /// 적응형 배너 광고 생성 (화면 크기에 맞춤)
-  Future<BannerAd?> createAdaptiveBannerAd({required double width, bool isTop = false}) async {
-    if (!_isInitialized) return null;
-    
+  Future<BannerAd?> createAdaptiveBannerAd({
+    required double width, 
+    bool isTop = false
+  }) async {
     final adUnitId = isTop ? _bannerTopAdUnitId : _bannerBottomAdUnitId;
-    if (adUnitId.isEmpty) return null;
+    if (!_isInitialized || adUnitId.isEmpty) return null;
     
     final adaptiveSize = await AdSize.getAnchoredAdaptiveBannerAdSize(
       Orientation.portrait,
@@ -236,7 +238,7 @@ class AdService {
     }
   }
 
-  /// 네이티브 광고 생성
+  /// 네이티브 광고 생성 (레시피 목록 통합용 - 높은 클릭률)
   NativeAd? createNativeAd() {
     if (!_isInitialized || _nativeAdUnitId.isEmpty) return null;
     
@@ -253,11 +255,17 @@ class AdService {
         },
         onAdOpened: (ad) => debugPrint('🎯 네이티브 광고 열림'),
         onAdClosed: (ad) => debugPrint('🎯 네이티브 광고 닫힘'),
+        onAdClicked: (ad) => debugPrint('🎯 네이티브 광고 클릭'),
       ),
     );
     
     _nativeAd!.load();
     return _nativeAd;
+  }
+
+  /// 전면 광고 자동 프리로드 (앱 시작 시)
+  Future<void> preloadInterstitialAd() async {
+    await loadInterstitialAd();
   }
 
   /// 모든 광고 해제
