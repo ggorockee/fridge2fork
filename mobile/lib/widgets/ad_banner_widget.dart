@@ -38,15 +38,15 @@ class _AdBannerWidgetState extends State<AdBannerWidget> {
     
     if (widget.isAdaptive) {
       // 적응형 배너 (화면 크기에 맞춤)
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (mounted) {
           final width = MediaQuery.of(context).size.width;
-          _bannerAd = adService.createAdaptiveBannerAd(
+          _bannerAd = await adService.createAdaptiveBannerAd(
             width: width,
             isTop: widget.isTop,
           );
           
-          if (_bannerAd != null) {
+          if (_bannerAd != null && mounted) {
             setState(() => _isAdLoaded = true);
           }
         }

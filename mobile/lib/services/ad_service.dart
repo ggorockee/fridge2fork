@@ -134,18 +134,22 @@ class AdService {
   }
 
   /// 적응형 배너 광고 생성 (화면 크기에 맞춤)
-  BannerAd? createAdaptiveBannerAd({required double width, bool isTop = false}) {
+  Future<BannerAd?> createAdaptiveBannerAd({required double width, bool isTop = false}) async {
     if (!_isInitialized) return null;
     
     final adUnitId = isTop ? _bannerTopAdUnitId : _bannerBottomAdUnitId;
     if (adUnitId.isEmpty) return null;
     
-    return BannerAd(
+    final adaptiveSize = await AdSize.getAnchoredAdaptiveBannerAdSize(
+      Orientation.portrait,
+      width.truncate(),
+    );
+    
+    if (adaptiveSize == null) return null;
+    
+    final bannerAd = BannerAd(
       adUnitId: adUnitId,
-      size: AdSize.getAnchoredAdaptiveBannerAdSize(
-        Orientation.portrait,
-        width.truncate(),
-      ),
+      size: adaptiveSize,
       request: const AdRequest(),
       listener: BannerAdListener(
         onAdLoaded: (ad) => debugPrint('🎯 적응형 배너 광고 로드 완료'),
@@ -154,7 +158,10 @@ class AdService {
           ad.dispose();
         },
       ),
-    )..load();
+    );
+    
+    bannerAd.load();
+    return bannerAd;
   }
 
   /// 전면 광고 로드
