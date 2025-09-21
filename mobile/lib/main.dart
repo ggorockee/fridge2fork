@@ -8,6 +8,7 @@ import 'screens/splash_screen.dart';
 import 'screens/recipe_detail_screen.dart';
 import 'models/recipe.dart';
 import 'theme/app_theme.dart';
+import 'services/ad_service.dart';
 
 void main() async {
   // Flutter 엔진과 위젯 바인딩 초기화
@@ -21,6 +22,9 @@ void main() async {
   if (AppConfig.debugMode) {
     AppConfig.printConfig();
   }
+  
+  // AdMob 초기화
+  await AdService().initialize();
   
   // SharedPreferences 인스턴스 로드
   final prefs = await SharedPreferences.getInstance();

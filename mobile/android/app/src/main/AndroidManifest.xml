@@ -31,6 +31,19 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        
+        <!-- AdMob App ID -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3219791135582658~4615536732"/>
+            
+        <!-- Firebase Performance Monitoring을 위한 자동 초기화 비활성화 -->
+        <meta-data
+            android:name="firebase_performance_logcat_enabled"
+            android:value="false" />
+        <meta-data
+            android:name="firebase_performance_collection_enabled"
+            android:value="true" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
