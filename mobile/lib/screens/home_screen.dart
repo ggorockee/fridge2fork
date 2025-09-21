@@ -153,7 +153,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
 }
 
-/// 냉장고 아이콘 위젯 - 재빌드 시에도 안정적인 렌더링을 위한 정적 위젯
+/// 냉장고 아이콘 위젯 - 앱 로고 이미지 사용
 class _FridgeIcon extends StatelessWidget {
   const _FridgeIcon();
 
@@ -163,13 +163,17 @@ class _FridgeIcon extends StatelessWidget {
       width: 120,
       height: 120,
       decoration: const BoxDecoration(
-        color: AppTheme.primaryOrange,
+        color: AppTheme.backgroundWhite,
         borderRadius: BorderRadius.all(Radius.circular(AppTheme.radiusMedium)),
       ),
-      child: const Icon(
-        Icons.kitchen,
-        size: 60,
-        color: Colors.white,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        child: Image.asset(
+          'assets/logos/app_logo.png',
+          width: 120,
+          height: 120,
+          fit: BoxFit.contain,
+        ),
       ),
     );
   }

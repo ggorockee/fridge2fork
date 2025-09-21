@@ -159,18 +159,22 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // 빈 냉장고 아이콘
+            // 빈 냉장고 아이콘 - 앱 로고 사용
             Container(
               width: 120,
               height: 120,
               decoration: const BoxDecoration(
-                color: AppTheme.primaryOrange,
+                color: AppTheme.backgroundWhite,
                 borderRadius: BorderRadius.all(Radius.circular(AppTheme.radiusMedium)),
               ),
-              child: const Icon(
-                Icons.kitchen,
-                size: 60,
-                color: Colors.white,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                child: Image.asset(
+                  'assets/logos/app_logo.png',
+                  width: 120,
+                  height: 120,
+                  fit: BoxFit.contain,
+                ),
               ),
             ),
             
