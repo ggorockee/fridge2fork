@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.core.database import get_db, get_redis
 from app.core.config import settings
@@ -187,7 +187,7 @@ async def health_check(db: AsyncSession = Depends(get_db)):
     
     return HealthResponse(
         status=overall_status,
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.now(timezone.utc),
         services=services,
         version=settings.PROJECT_VERSION
     )

@@ -2,7 +2,7 @@
 데이터베이스 연결 및 세션 관리
 """
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 import redis.asyncio as redis
@@ -61,4 +61,4 @@ async def close_redis_connection():
     """Redis 연결 종료"""
     global redis_client
     if redis_client:
-        await redis_client.close()
+        await redis_client.aclose()
