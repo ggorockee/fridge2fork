@@ -4,7 +4,13 @@
 Fridge2Fork 앱을 위한 RESTful API 엔드포인트 설계서입니다. 
 Supabase를 인증 시스템으로 사용하며, 모든 엔드포인트는 `/v1` prefix를 사용합니다.
 
+### 🎯 서비스 정책
+- **기본 이용**: 회원/비회원 모두 모든 기본 기능 이용 가능
+- **회원 혜택**: 개인화 기능 (즐겨찾기, 요리 히스토리, 맞춤 추천 등)
+- **확장성**: 향후 회원 전용 기능 확장 가능한 구조
+
 ## 🔐 인증 (Authentication) - `/v1/auth`
+**인증 방식**: JWT(JSON Web Token) 사용
 
 ### POST `/v1/auth/register`
 - **설명**: 새로운 사용자 회원가입
@@ -81,7 +87,7 @@ Supabase를 인증 시스템으로 사용하며, 모든 엔드포인트는 `/v1`
 ### GET `/v1/recipes`
 - **설명**: 레시피 목록 조회 (페이지네이션, 검색, 필터링 지원)
 - **메소드**: GET
-- **인증**: 선택적 (Bearer Token)
+- **인증**: 불필요 - 회원/비회원 모두 이용 가능
 - **쿼리 파라미터**:
   - page (number, default: 1): 페이지 번호
   - limit (number, default: 10, max: 50): 페이지당 아이템 수
@@ -98,18 +104,16 @@ Supabase를 인증 시스템으로 사용하며, 모든 엔드포인트는 `/v1`
 ### GET `/v1/recipes/{id}`
 - **설명**: 특정 레시피 상세 정보 조회
 - **메소드**: GET
-- **인증**: 선택적 (Bearer Token)
+- **인증**: 불필요 - 회원/비회원 모두 이용 가능
 - **경로 파라미터**:
   - id (string, required): 레시피 ID
 - **출력**:
   - recipe (object): 레시피 상세 정보
-  - is_favorite (boolean, optional): 즐겨찾기 여부 (로그인 시)
-  - matching_rate (number, optional): 재료 매칭율 (보유 재료 정보 있을 시)
 
 ### GET `/v1/recipes/{id}/related`
 - **설명**: 관련 레시피 추천 (같은 카테고리 또는 유사한 재료)
 - **메소드**: GET
-- **인증**: 선택적 (Bearer Token)
+- **인증**: 불필요 - 회원/비회원 모두 이용 가능
 - **경로 파라미터**:
   - id (string, required): 기준 레시피 ID
 - **쿼리 파라미터**:
@@ -120,14 +124,14 @@ Supabase를 인증 시스템으로 사용하며, 모든 엔드포인트는 `/v1`
 ### GET `/v1/recipes/categories`
 - **설명**: 레시피 카테고리 목록 조회
 - **메소드**: GET
-- **인증**: 불필요
+- **인증**: 불필요 - 회원/비회원 모두 이용 가능
 - **출력**:
   - categories (array): 카테고리 목록 (name, displayName, count)
 
 ### GET `/v1/recipes/popular`
 - **설명**: 인기 레시피 목록 조회
 - **메소드**: GET
-- **인증**: 선택적 (Bearer Token)
+- **인증**: 불필요 - 회원/비회원 모두 이용 가능
 - **쿼리 파라미터**:
   - limit (number, default: 10, max: 20): 레시피 수
   - period (string, default: week): 기간 (day, week, month, all)
@@ -135,20 +139,25 @@ Supabase를 인증 시스템으로 사용하며, 모든 엔드포인트는 `/v1`
   - recipes (array): 인기 레시피 목록
 
 ## 🧊 냉장고 (Fridge) - `/v1/fridge`
+**세션 기반 임시 저장소 사용 - 회원/비회원 모두 동일하게 이용**
 
 ### GET `/v1/fridge/ingredients`
-- **설명**: 사용자 보유 재료 목록 조회
+- **설명**: 사용자 보유 재료 목록 조회 (세션 기반)
 - **메소드**: GET
-- **인증**: Bearer Token 필요
+- **인증**: 불필요 - 회원/비회원 모두 이용 가능
+- **쿼리 파라미터**:
+  - session_id (string, optional): 세션 ID (없으면 새로 생성)
 - **출력**:
   - ingredients (array): 보유 재료 목록 (name, category, added_at, expires_at)
   - categories (object): 카테고리별 재료 수
+  - session_id (string): 세션 ID
 
 ### POST `/v1/fridge/ingredients`
-- **설명**: 냉장고에 재료 추가
+- **설명**: 냉장고에 재료 추가 (세션 기반)
 - **메소드**: POST
-- **인증**: Bearer Token 필요
+- **인증**: 불필요 - 회원/비회원 모두 이용 가능
 - **입력**:
+  - session_id (string, optional): 세션 ID (없으면 새로 생성)
   - ingredients (array, required): 추가할 재료 목록
     - name (string, required): 재료명
     - category (string, required): 카테고리
@@ -156,21 +165,25 @@ Supabase를 인증 시스템으로 사용하며, 모든 엔드포인트는 `/v1`
 - **출력**:
   - message (string): 성공 메시지
   - added_count (number): 추가된 재료 수
+  - session_id (string): 세션 ID
 
 ### DELETE `/v1/fridge/ingredients/{name}`
-- **설명**: 냉장고에서 특정 재료 제거
+- **설명**: 냉장고에서 특정 재료 제거 (세션 기반)
 - **메소드**: DELETE
-- **인증**: Bearer Token 필요
+- **인증**: 불필요 - 회원/비회원 모두 이용 가능
+- **쿼리 파라미터**:
+  - session_id (string, required): 세션 ID
 - **경로 파라미터**:
   - name (string, required): 재료명
 - **출력**:
   - message (string): 성공 메시지
 
 ### DELETE `/v1/fridge/ingredients`
-- **설명**: 냉장고 전체 비우기 또는 선택한 재료들 제거
+- **설명**: 냉장고 전체 비우기 또는 선택한 재료들 제거 (세션 기반)
 - **메소드**: DELETE
-- **인증**: Bearer Token 필요
+- **인증**: 불필요 - 회원/비회원 모두 이용 가능
 - **입력**:
+  - session_id (string, required): 세션 ID
   - ingredients (array, optional): 제거할 재료명 목록 (비어있으면 전체 제거)
 - **출력**:
   - message (string): 성공 메시지
@@ -179,15 +192,16 @@ Supabase를 인증 시스템으로 사용하며, 모든 엔드포인트는 `/v1`
 ### GET `/v1/fridge/ingredients/categories`
 - **설명**: 재료 카테고리 및 카테고리별 재료 목록 조회
 - **메소드**: GET
-- **인증**: 불필요
+- **인증**: 불필요 - 회원/비회원 모두 이용 가능
 - **출력**:
   - categories (object): 카테고리별 재료 목록
 
 ### POST `/v1/fridge/cooking-complete`
-- **설명**: 요리 완료 후 사용한 재료 차감
+- **설명**: 요리 완료 후 사용한 재료 차감 (세션 기반)
 - **메소드**: POST
-- **인증**: Bearer Token 필요
+- **인증**: 불필요 - 회원/비회원 모두 이용 가능
 - **입력**:
+  - session_id (string, required): 세션 ID
   - recipe_id (string, required): 완료한 레시피 ID
   - used_ingredients (array, required): 사용한 재료 목록
 - **출력**:
@@ -195,11 +209,12 @@ Supabase를 인증 시스템으로 사용하며, 모든 엔드포인트는 `/v1`
   - removed_ingredients (array): 제거된 재료 목록
 
 ## 👤 사용자 (User) - `/v1/user`
+**개인화 기능 - 회원 전용**
 
 ### GET `/v1/user/favorites`
 - **설명**: 사용자 즐겨찾기 레시피 목록 조회
 - **메소드**: GET
-- **인증**: Bearer Token 필요
+- **인증**: Bearer Token 필요 (회원 전용)
 - **쿼리 파라미터**:
   - page (number, default: 1): 페이지 번호
   - limit (number, default: 10): 페이지당 아이템 수
@@ -210,7 +225,7 @@ Supabase를 인증 시스템으로 사용하며, 모든 엔드포인트는 `/v1`
 ### POST `/v1/user/favorites/{recipe_id}`
 - **설명**: 레시피를 즐겨찾기에 추가
 - **메소드**: POST
-- **인증**: Bearer Token 필요
+- **인증**: Bearer Token 필요 (회원 전용)
 - **경로 파라미터**:
   - recipe_id (string, required): 레시피 ID
 - **출력**:
@@ -219,7 +234,7 @@ Supabase를 인증 시스템으로 사용하며, 모든 엔드포인트는 `/v1`
 ### DELETE `/v1/user/favorites/{recipe_id}`
 - **설명**: 레시피를 즐겨찾기에서 제거
 - **메소드**: DELETE
-- **인증**: Bearer Token 필요
+- **인증**: Bearer Token 필요 (회원 전용)
 - **경로 파라미터**:
   - recipe_id (string, required): 레시피 ID
 - **출력**:
@@ -228,7 +243,7 @@ Supabase를 인증 시스템으로 사용하며, 모든 엔드포인트는 `/v1`
 ### GET `/v1/user/cooking-history`
 - **설명**: 사용자 요리 히스토리 조회
 - **메소드**: GET
-- **인증**: Bearer Token 필요
+- **인증**: Bearer Token 필요 (회원 전용)
 - **쿼리 파라미터**:
   - page (number, default: 1): 페이지 번호
   - limit (number, default: 10): 페이지당 아이템 수
@@ -238,15 +253,28 @@ Supabase를 인증 시스템으로 사용하며, 모든 엔드포인트는 `/v1`
   - pagination (object): 페이지네이션 정보
   - statistics (object): 통계 정보 (총 요리 수, 최다 카테고리 등)
 
+### GET `/v1/user/recommendations`
+- **설명**: 개인화 맞춤 레시피 추천 (요리 히스토리 기반)
+- **메소드**: GET
+- **인증**: Bearer Token 필요 (회원 전용)
+- **쿼리 파라미터**:
+  - limit (number, default: 10, max: 20): 추천 레시피 수
+  - type (string, default: mixed): 추천 타입 (favorite_based, history_based, mixed)
+- **출력**:
+  - recipes (array): 맞춤 추천 레시피 목록
+  - recommendation_reason (array): 추천 이유 (같은 카테고리, 비슷한 재료 등)
+
 ### POST `/v1/user/feedback`
 - **설명**: 사용자 피드백 제출
 - **메소드**: POST
-- **인증**: Bearer Token 필요
+- **인증**: 불필요 - 회원/비회원 모두 이용 가능
 - **입력**:
   - type (string, required): 피드백 타입 (bug, feature, improvement, other)
   - title (string, required): 제목
   - content (string, required): 내용
   - rating (number, optional): 평점 (1-5)
+  - contact_email (string, optional): 연락처 이메일 (비회원용)
+  - user_id (string, optional): 사용자 ID (회원인 경우)
 - **출력**:
   - message (string): 성공 메시지
   - feedback_id (string): 피드백 ID
@@ -256,7 +284,7 @@ Supabase를 인증 시스템으로 사용하며, 모든 엔드포인트는 `/v1`
 ### GET `/v1/version`
 - **설명**: API 버전 및 앱 정보 조회
 - **메소드**: GET
-- **인증**: 불필요
+- **인증**: 불필요 - 회원/비회원 모두 이용 가능
 - **출력**:
   - api_version (string): API 버전
   - app_version (string): 최신 앱 버전
@@ -267,7 +295,7 @@ Supabase를 인증 시스템으로 사용하며, 모든 엔드포인트는 `/v1`
 ### GET `/v1/system/health`
 - **설명**: API 서버 상태 확인
 - **메소드**: GET
-- **인증**: 불필요
+- **인증**: 불필요 - 회원/비회원 모두 이용 가능
 - **출력**:
   - status (string): 서버 상태 (healthy, degraded, down)
   - timestamp (string): 확인 시간
@@ -287,11 +315,25 @@ Supabase를 인증 시스템으로 사용하며, 모든 엔드포인트는 `/v1`
   - message (string): 오류 메시지
   - details (object, optional): 상세 오류 정보
 
-## 🔒 인증 헤더
-Bearer Token을 사용하여 인증이 필요한 엔드포인트에 접근:
-`Authorization: Bearer {access_token}`
+## 🔒 인증 방식
+
+### 회원 전용 기능 (Bearer Token 필요)
+- 즐겨찾기 관리: `/v1/user/favorites/*`
+- 요리 히스토리: `/v1/user/cooking-history`
+- 개인화 추천: `/v1/user/recommendations`
+- 프로필 관리: `/v1/auth/profile`
+
+**인증 헤더**: `Authorization: Bearer {access_token}`
+
+### 세션 기반 기능
+- 냉장고 관리: `session_id` 파라미터 사용
+- 임시 데이터 저장 (브라우저 세션 종료 시 삭제)
 
 ## 📝 참고사항
+- **기본 정책**: 모든 핵심 기능은 회원/비회원 구분 없이 이용 가능
+- **회원 혜택**: 개인화 기능 (즐겨찾기, 히스토리, 맞춤 추천) 제공
+- **세션 관리**: 냉장고 데이터는 세션 기반 임시 저장
+- **확장성**: 향후 회원 전용 기능 추가 시 Bearer Token 방식 사용
 - 모든 날짜/시간은 ISO 8601 형식 사용
 - 페이지네이션은 1부터 시작
 - 요청/응답 본문은 UTF-8 인코딩 사용
