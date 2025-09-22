@@ -135,6 +135,13 @@ python scripts/run_dev.py    # 개발 서버
 python scripts/run_prod.py   # 운영 서버
 ```
 
+### 테스트 실행
+```bash
+python scripts/run_tests.py           # 모든 테스트 실행
+python scripts/run_tests.py --coverage # 커버리지 포함 테스트
+python scripts/test_coverage.py       # 상세 커버리지 분석
+```
+
 ## 🌐 API 엔드포인트
 
 ### 인증 (Authentication) - `/v1/auth`
@@ -194,6 +201,47 @@ pip install -r requirements.dev.txt
 ### Redis 연결 문제
 1. Redis 서버가 실행 중인지 확인
 2. Redis URL 설정 확인
+
+## 🧪 테스트
+
+### 테스트 실행
+```bash
+# conda 환경 활성화
+conda activate fridge2fork
+
+# 모든 테스트 실행
+python scripts/run_tests.py
+
+# 커버리지 포함 테스트
+python scripts/run_tests.py --coverage
+
+# 특정 테스트 파일만 실행
+python scripts/run_tests.py --file tests/test_auth.py
+
+# 특정 테스트 함수만 실행
+python scripts/run_tests.py --function test_login_success
+
+# 상세 커버리지 분석 (HTML 리포트 생성)
+python scripts/test_coverage.py
+```
+
+### 테스트 구조
+```
+tests/
+├── conftest.py          # 공통 픽스처 및 설정
+├── test_auth.py         # 인증 API 테스트
+├── test_recipes.py      # 레시피 API 테스트
+├── test_fridge.py       # 냉장고 API 테스트
+├── test_user.py         # 사용자 API 테스트
+├── test_system.py       # 시스템 API 테스트
+└── test_main.py         # 메인 앱 테스트
+```
+
+### 테스트 원칙
+- **독립적인 데이터베이스**: SQLite 인메모리 DB 사용
+- **자동 픽스처**: 테스트용 사용자, 레시피 등 자동 생성
+- **모킹**: Redis, 외부 서비스는 모킹 처리
+- **커버리지 목표**: 80% 이상
 
 ## 📝 개발 가이드
 
