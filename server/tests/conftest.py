@@ -2,6 +2,7 @@
 pytest 설정 및 공통 픽스처
 """
 import os
+import sys
 import asyncio
 import pytest
 import pytest_asyncio
@@ -11,11 +12,11 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from httpx import AsyncClient
 
-# 테스트 환경 설정
+# 프로젝트 루트를 Python 경로에 추가
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# 테스트 환경 설정 (import 전에 먼저 설정)
 os.environ["ENVIRONMENT"] = "test"
-os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///./test.db"
-os.environ["JWT_SECRET_KEY"] = "test_secret_key_for_testing_only"
-os.environ["REDIS_URL"] = "redis://localhost:6379/15"  # 테스트용 DB
 
 from main import app
 from app.core.database import get_db, Base

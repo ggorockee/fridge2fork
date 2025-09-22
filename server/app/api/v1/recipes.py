@@ -4,6 +4,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
+import sqlalchemy as sa
 from typing import Optional, List
 import math
 
@@ -81,7 +82,7 @@ async def get_recipes(
             or_(
                 Recipe.name.ilike(search_pattern),
                 Recipe.description.ilike(search_pattern),
-                func.cast(Recipe.ingredients, db.Text).ilike(search_pattern)
+                func.cast(Recipe.ingredients, sa.Text).ilike(search_pattern)
             )
         )
     
@@ -149,6 +150,48 @@ async def get_recipes(
     )
 
 
+@router.get("/categories", response_model=CategoriesResponse)
+async def get_categories(db: AsyncSession = Depends(get_db)):
+    """레시피 카테고리 목록 조회"""
+    # 카테고리별 레시피 수 조회
+    query = select(Recipe.category, func.count(Recipe.id)).group_by(Recipe.category)
+    result = await db.execute(query)
+    category_counts = result.all()
+    
+    categories = []
+    for category, count in category_counts:
+        categories.append(CategoryInfo(
+            name=category,
+            display_name=CATEGORY_DISPLAY_NAMES.get(category, category),
+            count=count
+        ))
+    
+    return CategoriesResponse(categories=categories)
+
+
+@router.get("/popular", response_model=PopularRecipesResponse)
+async def get_popular_recipes(
+    limit: int = Query(10, ge=1, le=20, description="레시피 수"),
+    period: str = Query("week", description="기간 (day, week, month, all)"),
+    db: AsyncSession = Depends(get_db)
+):
+    """인기 레시피 목록 조회"""
+    # 기간별 필터링은 향후 조회수 데이터 추가 시 구현
+    # 현재는 인기 레시피 플래그와 평점 기준으로 정렬
+    query = select(Recipe).order_by(
+        Recipe.is_popular.desc(),
+        Recipe.rating.desc(),
+        Recipe.review_count.desc()
+    ).limit(limit)
+    
+    result = await db.execute(query)
+    recipes = result.scalars().all()
+    
+    recipe_list = [RecipeList.model_validate(recipe) for recipe in recipes]
+    
+    return PopularRecipesResponse(recipes=recipe_list)
+
+
 @router.get("/{recipe_id}", response_model=RecipeSchema)
 async def get_recipe(
     recipe_id: str,
@@ -198,45 +241,3 @@ async def get_related_recipes(
     recipe_list = [RecipeList.model_validate(recipe) for recipe in related_recipes]
     
     return RelatedRecipesResponse(recipes=recipe_list)
-
-
-@router.get("/categories", response_model=CategoriesResponse)
-async def get_categories(db: AsyncSession = Depends(get_db)):
-    """레시피 카테고리 목록 조회"""
-    # 카테고리별 레시피 수 조회
-    query = select(Recipe.category, func.count(Recipe.id)).group_by(Recipe.category)
-    result = await db.execute(query)
-    category_counts = result.all()
-    
-    categories = []
-    for category, count in category_counts:
-        categories.append(CategoryInfo(
-            name=category,
-            display_name=CATEGORY_DISPLAY_NAMES.get(category, category),
-            count=count
-        ))
-    
-    return CategoriesResponse(categories=categories)
-
-
-@router.get("/popular", response_model=PopularRecipesResponse)
-async def get_popular_recipes(
-    limit: int = Query(10, ge=1, le=20, description="레시피 수"),
-    period: str = Query("week", description="기간 (day, week, month, all)"),
-    db: AsyncSession = Depends(get_db)
-):
-    """인기 레시피 목록 조회"""
-    # 기간별 필터링은 향후 조회수 데이터 추가 시 구현
-    # 현재는 인기 레시피 플래그와 평점 기준으로 정렬
-    query = select(Recipe).order_by(
-        Recipe.is_popular.desc(),
-        Recipe.rating.desc(),
-        Recipe.review_count.desc()
-    ).limit(limit)
-    
-    result = await db.execute(query)
-    recipes = result.scalars().all()
-    
-    recipe_list = [RecipeList.model_validate(recipe) for recipe in recipes]
-    
-    return PopularRecipesResponse(recipes=recipe_list)
