@@ -257,3 +257,9 @@ $RECYCLE.BIN/
 *.db
 
 .vscode
+*.dev
+mobile/.flutter-plugins-dependencies
+**/.env.prod
+**/.env.common
+mobile/.dart_tool
+mobile/.cursor
