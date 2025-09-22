@@ -282,15 +282,43 @@ Supabase를 인증 시스템으로 사용하며, 모든 엔드포인트는 `/v1`
 ## 🔧 시스템 (System) - `/v1/system`
 
 ### GET `/v1/version`
-- **설명**: API 버전 및 앱 정보 조회
+- **설명**: API 버전 및 앱 정보 조회 (플랫폼별 버전 관리)
+- **메소드**: GET
+- **인증**: 불필요 - 회원/비회원 모두 이용 가능
+- **쿼리 파라미터**:
+  - platform (string, required): 플랫폼 (ios, android, web, windows, macos, linux)
+  - current_version (string, optional): 현재 앱 버전
+  - build_number (string, optional): 현재 빌드 번호
+- **출력**:
+  - api_version (string): API 버전
+  - platform_info (object): 플랫폼별 정보
+    - platform (string): 요청한 플랫폼
+    - latest_version (string): 최신 앱 버전
+    - latest_build_number (string): 최신 빌드 번호
+    - min_supported_version (string): 최소 지원 앱 버전
+    - min_supported_build_number (string): 최소 지원 빌드 번호
+    - update_required (boolean): 강제 업데이트 필요 여부
+    - update_recommended (boolean): 업데이트 권장 여부
+    - download_url (string, optional): 다운로드 URL (스토어 링크)
+  - maintenance (boolean): 점검 모드 여부
+  - message (string, optional): 공지사항
+  - update_message (string, optional): 업데이트 관련 메시지
+
+### GET `/v1/system/platforms`
+- **설명**: 지원하는 모든 플랫폼의 버전 정보 조회
 - **메소드**: GET
 - **인증**: 불필요 - 회원/비회원 모두 이용 가능
 - **출력**:
-  - api_version (string): API 버전
-  - app_version (string): 최신 앱 버전
-  - min_app_version (string): 최소 지원 앱 버전
-  - maintenance (boolean): 점검 모드 여부
-  - message (string, optional): 공지사항
+  - platforms (array): 플랫폼별 정보 목록
+    - platform (string): 플랫폼명
+    - latest_version (string): 최신 버전
+    - latest_build_number (string): 최신 빌드 번호
+    - min_supported_version (string): 최소 지원 버전
+    - min_supported_build_number (string): 최소 지원 빌드 번호
+    - status (string): 플랫폼 상태 (active, deprecated, maintenance)
+    - release_date (string): 최신 버전 출시일 (ISO 8601)
+    - download_url (string, optional): 다운로드 URL
+    - release_notes (string, optional): 릴리스 노트 요약
 
 ### GET `/v1/system/health`
 - **설명**: API 서버 상태 확인
@@ -300,6 +328,7 @@ Supabase를 인증 시스템으로 사용하며, 모든 엔드포인트는 `/v1`
   - status (string): 서버 상태 (healthy, degraded, down)
   - timestamp (string): 확인 시간
   - services (object): 각 서비스별 상태
+  - version (string): 서버 버전
 
 ## 📊 공통 응답 형식
 
@@ -330,10 +359,26 @@ Supabase를 인증 시스템으로 사용하며, 모든 엔드포인트는 `/v1`
 - 임시 데이터 저장 (브라우저 세션 종료 시 삭제)
 
 ## 📝 참고사항
+
+### 🎯 서비스 정책
 - **기본 정책**: 모든 핵심 기능은 회원/비회원 구분 없이 이용 가능
 - **회원 혜택**: 개인화 기능 (즐겨찾기, 히스토리, 맞춤 추천) 제공
 - **세션 관리**: 냉장고 데이터는 세션 기반 임시 저장
 - **확장성**: 향후 회원 전용 기능 추가 시 Bearer Token 방식 사용
+
+### 📱 플랫폼별 버전 관리
+- **지원 플랫폼**: iOS, Android, Web, Windows, macOS, Linux
+- **버전 형식**: `major.minor.patch` (예: 1.2.3)
+- **빌드 번호**: 플랫폼별 독립적인 빌드 번호 관리
+- **업데이트 정책**:
+  - `update_required`: 앱 실행 불가, 강제 업데이트 필요
+  - `update_recommended`: 앱 실행 가능, 업데이트 권장
+- **스토어별 URL**: 
+  - iOS: App Store URL
+  - Android: Google Play Store URL
+  - 기타: 직접 다운로드 URL
+
+### 🔧 기술적 사항
 - 모든 날짜/시간은 ISO 8601 형식 사용
 - 페이지네이션은 1부터 시작
 - 요청/응답 본문은 UTF-8 인코딩 사용
