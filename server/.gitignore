@@ -1,1 +1,9 @@
 .env*
+test.db
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.pytest_cache/
