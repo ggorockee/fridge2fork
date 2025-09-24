@@ -1,0 +1,12 @@
+# Generated files
+*.json
+*.jsonl
+
+# Python cache
+__pycache__/
+*.pyc
+
+# IDE / OS specific
+.vscode/
+.idea/
+.DS_Store
