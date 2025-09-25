@@ -35,6 +35,7 @@ from bs4 import BeautifulSoup
 from urllib.robotparser import RobotFileParser
 from dotenv import load_dotenv
 from datetime import datetime
+import psutil
 
 # --- 환경 변수 및 설정 (Configuration) ---
 load_dotenv()
@@ -65,12 +66,16 @@ def setup_logging():
 # 로깅 초기화
 logger = setup_logging()
 
-TARGET_RECIPE_COUNT = 100
+# 환경변수로 설정 제어 (ConfigMap으로 주입)
+TARGET_RECIPE_COUNT = int(os.getenv('TARGET_RECIPE_COUNT', '100'))
 BASE_URL = "https://www.10000recipe.com"
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
 HEADERS = {'User-Agent': USER_AGENT}
 OUTPUT_FILENAME = "recipes.jsonl"
-CONCURRENT_REQUESTS = 3  # 동시 요청 수 제어
+CONCURRENT_REQUESTS = int(os.getenv('CONCURRENT_REQUESTS', '2'))  # 매우 보수적
+BATCH_SIZE = int(os.getenv('BATCH_SIZE', '5'))  # 작은 배치 크기
+REQUEST_DELAY = float(os.getenv('REQUEST_DELAY', '3.0'))  # 요청 간 지연
+BATCH_DELAY = float(os.getenv('BATCH_DELAY', '5.0'))  # 배치 간 지연
 
 # --- 데이터베이스 설정 ---
 DB_POOL = None
@@ -107,6 +112,18 @@ rp.set_url(f"{BASE_URL}/robots.txt")
 rp.read()
 
 # --- Helper Functions ---
+def log_memory_usage():
+    """메모리 사용량을 로깅합니다."""
+    try:
+        memory = psutil.virtual_memory()
+        logger.info(f"💾 메모리 사용량: {memory.percent}% ({memory.used / 1024**3:.2f}GB / {memory.total / 1024**3:.2f}GB)")
+        
+        # 메모리 사용량이 80% 이상이면 경고
+        if memory.percent > 80:
+            logger.warning(f"⚠️ 메모리 사용량이 높습니다: {memory.percent}%")
+    except Exception as e:
+        logger.debug(f"메모리 정보 조회 실패: {e}")
+
 def parse_ingredient(text):
     """
     단일 재료 텍스트를 파싱하여 이름, 수량, 단위로 구조화합니다.
@@ -351,7 +368,7 @@ def get_all_recipe_urls(target_count):
             
             logger.info(f"✅ 페이지 {page} 완료 - 새로 수집된 링크: {new_links_count}개")
             page += 1
-            time.sleep(2) # 서버 부하를 줄이기 위한 지연
+            time.sleep(REQUEST_DELAY) # 서버 부하를 줄이기 위한 지연
 
         except requests.exceptions.RequestException as e:
             logger.error(f"❌ 페이지 {page} 요청 실패: {e} - 5초 후 재시도")
@@ -368,7 +385,7 @@ async def scrape_recipe_details(session, url, semaphore):
     """
     async with semaphore:
         try:
-            await asyncio.sleep(1) # 추가적인 요청 간 지연
+            await asyncio.sleep(REQUEST_DELAY) # 추가적인 요청 간 지연
             logger.debug(f"🔍 스크래핑 시작: {url}")
             
             async with session.get(url, headers=HEADERS) as response:
@@ -408,7 +425,11 @@ async def main():
     logger.info("=" * 60)
     logger.info("🚀 만개의 레시피 크롤러 시작")
     logger.info(f"📊 설정: 목표 {TARGET_RECIPE_COUNT}개, 동시 요청 {CONCURRENT_REQUESTS}개")
+    logger.info(f"📊 배치 크기: {BATCH_SIZE}개, 요청 지연: {REQUEST_DELAY}초")
     logger.info("=" * 60)
+    
+    # 초기 메모리 상태 로깅
+    log_memory_usage()
     
     if not DB_POOL:
         logger.error("🚨 데이터베이스 연결이 설정되지 않았습니다. 스크립트를 종료합니다.")
@@ -444,6 +465,8 @@ async def main():
                     logger.info(f"💾 배치 저장 시작: {len(batch_results)}개")
                     await insert_recipe_batch(DB_POOL, batch_results)
                     batch_results = []
+                    # 배치 간 지연
+                    await asyncio.sleep(BATCH_DELAY)
                 
                 # 진행률 표시 (10개마다)
                 if i % 10 == 0:
