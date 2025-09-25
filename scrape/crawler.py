@@ -76,6 +76,8 @@ CONCURRENT_REQUESTS = int(os.getenv('CONCURRENT_REQUESTS', '2'))  # 매우 보�
 BATCH_SIZE = int(os.getenv('BATCH_SIZE', '5'))  # 작은 배치 크기
 REQUEST_DELAY = float(os.getenv('REQUEST_DELAY', '3.0'))  # 요청 간 지연
 BATCH_DELAY = float(os.getenv('BATCH_DELAY', '5.0'))  # 배치 간 지연
+PROGRESS_INTERVAL = int(os.getenv('PROGRESS_INTERVAL', '10'))  # 진행률 표시 간격
+MEMORY_CHECK_INTERVAL = int(os.getenv('MEMORY_CHECK_INTERVAL', '50'))  # 메모리 체크 간격
 
 # --- 데이터베이스 설정 ---
 DB_POOL = None
@@ -371,8 +373,8 @@ def get_all_recipe_urls(target_count):
             time.sleep(REQUEST_DELAY) # 서버 부하를 줄이기 위한 지연
 
         except requests.exceptions.RequestException as e:
-            logger.error(f"❌ 페이지 {page} 요청 실패: {e} - 5초 후 재시도")
-            time.sleep(5)
+            logger.error(f"❌ 페이지 {page} 요청 실패: {e} - {REQUEST_DELAY * 2}초 후 재시도")
+            time.sleep(REQUEST_DELAY * 2)
 
     elapsed_time = time.time() - start_time
     logger.info(f"🎯 URL 수집 완료 - 총 {len(recipe_urls)}개 수집 (소요시간: {elapsed_time:.2f}초)")
@@ -467,9 +469,13 @@ async def main():
                     # 배치 간 지연
                     await asyncio.sleep(BATCH_DELAY)
                 
-                # 진행률 표시 (10개마다)
-                if i % 10 == 0:
+                # 진행률 표시 (환경변수로 제어)
+                if i % PROGRESS_INTERVAL == 0:
                     logger.info(f"📈 진행률: {i}/{len(results)} ({i/len(results)*100:.1f}%)")
+                
+                # 메모리 사용량 체크 (환경변수로 제어)
+                if i % MEMORY_CHECK_INTERVAL == 0:
+                    log_memory_usage()
             else:
                 failed_count += 1
         
