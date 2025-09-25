@@ -17,6 +17,8 @@
     1. .env 파일을 생성하고 데이터베이스 연결 정보를 설정합니다. (.env.example 참고)
     2. pip install -r requirements.txt
     3. python crawler.py
+
+CI 테스트를 위한 업데이트
 """
 
 import asyncio
