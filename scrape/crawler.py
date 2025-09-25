@@ -400,33 +400,29 @@ async def main():
         
         # 배치 처리를 위한 설정
         BATCH_SIZE = 10  # 10개씩 배치로 처리
+        batch_results = []
         
-        with open(OUTPUT_FILENAME, 'w', encoding='utf-8') as f:
-            batch_results = []
-            
-            for i, result in enumerate(results, 1):
-                if result:
-                    # 1. 파일에 기록 (기존 기능 유지)
-                    f.write(json.dumps(result, ensure_ascii=False) + '\n')
-                    scraped_count += 1
-                    batch_results.append(result)
-                    
-                    # 배치 크기에 도달하면 DB에 저장
-                    if len(batch_results) >= BATCH_SIZE:
-                        logger.info(f"💾 배치 저장 시작: {len(batch_results)}개")
-                        await insert_recipe_batch(DB_POOL, batch_results)
-                        batch_results = []
-                    
-                    # 진행률 표시 (10개마다)
-                    if i % 10 == 0:
-                        logger.info(f"📈 진행률: {i}/{len(results)} ({i/len(results)*100:.1f}%)")
-                else:
-                    failed_count += 1
-            
-            # 남은 배치 처리
-            if batch_results:
-                logger.info(f"💾 마지막 배치 저장: {len(batch_results)}개")
-                await insert_recipe_batch(DB_POOL, batch_results)
+        for i, result in enumerate(results, 1):
+            if result:
+                scraped_count += 1
+                batch_results.append(result)
+                
+                # 배치 크기에 도달하면 DB에 저장
+                if len(batch_results) >= BATCH_SIZE:
+                    logger.info(f"💾 배치 저장 시작: {len(batch_results)}개")
+                    await insert_recipe_batch(DB_POOL, batch_results)
+                    batch_results = []
+                
+                # 진행률 표시 (10개마다)
+                if i % 10 == 0:
+                    logger.info(f"📈 진행률: {i}/{len(results)} ({i/len(results)*100:.1f}%)")
+            else:
+                failed_count += 1
+        
+        # 남은 배치 처리
+        if batch_results:
+            logger.info(f"💾 마지막 배치 저장: {len(batch_results)}개")
+            await insert_recipe_batch(DB_POOL, batch_results)
     
     total_time = time.time() - start_time
     logger.info("=" * 60)
@@ -435,7 +431,7 @@ async def main():
     logger.info(f"   ✅ 성공: {scraped_count}개")
     logger.info(f"   ❌ 실패: {failed_count}개")
     logger.info(f"   ⏱️ 총 소요시간: {total_time:.2f}초")
-    logger.info(f"   📁 출력파일: {OUTPUT_FILENAME}")
+    logger.info(f"   💾 데이터베이스에 저장 완료")
     logger.info("=" * 60)
 
 if __name__ == "__main__":
