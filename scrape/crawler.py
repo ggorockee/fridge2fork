@@ -451,8 +451,7 @@ async def main():
         
         logger.info("💾 크롤링 결과 처리 및 데이터베이스 저장을 시작합니다.")
         
-        # 배치 처리를 위한 설정
-        BATCH_SIZE = 10  # 10개씩 배치로 처리
+        # 배치 처리를 위한 설정 (환경변수 사용)
         batch_results = []
         
         for i, result in enumerate(results, 1):
