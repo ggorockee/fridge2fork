@@ -2,3 +2,5 @@ requests
 beautifulsoup4
 lxml
 aiohttp
+psycopg2-binary
+python-dotenv
