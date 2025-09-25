@@ -8,7 +8,7 @@ on:
       - develop
       - development
     paths:
-      - '.github/scrape/**'
+      - 'scrape/**'
       - '.github/workflows/ci-scrape.yml'
   workflow_dispatch: # Allows manual triggering
 
@@ -47,8 +47,8 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: ./.github/scrape
-          file: ./.github/scrape/Dockerfile
+          context: ./scrape
+          file: ./scrape/Dockerfile
           push: true
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/fridge2fork-scrape:${{ steps.vars.outputs.environment }}-latest
