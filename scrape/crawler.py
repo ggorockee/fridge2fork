@@ -332,18 +332,14 @@ async def main():
                     f.write(json.dumps(result, ensure_ascii=False) + '\n')
                     scraped_count += 1
                     
-                    # 2. 데이터베이스에 저장
-                    db_tasks.append(insert_recipe_data(DB_POOL, result))
+                    # 2. 데이터베이스에 즉시 저장
+                    await insert_recipe_data(DB_POOL, result)
                     
                     # 진행률 표시 (10개마다)
                     if i % 10 == 0:
                         logger.info(f"📈 진행률: {i}/{len(results)} ({i/len(results)*100:.1f}%)")
                 else:
                     failed_count += 1
-
-            if db_tasks:
-                logger.info("💾 데이터베이스 저장 시작...")
-                await asyncio.gather(*db_tasks)
     
     total_time = time.time() - start_time
     logger.info("=" * 60)
