@@ -66,4 +66,4 @@ jobs:
 
       - name: Update infra repository
         run: |
-          python scripts/update_infra_values.py scraper sha-${{ needs.build-and-push-scraper.outputs.sha }} ${{ secrets.INFRA_GITHUB_TOKEN }}
+          python .github/workflows/scripts/update_infra_values.py sha-${{ needs.build-and-push-scraper.outputs.sha }} ${{ secrets.INFRA_GITHUB_TOKEN }} scraper
