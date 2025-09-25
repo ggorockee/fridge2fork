@@ -4,3 +4,4 @@ lxml
 aiohttp
 psycopg2-binary
 python-dotenv
+psutil
