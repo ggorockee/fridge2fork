@@ -42,7 +42,7 @@ def setup_logging():
     """로깅 설정을 초기화합니다."""
     # 로그 포맷터 설정
     formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        '%(asctime)s - %(levelname)s - %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S'
     )
     
@@ -50,19 +50,13 @@ def setup_logging():
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
     
-    # 콘솔 핸들러
+    # 콘솔 핸들러만 사용 (Pod 로그로 확인)
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
     console_handler.setFormatter(formatter)
     
-    # 파일 핸들러 (로그 파일에 저장)
-    file_handler = logging.FileHandler('scraper.log', encoding='utf-8')
-    file_handler.setLevel(logging.DEBUG)
-    file_handler.setFormatter(formatter)
-    
     # 핸들러 추가
     logger.addHandler(console_handler)
-    logger.addHandler(file_handler)
     
     return logger
 
