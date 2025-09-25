@@ -111,11 +111,27 @@ def parse_ingredient(text):
     """
     단일 재료 텍스트를 파싱하여 이름, 수량, 단위로 구조화합니다.
     예: "다진 마늘 1/2큰술" -> {'name': '다진 마늘', 'quantity_from': 0.5, 'quantity_to': None, 'unit': '큰술'}
+    예: "청양고추 약간" -> {'name': '청양고추', 'is_vague': True, 'vague_description': '약간', 'importance': 'optional'}
     """
     original_text = text.replace("구매", "").strip()
     text = original_text
 
-    # 수량/단위 패턴 매칭 (문자열 끝에서부터)
+    # 모호한 수량 표현 체크
+    vague_indicators = ["약간", "적당히", "조금", "많이", "적당량"]
+    
+    for indicator in vague_indicators:
+        if indicator in text:
+            return {
+                "name": text.replace(indicator, "").strip(),
+                "quantity_from": None,
+                "quantity_to": None,
+                "unit": None,
+                "is_vague": True,
+                "vague_description": indicator,
+                "importance": "optional"
+            }
+
+    # 정확한 수량이 있는 경우 기존 로직
     pattern = r"(.+?)\s*([\d./~-]+)\s*([\w가-힣]*)$"
     match = re.match(pattern, text)
     
@@ -143,7 +159,14 @@ def parse_ingredient(text):
     else:
         name = text
 
-    return {"name": name, "quantity_from": quant_from, "quantity_to": quant_to, "unit": unit}
+    return {
+        "name": name, 
+        "quantity_from": quant_from, 
+        "quantity_to": quant_to, 
+        "unit": unit,
+        "is_vague": False,
+        "importance": "essential"
+    }
 
 # --- Database Functions ---
 async def insert_recipe_batch(pool, recipe_batch):
@@ -174,13 +197,15 @@ async def insert_recipe_batch(pool, recipe_batch):
 
                 # 2. ingredients 및 recipe_ingredients 테이블 처리
                 for ing in recipe_data['ingredients']:
-                    # 2a. ingredients 테이블에 Upsert (DO NOTHING)
+                    # 2a. ingredients 테이블에 Upsert (is_vague, vague_description 포함)
                     cursor.execute(
-                        """INSERT INTO ingredients (name)
-                           VALUES (%s)
-                           ON CONFLICT (name) DO NOTHING
+                        """INSERT INTO ingredients (name, is_vague, vague_description)
+                           VALUES (%s, %s, %s)
+                           ON CONFLICT (name) DO UPDATE SET
+                             is_vague = EXCLUDED.is_vague,
+                             vague_description = EXCLUDED.vague_description
                            RETURNING ingredient_id;""",
-                        (ing['name'],)
+                        (ing['name'], ing.get('is_vague', False), ing.get('vague_description'))
                     )
                     result = cursor.fetchone()
                     if result:
@@ -190,15 +215,17 @@ async def insert_recipe_batch(pool, recipe_batch):
                         cursor.execute("SELECT ingredient_id FROM ingredients WHERE name = %s;", (ing['name'],))
                         ingredient_id = cursor.fetchone()[0]
 
-                    # 2b. recipe_ingredients 테이블에 Upsert
+                    # 2b. recipe_ingredients 테이블에 Upsert (importance 포함)
                     cursor.execute(
-                        """INSERT INTO recipe_ingredients (recipe_id, ingredient_id, quantity_from, quantity_to, unit)
-                           VALUES (%s, %s, %s, %s, %s)
+                        """INSERT INTO recipe_ingredients (recipe_id, ingredient_id, quantity_from, quantity_to, unit, importance)
+                           VALUES (%s, %s, %s, %s, %s, %s)
                            ON CONFLICT (recipe_id, ingredient_id) DO UPDATE SET
                              quantity_from = EXCLUDED.quantity_from,
                              quantity_to = EXCLUDED.quantity_to,
-                             unit = EXCLUDED.unit;""",
-                        (recipe_id, ingredient_id, ing['quantity_from'], ing['quantity_to'], ing['unit'])
+                             unit = EXCLUDED.unit,
+                             importance = EXCLUDED.importance;""",
+                        (recipe_id, ingredient_id, ing['quantity_from'], ing['quantity_to'], 
+                         ing['unit'], ing.get('importance', 'essential'))
                     )
                 
                 success_count += 1
