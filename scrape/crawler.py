@@ -146,6 +146,78 @@ def parse_ingredient(text):
     return {"name": name, "quantity_from": quant_from, "quantity_to": quant_to, "unit": unit}
 
 # --- Database Functions ---
+async def insert_recipe_batch(pool, recipe_batch):
+    """
+    여러 레시피 데이터를 배치로 데이터베이스에 저장합니다.
+    """
+    conn = None
+    try:
+        conn = pool.getconn()
+        cursor = conn.cursor()
+        
+        success_count = 0
+        
+        for recipe_data in recipe_batch:
+            try:
+                # 1. recipes 테이블에 Upsert
+                cursor.execute(
+                    """INSERT INTO recipes (url, title, description, image_url)
+                       VALUES (%s, %s, %s, %s)
+                       ON CONFLICT (url) DO UPDATE SET
+                         title = EXCLUDED.title,
+                         description = EXCLUDED.description,
+                         image_url = EXCLUDED.image_url
+                       RETURNING recipe_id;""",
+                    (recipe_data['url'], recipe_data['title'], recipe_data['description'], recipe_data['image_url'])
+                )
+                recipe_id = cursor.fetchone()[0]
+
+                # 2. ingredients 및 recipe_ingredients 테이블 처리
+                for ing in recipe_data['ingredients']:
+                    # 2a. ingredients 테이블에 Upsert (DO NOTHING)
+                    cursor.execute(
+                        """INSERT INTO ingredients (name)
+                           VALUES (%s)
+                           ON CONFLICT (name) DO NOTHING
+                           RETURNING ingredient_id;""",
+                        (ing['name'],)
+                    )
+                    result = cursor.fetchone()
+                    if result:
+                        ingredient_id = result[0]
+                    else:
+                        # 이미 존재하여 id가 반환되지 않은 경우, id를 조회
+                        cursor.execute("SELECT ingredient_id FROM ingredients WHERE name = %s;", (ing['name'],))
+                        ingredient_id = cursor.fetchone()[0]
+
+                    # 2b. recipe_ingredients 테이블에 Upsert
+                    cursor.execute(
+                        """INSERT INTO recipe_ingredients (recipe_id, ingredient_id, quantity_from, quantity_to, unit)
+                           VALUES (%s, %s, %s, %s, %s)
+                           ON CONFLICT (recipe_id, ingredient_id) DO UPDATE SET
+                             quantity_from = EXCLUDED.quantity_from,
+                             quantity_to = EXCLUDED.quantity_to,
+                             unit = EXCLUDED.unit;""",
+                        (recipe_id, ingredient_id, ing['quantity_from'], ing['quantity_to'], ing['unit'])
+                    )
+                
+                success_count += 1
+                
+            except Exception as e:
+                logger.error(f"❌ 배치 내 레시피 저장 실패: {recipe_data.get('title', 'N/A')} - {e}")
+                continue
+        
+        conn.commit()
+        logger.info(f"✅ 배치 저장 완료: {success_count}/{len(recipe_batch)}개 성공")
+        
+    except (Exception, psycopg2.DatabaseError) as error:
+        logger.error(f"❌ 배치 저장 실패: {error}")
+        if conn:
+            conn.rollback()
+    finally:
+        if conn:
+            pool.putconn(conn)
+
 async def insert_recipe_data(pool, recipe_data):
     """
     단일 레시피 데이터를 데이터베이스에 Upsert합니다.
@@ -325,21 +397,36 @@ async def main():
         results = await asyncio.gather(*tasks)
         
         logger.info("💾 크롤링 결과 처리 및 데이터베이스 저장을 시작합니다.")
+        
+        # 배치 처리를 위한 설정
+        BATCH_SIZE = 10  # 10개씩 배치로 처리
+        
         with open(OUTPUT_FILENAME, 'w', encoding='utf-8') as f:
+            batch_results = []
+            
             for i, result in enumerate(results, 1):
                 if result:
                     # 1. 파일에 기록 (기존 기능 유지)
                     f.write(json.dumps(result, ensure_ascii=False) + '\n')
                     scraped_count += 1
+                    batch_results.append(result)
                     
-                    # 2. 데이터베이스에 즉시 저장
-                    await insert_recipe_data(DB_POOL, result)
+                    # 배치 크기에 도달하면 DB에 저장
+                    if len(batch_results) >= BATCH_SIZE:
+                        logger.info(f"💾 배치 저장 시작: {len(batch_results)}개")
+                        await insert_recipe_batch(DB_POOL, batch_results)
+                        batch_results = []
                     
                     # 진행률 표시 (10개마다)
                     if i % 10 == 0:
                         logger.info(f"📈 진행률: {i}/{len(results)} ({i/len(results)*100:.1f}%)")
                 else:
                     failed_count += 1
+            
+            # 남은 배치 처리
+            if batch_results:
+                logger.info(f"💾 마지막 배치 저장: {len(batch_results)}개")
+                await insert_recipe_batch(DB_POOL, batch_results)
     
     total_time = time.time() - start_time
     logger.info("=" * 60)
