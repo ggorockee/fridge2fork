@@ -79,6 +79,10 @@ BATCH_DELAY = float(os.getenv('BATCH_DELAY', '5.0'))  # 배치 간 지연
 PROGRESS_INTERVAL = int(os.getenv('PROGRESS_INTERVAL', '10'))  # 진행률 표시 간격
 MEMORY_CHECK_INTERVAL = int(os.getenv('MEMORY_CHECK_INTERVAL', '50'))  # 메모리 체크 간격
 
+# 메모리 효율성을 위한 청크 설정
+CHUNK_SIZE = int(os.getenv('CHUNK_SIZE', '100'))  # 한 번에 처리할 URL 청크 크기
+CHUNK_DELAY = float(os.getenv('CHUNK_DELAY', '10.0'))  # 청크 간 지연 (메모리 정리 시간)
+
 # --- 데이터베이스 설정 ---
 DB_POOL = None
 try:
@@ -420,14 +424,46 @@ async def scrape_recipe_details(session, url, semaphore):
             logger.error(f"❌ 스크래핑 실패: {url} - {e}")
             return None
 
+async def process_chunk(session, urls_chunk, semaphore):
+    """
+    URL 청크를 처리하는 함수. 메모리 효율성을 위해 청크 단위로 처리합니다.
+    """
+    logger.info(f"🔄 청크 처리 시작: {len(urls_chunk)}개 URL")
+    
+    # 청크 내에서만 비동기 처리
+    tasks = [scrape_recipe_details(session, url, semaphore) for url in urls_chunk]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    
+    # 결과 처리 및 즉시 DB 저장
+    valid_results = []
+    for result in results:
+        if isinstance(result, Exception):
+            logger.error(f"❌ 청크 처리 중 예외 발생: {result}")
+            continue
+        if result:
+            valid_results.append(result)
+    
+    # 청크 결과를 즉시 DB에 저장
+    if valid_results:
+        logger.info(f"💾 청크 결과 저장: {len(valid_results)}개")
+        await insert_recipe_batch(DB_POOL, valid_results)
+    
+    # 메모리 정리를 위한 가비지 컬렉션
+    import gc
+    gc.collect()
+    
+    logger.info(f"✅ 청크 처리 완료: {len(valid_results)}개 성공")
+    return len(valid_results)
+
 async def main():
     """
-    비동기 크롤링 프로세스를 총괄하는 메인 함수.
+    메모리 효율적인 청크 단위 크롤링 프로세스를 총괄하는 메인 함수.
     """
     logger.info("=" * 60)
-    logger.info("🚀 만개의 레시피 크롤러 시작")
+    logger.info("🚀 만개의 레시피 크롤러 시작 (메모리 효율 모드)")
     logger.info(f"📊 설정: 목표 {TARGET_RECIPE_COUNT}개, 동시 요청 {CONCURRENT_REQUESTS}개")
-    logger.info(f"📊 배치 크기: {BATCH_SIZE}개, 요청 지연: {REQUEST_DELAY}초")
+    logger.info(f"📊 청크 크기: {CHUNK_SIZE}개, 배치 크기: {BATCH_SIZE}개")
+    logger.info(f"📊 요청 지연: {REQUEST_DELAY}초, 청크 지연: {CHUNK_DELAY}초")
     logger.info("=" * 60)
     
     # 초기 메모리 상태 로깅
@@ -439,57 +475,45 @@ async def main():
 
     start_time = time.time()
     recipe_urls = get_all_recipe_urls(TARGET_RECIPE_COUNT)
-    logger.info(f"\n📋 총 {len(recipe_urls)}개의 URL에 대한 상세 정보 크롤링을 시작합니다.")
+    logger.info(f"\n📋 총 {len(recipe_urls)}개의 URL을 {CHUNK_SIZE}개씩 청크로 나누어 처리합니다.")
     
-    scraped_count = 0
-    failed_count = 0
-    db_tasks = []
-
+    total_scraped = 0
+    total_failed = 0
+    
+    # URL을 청크로 분할
+    url_chunks = [recipe_urls[i:i + CHUNK_SIZE] for i in range(0, len(recipe_urls), CHUNK_SIZE)]
+    logger.info(f"📋 총 {len(url_chunks)}개의 청크로 분할됨")
+    
     semaphore = asyncio.Semaphore(CONCURRENT_REQUESTS)
+    
     async with aiohttp.ClientSession() as session:
-        logger.info("🔄 비동기 스크래핑 시작...")
-        tasks = [scrape_recipe_details(session, url, semaphore) for url in recipe_urls]
-        results = await asyncio.gather(*tasks)
-        
-        logger.info("💾 크롤링 결과 처리 및 데이터베이스 저장을 시작합니다.")
-        
-        # 배치 처리를 위한 설정 (환경변수 사용)
-        batch_results = []
-        
-        for i, result in enumerate(results, 1):
-            if result:
-                scraped_count += 1
-                batch_results.append(result)
-                
-                # 배치 크기에 도달하면 DB에 저장
-                if len(batch_results) >= BATCH_SIZE:
-                    logger.info(f"💾 배치 저장 시작: {len(batch_results)}개")
-                    await insert_recipe_batch(DB_POOL, batch_results)
-                    batch_results = []
-                    # 배치 간 지연
-                    await asyncio.sleep(BATCH_DELAY)
-                
-                # 진행률 표시 (환경변수로 제어)
-                if i % PROGRESS_INTERVAL == 0:
-                    logger.info(f"📈 진행률: {i}/{len(results)} ({i/len(results)*100:.1f}%)")
-                
-                # 메모리 사용량 체크 (환경변수로 제어)
-                if i % MEMORY_CHECK_INTERVAL == 0:
-                    log_memory_usage()
-            else:
-                failed_count += 1
-        
-        # 남은 배치 처리
-        if batch_results:
-            logger.info(f"💾 마지막 배치 저장: {len(batch_results)}개")
-            await insert_recipe_batch(DB_POOL, batch_results)
+        for chunk_idx, urls_chunk in enumerate(url_chunks, 1):
+            logger.info(f"🔄 청크 {chunk_idx}/{len(url_chunks)} 처리 시작")
+            
+            # 청크 처리
+            scraped_count = await process_chunk(session, urls_chunk, semaphore)
+            total_scraped += scraped_count
+            total_failed += len(urls_chunk) - scraped_count
+            
+            # 진행률 표시
+            processed_urls = chunk_idx * CHUNK_SIZE
+            progress = min(processed_urls, len(recipe_urls))
+            logger.info(f"📈 전체 진행률: {progress}/{len(recipe_urls)} ({progress/len(recipe_urls)*100:.1f}%)")
+            
+            # 메모리 사용량 체크
+            log_memory_usage()
+            
+            # 마지막 청크가 아니면 지연
+            if chunk_idx < len(url_chunks):
+                logger.info(f"⏳ 다음 청크까지 {CHUNK_DELAY}초 대기 (메모리 정리 시간)")
+                await asyncio.sleep(CHUNK_DELAY)
     
     total_time = time.time() - start_time
     logger.info("=" * 60)
     logger.info("🎉 크롤링 및 저장 완료!")
     logger.info(f"📊 최종 통계:")
-    logger.info(f"   ✅ 성공: {scraped_count}개")
-    logger.info(f"   ❌ 실패: {failed_count}개")
+    logger.info(f"   ✅ 성공: {total_scraped}개")
+    logger.info(f"   ❌ 실패: {total_failed}개")
     logger.info(f"   ⏱️ 총 소요시간: {total_time:.2f}초")
     logger.info(f"   💾 데이터베이스에 저장 완료")
     logger.info("=" * 60)
