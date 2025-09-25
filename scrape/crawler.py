@@ -121,8 +121,13 @@ def parse_ingredient(text):
     
     for indicator in vague_indicators:
         if indicator in text:
+            # 모호한 표현을 제거하고 앞뒤 공백도 정리
+            clean_name = text.replace(indicator, "").strip()
+            # 추가 공백 제거
+            clean_name = re.sub(r'\s+', ' ', clean_name)
+            
             return {
-                "name": text.replace(indicator, "").strip(),
+                "name": clean_name,
                 "quantity_from": None,
                 "quantity_to": None,
                 "unit": None,
