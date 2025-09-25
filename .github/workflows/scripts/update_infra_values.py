@@ -53,12 +53,12 @@ def update_yaml_file(repo_url, token, image_tag, service_type="onedaypillo", bra
             sys.exit(1)
 
         # Configure git user
-        repo.config_writer().set_value("user", "name", "Gemini CI").release()
-        repo.config_writer().set_value("user", "email", "gemini-ci@example.com").release()
+        repo.config_writer().set_value("user", "name", "github bot").release()
+        repo.config_writer().set_value("user", "email", "github-bot@example.com").release()
 
         # Determine file path and field based on service type
         if service_type == "scraper":
-            yaml_file_path = os.path.join(temp_dir, "charts/helm/fridge2fork/values.yaml")
+            yaml_file_path = os.path.join(temp_dir, "charts/helm/dev/fridge2fork/values.yaml")
             field_path = ["scrape", "image", "tag"]
         else:  # onedaypillo (default)
             yaml_file_path = os.path.join(temp_dir, "charts/argocd/applicationsets/valuefiles/dev/onedaypillo/values.yaml")
