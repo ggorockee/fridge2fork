@@ -1,0 +1,4 @@
+-r requirements.common.txt
+
+# Production dependencies
+gunicorn==21.2.0

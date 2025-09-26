@@ -4,6 +4,7 @@ import '../theme/app_theme.dart';
 import '../widgets/widgets.dart';
 import '../providers/ingredients_provider.dart';
 import 'add_ingredient_screen.dart';
+import '../services/analytics_service.dart';
 
 /// 나의냉장고 화면
 /// 사용자가 보유한 모든 식재료를 카테고리별로 관리할 수 있는 화면
@@ -15,6 +16,12 @@ class MyFridgeScreen extends ConsumerStatefulWidget {
 }
 
 class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
+
+  @override
+  void initState() {
+    super.initState();
+    AnalyticsService().logScreenView('my_fridge');
+  }
 
   void _onAddButtonPressed() async {
     // 식재료 추가 Modal Bottom Sheet 표시
@@ -159,18 +166,22 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // 빈 냉장고 아이콘
+            // 빈 냉장고 아이콘 - 앱 로고 사용
             Container(
               width: 120,
               height: 120,
               decoration: const BoxDecoration(
-                color: AppTheme.primaryOrange,
+                color: AppTheme.backgroundWhite,
                 borderRadius: BorderRadius.all(Radius.circular(AppTheme.radiusMedium)),
               ),
-              child: const Icon(
-                Icons.kitchen,
-                size: 60,
-                color: Colors.white,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                child: Image.asset(
+                  'assets/logos/app_logo.png',
+                  width: 120,
+                  height: 120,
+                  fit: BoxFit.contain,
+                ),
               ),
             ),
             

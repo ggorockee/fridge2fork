@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../widgets/widgets.dart';
+import '../widgets/ad_banner_widget.dart';
 import '../models/recipe.dart';
 import '../services/recipe_data.dart';
+import '../services/interstitial_ad_manager.dart';
+import '../services/analytics_service.dart';
 import 'recipe_detail_screen.dart';
 
 /// 검색 결과 화면 (LIST-01)
@@ -31,6 +34,7 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
   @override
   void initState() {
     super.initState();
+    AnalyticsService().logScreenView('recipe_list');
     _loadRecipes();
   }
 
@@ -40,9 +44,13 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
     if (widget.category != null) {
       // 카테고리별 레시피
       recipes = await getRecipesByCategory(widget.category!);
+      // Firebase Analytics 이벤트 기록
+      AnalyticsService().logSelectCategory(widget.category!.name);
     } else if (widget.userIngredients.isNotEmpty) {
       // 재료 기반 검색
       recipes = await searchRecipesByIngredients(widget.userIngredients);
+      // Firebase Analytics 이벤트 기록
+      AnalyticsService().logSearchByIngredients(widget.userIngredients);
     } else {
       // 전체 레시피 또는 인기 레시피
       recipes = widget.title == '인기 레시피' 
@@ -73,15 +81,23 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
     });
   }
 
-  void _navigateToRecipeDetail(Recipe recipe) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => RecipeDetailScreen(
-          recipe: recipe,
-          userIngredients: widget.userIngredients,
+  void _navigateToRecipeDetail(Recipe recipe) async {
+    // 🎯 수익성 극대화: 레시피 상세보기 전 전면 광고 기회
+    await InterstitialAdManager().onRecipeViewed();
+
+    // Firebase Analytics 이벤트 기록
+    AnalyticsService().logViewRecipe(recipe.name, recipe.id);
+    
+    if (mounted) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => RecipeDetailScreen(
+            recipe: recipe,
+            userIngredients: widget.userIngredients,
+          ),
         ),
-      ),
-    );
+      );
+    }
   }
 
   @override
@@ -160,23 +176,68 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
               ),
             ),
             
-            // 레시피 목록
+            // 레시피 목록 (광고 통합)
             Expanded(
               child: _filteredRecipes.isEmpty
                   ? _buildEmptyState()
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(AppTheme.spacingM),
-                      itemCount: _filteredRecipes.length,
-                      itemBuilder: (context, index) {
-                        final recipe = _filteredRecipes[index];
-                        return _buildRecipeCard(recipe);
-                      },
+                  : Column(
+                      children: [
+                        // 레시피 목록 (네이티브 광고 포함)
+                        Expanded(
+                          child: ListView.builder(
+                            padding: const EdgeInsets.all(AppTheme.spacingM),
+                            itemCount: _getItemCount(),
+                            itemBuilder: (context, index) {
+                              return _buildListItem(index);
+                            },
+                          ),
+                        ),
+                        // 하단 배너 광고 (수익성 극대화)
+                        const AdBannerWidget(isTop: false),
+                      ],
                     ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  /// 네이티브 광고가 포함된 전체 아이템 수 계산
+  int _getItemCount() {
+    if (_filteredRecipes.isEmpty) return 0;
+    
+    // 레시피 5개마다 네이티브 광고 1개 삽입
+    final adCount = (_filteredRecipes.length / 5).floor();
+    return _filteredRecipes.length + adCount;
+  }
+
+  /// 리스트 아이템 빌더 (레시피 + 네이티브 광고)
+  Widget _buildListItem(int index) {
+    // 네이티브 광고 위치 계산 (5개마다 1개)
+    final adPositions = <int>[];
+    for (int i = 5; i < _getItemCount(); i += 6) {
+      adPositions.add(i);
+    }
+    
+    if (adPositions.contains(index)) {
+      // 네이티브 광고 표시
+      return const Padding(
+        padding: EdgeInsets.only(bottom: AppTheme.spacingM),
+        child: AdNativeWidget(),
+      );
+    }
+    
+    // 실제 레시피 인덱스 계산
+    final adsBefore = adPositions.where((pos) => pos < index).length;
+    final recipeIndex = index - adsBefore;
+    
+    if (recipeIndex >= _filteredRecipes.length) {
+      return const SizedBox.shrink();
+    }
+    
+    final recipe = _filteredRecipes[recipeIndex];
+    return _buildRecipeCard(recipe);
   }
 
   Widget _buildEmptyState() {

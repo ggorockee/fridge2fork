@@ -1,0 +1,20 @@
+# 개발 환경용 패키지
+-r requirements.common.txt
+
+# 테스트
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+httpx==0.25.2
+
+# 개발 도구
+black==23.11.0
+flake8==6.1.0
+isort==5.12.0
+mypy==1.7.1
+
+# 디버깅
+debugpy==1.8.0
+
+# API 문서화
+fastapi-cli>=0.0.2

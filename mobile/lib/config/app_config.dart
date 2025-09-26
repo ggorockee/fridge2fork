@@ -107,6 +107,29 @@ class AppConfig {
   // ===========================================
 
   static String get firebaseProjectId => dotenv.env['FIREBASE_PROJECT_ID'] ?? '';
+  
+  // ===========================================
+  // AdMob 광고 설정
+  // ===========================================
+  
+  // Android AdMob IDs
+  static String get admobAndroidAppId => dotenv.env['ADMOB_ANDROID_APP_ID'] ?? '';
+  static String get admobAndroidBannerTopId => dotenv.env['ADMOB_ANDROID_BANNER_TOP_ID'] ?? '';
+  static String get admobAndroidBannerBottomId => dotenv.env['ADMOB_ANDROID_BANNER_BOTTOM_ID'] ?? '';
+  static String get admobAndroidInterstitialId => dotenv.env['ADMOB_ANDROID_INTERSTITIAL_ID'] ?? '';
+  static String get admobAndroidNativeId => dotenv.env['ADMOB_ANDROID_NATIVE_ID'] ?? '';
+  
+  // iOS AdMob IDs
+  static String get admobIosAppId => dotenv.env['ADMOB_IOS_APP_ID'] ?? '';
+  static String get admobIosBannerTopId => dotenv.env['ADMOB_IOS_BANNER_TOP_ID'] ?? '';
+  static String get admobIosBannerBottomId => dotenv.env['ADMOB_IOS_BANNER_BOTTOM_ID'] ?? '';
+  static String get admobIosInterstitialId => dotenv.env['ADMOB_IOS_INTERSTITIAL_ID'] ?? '';
+  static String get admobIosNativeId => dotenv.env['ADMOB_IOS_NATIVE_ID'] ?? '';
+  
+  // 광고 설정
+  static int get adRefreshRateSeconds => _getInt('AD_REFRESH_RATE_SECONDS', defaultValue: 30);
+  static int get adInterstitialMinIntervalSeconds => _getInt('AD_INTERSTITIAL_MIN_INTERVAL_SECONDS', defaultValue: 60);
+  static int get adNativeRefreshRateSeconds => _getInt('AD_NATIVE_REFRESH_RATE_SECONDS', defaultValue: 300);
   static String get analyticsTrackingId => dotenv.env['ANALYTICS_TRACKING_ID'] ?? '';
   static String get sentryDsn => dotenv.env['SENTRY_DSN'] ?? '';
 

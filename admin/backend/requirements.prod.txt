@@ -1,0 +1,12 @@
+# 운영 환경용 패키지
+-r requirements.common.txt
+
+# 운영 환경 웹 서버
+gunicorn==21.2.0
+
+# 모니터링
+prometheus-client==0.19.0
+
+# 보안
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4

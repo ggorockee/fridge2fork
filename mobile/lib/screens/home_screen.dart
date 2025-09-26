@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:showcaseview/showcaseview.dart';
 import '../theme/app_theme.dart';
 import '../widgets/widgets.dart';
+import '../widgets/ad_banner_widget.dart';
 import '../providers/ingredients_provider.dart';
+import '../services/interstitial_ad_manager.dart';
+import '../services/analytics_service.dart';
 import 'add_ingredient_screen.dart';
 import 'my_fridge_screen.dart';
 
@@ -33,6 +36,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         '${result.length}개의 식재료가 추가되었습니다!',
         backgroundColor: AppTheme.primaryOrange,
       );
+
+      //  Firebase Analytics 이벤트 기록
+      AnalyticsService().logAddIngredients(result);
+      
+      // 🎯 수익성 극대화: 식재료 추가 완료 후 전면 광고 기회
+      for (int i = 0; i < result.length; i++) {
+        await InterstitialAdManager().onIngredientAdded();
+      }
     }
   }
 
@@ -64,6 +75,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: [
           Column(
             children: [
+              // 상단 배너 광고 (수익성 극대화 - 첫 화면 최상단)
+              const AdBannerWidget(isTop: true),
+              
               // 냉장고 부분 - 전체 화면의 2/3
               Expanded(
                 flex: 2,
@@ -143,7 +157,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
 }
 
-/// 냉장고 아이콘 위젯 - 재빌드 시에도 안정적인 렌더링을 위한 정적 위젯
+/// 냉장고 아이콘 위젯 - 앱 로고 이미지 사용
 class _FridgeIcon extends StatelessWidget {
   const _FridgeIcon();
 
@@ -153,13 +167,17 @@ class _FridgeIcon extends StatelessWidget {
       width: 120,
       height: 120,
       decoration: const BoxDecoration(
-        color: AppTheme.primaryOrange,
+        color: AppTheme.backgroundWhite,
         borderRadius: BorderRadius.all(Radius.circular(AppTheme.radiusMedium)),
       ),
-      child: const Icon(
-        Icons.kitchen,
-        size: 60,
-        color: Colors.white,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        child: Image.asset(
+          'assets/logos/app_logo.png',
+          width: 120,
+          height: 120,
+          fit: BoxFit.contain,
+        ),
       ),
     );
   }

@@ -1,0 +1,18 @@
+"""
+API v1 라우터 통합
+"""
+from fastapi import APIRouter
+
+from app.api.v1 import auth, recipes, fridge, user, system
+
+api_router = APIRouter()
+
+# 각 모듈의 라우터 포함
+api_router.include_router(auth.router, prefix="/auth", tags=["인증"])
+api_router.include_router(recipes.router, prefix="/recipes", tags=["레시피"])
+api_router.include_router(fridge.router, prefix="/fridge", tags=["냉장고"])
+api_router.include_router(user.router, prefix="/user", tags=["사용자"])
+api_router.include_router(system.router, prefix="/system", tags=["시스템"])
+
+# 버전 엔드포인트는 시스템 라우터에서 별도 처리
+api_router.include_router(system.router, tags=["시스템"], include_in_schema=False)

@@ -3,9 +3,10 @@ import '../theme/app_theme.dart';
 import '../widgets/widgets.dart';
 import '../models/recipe.dart';
 import '../services/recipe_data.dart';
+import '../services/analytics_service.dart';
 
 /// 레시피 상세 화면 (DETAIL-01)
-/// 요리 과정을 명확하게 안내하고, 필요한 정보를 한눈에 파악할 수 있도록 제공
+/// 레시피의 모든 정보를 상세하게 보여주며, 사용자 인터랙션을 처리합니다.
 class RecipeDetailScreen extends StatefulWidget {
   final Recipe recipe;
   final List<String> userIngredients;
@@ -28,6 +29,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   void initState() {
     super.initState();
     _stepPageController = PageController();
+    AnalyticsService().logScreenView('recipe_detail');
   }
 
   @override
@@ -90,6 +92,19 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 },
               ),
             ),
+            actions: [
+              IconButton(
+                onPressed: () {
+                  // TODO: 공유 기능 구현 (예: dynamic links, share_plus 패키지)
+                  AnalyticsService().logShare('recipe', widget.recipe.id);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('공유 기능은 현재 준비 중입니다.')),
+                  );
+                },
+                icon: const Icon(Icons.share_outlined),
+                tooltip: '공유하기',
+              ),
+            ],
           ),
           
           // 메인 콘텐츠

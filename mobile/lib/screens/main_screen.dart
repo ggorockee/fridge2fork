@@ -8,6 +8,8 @@ import 'my_fridge_screen.dart';
 import 'recipe_screen.dart';
 import 'feedback_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../widgets/widgets.dart';
+import '../services/analytics_service.dart';
 
 /// 메인 화면 - 탭 기반 네비게이션
 /// 하단 네비게이션 바가 항상 표시되는 메인 컨테이너 화면
@@ -25,10 +27,20 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   // Showcase를 위한 GlobalKey 선언
   final GlobalKey _fridgeTabKey = GlobalKey();
 
+  // 각 탭에 해당하는 화면 이름 (애널리틱스용)
+  static const List<String> _screenNames = <String>[
+    'home',
+    'my_fridge', // Changed from 'recipe' to 'my_fridge'
+    'recipe',
+    'feedback',
+  ];
+
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
+    // 첫 화면 진입 기록
+    AnalyticsService().logScreenView(_screenNames[_selectedIndex]);
   }
 
   @override
@@ -46,6 +58,8 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
+    // 화면 전환 시 애널리틱스 이벤트 기록
+    AnalyticsService().logScreenView(_screenNames[_selectedIndex]);
   }
 
   void _onPageChanged(int index) {
