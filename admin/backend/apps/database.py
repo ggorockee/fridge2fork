@@ -18,6 +18,10 @@ engine = create_engine(
     echo=settings.debug,  # 디버그 모드에서 SQL 쿼리 출력
     pool_pre_ping=True,   # 연결 상태 확인
     pool_recycle=3600,    # 1시간마다 연결 재생성
+    connect_args={
+        "connect_timeout": 10,  # 연결 타임아웃 10초
+        "application_name": "fridge2fork_admin_api"
+    }
 )
 
 # 세션 팩토리 생성
@@ -32,17 +36,19 @@ metadata = MetaData()
 
 def get_db() -> Session:
     """데이터베이스 세션 의존성"""
-    db = SessionLocal()
     try:
+        db = SessionLocal()
         logger.info("🔗 데이터베이스 세션 생성됨")
         yield db
     except Exception as e:
         logger.error(f"❌ 데이터베이스 세션 오류: {e}")
-        db.rollback()
+        if 'db' in locals():
+            db.rollback()
         raise
     finally:
-        logger.info("🔚 데이터베이스 세션 종료됨")
-        db.close()
+        if 'db' in locals():
+            logger.info("🔚 데이터베이스 세션 종료됨")
+            db.close()
 
 
 @contextmanager
