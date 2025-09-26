@@ -64,6 +64,10 @@ export default function DashboardPage() {
   const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [refreshInterval, setRefreshInterval] = useState<number>(30); // 기본 30초
+  const [customInterval, setCustomInterval] = useState<string>('60'); // 커스텀 간격 (초)
+  const [isAutoRefresh, setIsAutoRefresh] = useState<boolean>(true);
+  const [nextRefresh, setNextRefresh] = useState<Date>(new Date(Date.now() + 30000));
 
   // 시스템 정보 조회
   const fetchSystemInfo = async () => {
@@ -263,9 +267,49 @@ export default function DashboardPage() {
   // 자동 새로고침
   useEffect(() => {
     fetchAllData();
-    const interval = setInterval(fetchAllData, 30000); // 30초마다 새로고침
-    return () => clearInterval(interval);
-  }, []);
+    
+    if (isAutoRefresh) {
+      const interval = setInterval(() => {
+        fetchAllData();
+        setNextRefresh(new Date(Date.now() + refreshInterval * 1000));
+      }, refreshInterval * 1000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [refreshInterval, isAutoRefresh]);
+
+  // 다음 새로고침 시간 업데이트
+  useEffect(() => {
+    if (isAutoRefresh) {
+      const timer = setInterval(() => {
+        setNextRefresh(new Date(Date.now() + refreshInterval * 1000));
+      }, 1000);
+      
+      return () => clearInterval(timer);
+    }
+  }, [refreshInterval, isAutoRefresh]);
+
+  // 새로고침 간격 변경 핸들러
+  const handleRefreshIntervalChange = (interval: number) => {
+    setRefreshInterval(interval);
+    setNextRefresh(new Date(Date.now() + interval * 1000));
+  };
+
+  // 커스텀 간격 적용
+  const handleCustomIntervalApply = () => {
+    const customSeconds = parseInt(customInterval);
+    if (customSeconds >= 5 && customSeconds <= 300) { // 5초~5분 제한
+      handleRefreshIntervalChange(customSeconds);
+    }
+  };
+
+  // 자동 새로고침 토글
+  const toggleAutoRefresh = () => {
+    setIsAutoRefresh(!isAutoRefresh);
+    if (!isAutoRefresh) {
+      setNextRefresh(new Date(Date.now() + refreshInterval * 1000));
+    }
+  };
 
   // 상태별 색상 반환
   const getStatusColor = (status: string) => {
@@ -349,13 +393,70 @@ export default function DashboardPage() {
                 <p className="text-gray-400">
                   마지막 업데이트: {lastUpdated.toLocaleString('ko-KR')}
                 </p>
+                {isAutoRefresh && (
+                  <p className="text-gray-500 text-sm">
+                    다음 새로고침: {nextRefresh.toLocaleString('ko-KR')}
+                  </p>
+                )}
               </div>
-              {api.getOfflineMode() && (
-                <div className="flex items-center gap-2 px-4 py-2 bg-red-500/20 border border-red-500/30 rounded-lg">
-                  <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse"></div>
-                  <span className="text-red-400 text-sm font-medium">오프라인 모드</span>
+              <div className="flex items-center gap-4">
+                {/* 새로고침 간격 선택 */}
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-gray-400">새로고침:</label>
+                  <select
+                    value={refreshInterval}
+                    onChange={(e) => handleRefreshIntervalChange(parseInt(e.target.value))}
+                    className="bg-gray-800 border border-gray-600 rounded px-2 py-1 text-sm text-gray-100"
+                  >
+                    <option value={5}>5초</option>
+                    <option value={15}>15초</option>
+                    <option value={30}>30초</option>
+                    <option value={60}>1분</option>
+                    <option value={120}>2분</option>
+                    <option value={300}>5분</option>
+                    <option value={-1}>커스텀</option>
+                  </select>
+                  
+                  {refreshInterval === -1 && (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        value={customInterval}
+                        onChange={(e) => setCustomInterval(e.target.value)}
+                        min="5"
+                        max="300"
+                        className="w-16 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-sm text-gray-100"
+                        placeholder="초"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleCustomIntervalApply}
+                        className="text-xs"
+                      >
+                        적용
+                      </Button>
+                    </div>
+                  )}
                 </div>
-              )}
+
+                {/* 자동 새로고침 토글 */}
+                <Button
+                  variant={isAutoRefresh ? "primary" : "ghost"}
+                  size="sm"
+                  onClick={toggleAutoRefresh}
+                  className="text-xs"
+                >
+                  {isAutoRefresh ? "자동 ON" : "자동 OFF"}
+                </Button>
+
+                {api.getOfflineMode() && (
+                  <div className="flex items-center gap-2 px-4 py-2 bg-red-500/20 border border-red-500/30 rounded-lg">
+                    <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse"></div>
+                    <span className="text-red-400 text-sm font-medium">오프라인 모드</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
