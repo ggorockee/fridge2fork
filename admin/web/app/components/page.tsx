@@ -3,6 +3,8 @@
  * Linear 테마 시스템의 모든 컴포넌트를 확인할 수 있는 페이지
  */
 
+"use client";
+
 import React from "react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/Card";
