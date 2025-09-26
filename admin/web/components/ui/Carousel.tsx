@@ -3,6 +3,8 @@
  * Linear 테마에 맞춘 재사용 가능한 캐러셀 컴포넌트
  */
 
+"use client";
+
 import React, { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 
