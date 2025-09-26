@@ -16,7 +16,8 @@ const getApiBaseUrl = () => {
 };
 
 const API_BASE_URL = getApiBaseUrl();
-const API_V1_BASE_URL = `${API_BASE_URL}/v1`;
+const API_FRIDGE2FORK_BASE_URL = `${API_BASE_URL}/fridge2fork`;
+const API_V1_BASE_URL = `${API_BASE_URL}/fridge2fork/v1`;
 
 // 네트워크 상태 확인
 const isOnline = () => {
@@ -129,10 +130,10 @@ export class ColdRecipeAPI {
     this.isOfflineMode = offline;
   }
 
-  // 헬스체크 (루트 경로 사용)
+  // 헬스체크 (/fridge2fork/health 경로 사용)
   async healthCheck(): Promise<any> {
     try {
-      const response: AxiosResponse = await this.axiosInstance.get('/health');
+      const response: AxiosResponse = await this.axiosInstance.get('/fridge2fork/health');
       return response.data;
     } catch (error) {
       // 네트워크 오류 시 기본 응답 반환
@@ -147,10 +148,10 @@ export class ColdRecipeAPI {
     }
   }
 
-  // 시스템 정보 조회 (v1 경로 사용)
+  // 시스템 정보 조회 (/fridge2fork/v1/system/info 경로 사용)
   async getSystemInfo(): Promise<any> {
     try {
-      const response: AxiosResponse = await this.axiosInstance.get('/v1/system/info');
+      const response: AxiosResponse = await this.axiosInstance.get('/fridge2fork/v1/system/info');
       return response.data;
     } catch (error) {
       if (this.getOfflineMode()) {
@@ -165,10 +166,10 @@ export class ColdRecipeAPI {
     }
   }
 
-  // 데이터베이스 테이블 정보 조회 (v1 경로 사용)
+  // 데이터베이스 테이블 정보 조회 (/fridge2fork/v1/system/database/tables 경로 사용)
   async getDatabaseTables(): Promise<any> {
     try {
-      const response: AxiosResponse = await this.axiosInstance.get('/v1/system/database/tables');
+      const response: AxiosResponse = await this.axiosInstance.get('/fridge2fork/v1/system/database/tables');
       return response.data;
     } catch (error) {
       if (this.getOfflineMode()) {
@@ -197,10 +198,10 @@ export class ColdRecipeAPI {
     }
   }
 
-  // 리소스 사용량 조회 (v1 경로 사용)
+  // 리소스 사용량 조회 (/fridge2fork/v1/system/resources 경로 사용)
   async getResourceUsage(): Promise<any> {
     try {
-      const response: AxiosResponse = await this.axiosInstance.get('/v1/system/resources');
+      const response: AxiosResponse = await this.axiosInstance.get('/fridge2fork/v1/system/resources');
       return response.data;
     } catch (error) {
       if (this.getOfflineMode()) {
@@ -218,16 +219,16 @@ export class ColdRecipeAPI {
     }
   }
 
-  // API 엔드포인트 상태 조회 (v1 경로 사용)
+  // API 엔드포인트 상태 조회 (/fridge2fork/v1/system/api/endpoints 경로 사용)
   async getApiEndpoints(): Promise<any> {
     try {
-      const response: AxiosResponse = await this.axiosInstance.get('/v1/system/api/endpoints');
+      const response: AxiosResponse = await this.axiosInstance.get('/fridge2fork/v1/system/api/endpoints');
       return response.data;
     } catch (error) {
       if (this.getOfflineMode()) {
         return {
           endpoints: [
-            { path: '/health', method: 'GET', status: 'down', responseTime: 0, lastChecked: new Date().toLocaleString('ko-KR') },
+            { path: '/fridge2fork/health', method: 'GET', status: 'down', responseTime: 0, lastChecked: new Date().toLocaleString('ko-KR') },
             { path: '/fridge2fork/v1/recipes/', method: 'GET', status: 'down', responseTime: 0, lastChecked: new Date().toLocaleString('ko-KR') },
             { path: '/fridge2fork/v1/ingredients/', method: 'GET', status: 'down', responseTime: 0, lastChecked: new Date().toLocaleString('ko-KR') }
           ]
@@ -237,10 +238,10 @@ export class ColdRecipeAPI {
     }
   }
 
-  // 최근 활동 조회 (v1 경로 사용)
+  // 최근 활동 조회 (/fridge2fork/v1/system/activities 경로 사용)
   async getRecentActivities(): Promise<any> {
     try {
-      const response: AxiosResponse = await this.axiosInstance.get('/v1/system/activities');
+      const response: AxiosResponse = await this.axiosInstance.get('/fridge2fork/v1/system/activities');
       return response.data;
     } catch (error) {
       if (this.getOfflineMode()) {

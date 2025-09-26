@@ -167,7 +167,7 @@ export default function DashboardPage() {
       // 오프라인 모드인 경우 모든 엔드포인트를 down으로 설정
       if (api.getOfflineMode()) {
         const endpoints: ApiEndpoint[] = [
-          { path: '/health', method: 'GET', status: 'down', responseTime: 0, lastChecked: new Date().toLocaleString('ko-KR') },
+          { path: '/fridge2fork/health', method: 'GET', status: 'down', responseTime: 0, lastChecked: new Date().toLocaleString('ko-KR') },
           { path: '/fridge2fork/v1/recipes/', method: 'GET', status: 'down', responseTime: 0, lastChecked: new Date().toLocaleString('ko-KR') },
           { path: '/fridge2fork/v1/ingredients/', method: 'GET', status: 'down', responseTime: 0, lastChecked: new Date().toLocaleString('ko-KR') }
         ];
@@ -177,7 +177,7 @@ export default function DashboardPage() {
 
       // 실제 API 호출로 상태 확인
       const endpoints: ApiEndpoint[] = [
-        { path: '/health', method: 'GET', status: 'up', responseTime: 0, lastChecked: new Date().toLocaleString('ko-KR') },
+        { path: '/fridge2fork/health', method: 'GET', status: 'up', responseTime: 0, lastChecked: new Date().toLocaleString('ko-KR') },
         { path: '/fridge2fork/v1/recipes/', method: 'GET', status: 'up', responseTime: 0, lastChecked: new Date().toLocaleString('ko-KR') },
         { path: '/fridge2fork/v1/ingredients/', method: 'GET', status: 'up', responseTime: 0, lastChecked: new Date().toLocaleString('ko-KR') }
       ];
