@@ -20,7 +20,10 @@ def update_yaml_file(repo_url, token, image_tag, service_type="onedaypillo", env
         branches_to_try: List of branches to try cloning
     """
     if branches_to_try is None:
-        branches_to_try = ["develop", "dev"]
+        if environment == "prod":
+            branches_to_try = ["main", "master"]
+        else:
+            branches_to_try = ["develop", "dev"]
 
     temp_dir = tempfile.mkdtemp()
     try:
