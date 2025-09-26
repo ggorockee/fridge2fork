@@ -36,11 +36,15 @@ COMMENT ON COLUMN recipes.url IS '레시피 원본 URL (고유값)';
 -- 2. ingredients 테이블: 모든 재료의 고유한 이름을 저장합니다.
 CREATE TABLE ingredients (
     ingredient_id SERIAL PRIMARY KEY,
-    name VARCHAR(100) UNIQUE NOT NULL
+    name VARCHAR(100) UNIQUE NOT NULL,
+    is_vague BOOLEAN DEFAULT FALSE,
+    vague_description VARCHAR(20)
 );
 
 COMMENT ON TABLE ingredients IS '모든 재료의 고유한 이름을 관리하는 마스터 테이블';
 COMMENT ON COLUMN ingredients.name IS '정규화된 재료 이름 (고유값)';
+COMMENT ON COLUMN ingredients.is_vague IS '모호한 재료 여부 (예: "적당량", "조금")';
+COMMENT ON COLUMN ingredients.vague_description IS '모호한 재료의 설명 (예: "적당량", "조금")';
 
 
 -- 3. recipe_ingredients 테이블: 레시피와 재료의 관계 및 분량을 저장합니다. (Junction Table)
@@ -50,6 +54,7 @@ CREATE TABLE recipe_ingredients (
     quantity_from NUMERIC(10, 2),
     quantity_to NUMERIC(10, 2),
     unit VARCHAR(50),
+    importance VARCHAR(20) DEFAULT 'essential',
     PRIMARY KEY (recipe_id, ingredient_id),
     FOREIGN KEY (recipe_id) REFERENCES recipes(recipe_id) ON DELETE CASCADE,
     FOREIGN KEY (ingredient_id) REFERENCES ingredients(ingredient_id) ON DELETE CASCADE
@@ -59,6 +64,7 @@ COMMENT ON TABLE recipe_ingredients IS '레시피와 재료의 다대다 관계�
 COMMENT ON COLUMN recipe_ingredients.quantity_from IS '수량 (시작 범위 또는 단일 값)';
 COMMENT ON COLUMN recipe_ingredients.quantity_to IS '수량 (종료 범위, 범위가 아닐 경우 NULL)';
 COMMENT ON COLUMN recipe_ingredients.unit IS '수량 단위 (예: g, 개, 큰술)';
+COMMENT ON COLUMN recipe_ingredients.importance IS '재료의 중요도 (essential, optional, garnish 등)';
 
 ```
 
@@ -76,6 +82,12 @@ CREATE INDEX idx_recipe_ingredients_ingredient_id ON recipe_ingredients(ingredie
 -- ingredients 테이블의 name 필드에 대한 인덱스 생성 (재료 이름으로 레시피를 검색할 때 성능 향상)
 CREATE INDEX idx_ingredients_name ON ingredients(name);
 
+-- ingredients 테이블의 is_vague 필드에 대한 인덱스 생성 (모호한 재료 필터링 성능 향상)
+CREATE INDEX idx_ingredients_is_vague ON ingredients(is_vague);
+
+-- recipe_ingredients 테이블의 importance 필드에 대한 인덱스 생성 (재료 중요도 필터링 성능 향상)
+CREATE INDEX idx_recipe_ingredients_importance ON recipe_ingredients(importance);
+
 -- [고급] Full-Text Search를 위한 GIN 인덱스 (선택 사항)
 -- 사용자가 '돼지'만 입력해도 '돼지고기'가 포함된 재료를 찾고 싶을 때 유용합니다.
 -- CREATE INDEX idx_ingredients_name_gin ON ingredients USING GIN (to_tsvector('korean', name));
@@ -91,5 +103,25 @@ CREATE INDEX idx_ingredients_name ON ingredients(name);
 4.  각 재료에 대해:
     a. `ingredients` 테이블에 해당 재료의 `name`이 존재하는지 `SELECT`합니다.
     b. 존재하지 않으면, `INSERT`하여 새로운 `ingredient_id`를 생성합니다.
+       - 모호한 재료인 경우 `is_vague = TRUE`와 `vague_description`을 설정합니다.
     c. 존재하는 경우, 해당 `ingredient_id`를 가져옵니다.
-5.  `recipe_ingredients` 테이블에 `recipe_id`, `ingredient_id`, 그리고 `quantity_from`, `quantity_to`, `unit` 정보를 `INSERT`하여 레시피와 재료를 연결합니다.
+5.  `recipe_ingredients` 테이블에 `recipe_id`, `ingredient_id`, 그리고 `quantity_from`, `quantity_to`, `unit`, `importance` 정보를 `INSERT`하여 레시피와 재료를 연결합니다.
+
+---
+
+## 5. 추가된 필드 설명
+
+### ingredients 테이블
+- **is_vague**: 모호한 재료 여부를 나타냅니다 (예: "적당량", "조금", "약간")
+- **vague_description**: 모호한 재료의 구체적인 설명을 저장합니다
+
+### recipe_ingredients 테이블
+- **importance**: 재료의 중요도를 나타냅니다
+  - `essential`: 필수 재료
+  - `optional`: 선택 재료
+  - `garnish`: 장식용 재료
+  - 기타 사용자 정의 값
+
+### 성능 최적화
+- **idx_ingredients_is_vague**: 모호한 재료 필터링 성능 향상
+- **idx_recipe_ingredients_importance**: 재료 중요도별 필터링 성능 향상
