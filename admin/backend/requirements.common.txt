@@ -20,3 +20,4 @@ httpx==0.25.2
 
 # 유틸리티
 python-multipart==0.0.6
+psutil>=5.9.0
