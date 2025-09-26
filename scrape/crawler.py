@@ -200,6 +200,7 @@ def parse_ingredient(text):
 async def insert_recipe_batch(pool, recipe_batch):
     """
     여러 레시피 데이터를 배치로 데이터베이스에 저장합니다.
+    모든 레시피를 하나의 트랜잭션으로 처리하여 성능을 최적화합니다.
     """
     conn = None
     try:
@@ -208,6 +209,7 @@ async def insert_recipe_batch(pool, recipe_batch):
         
         success_count = 0
         
+        # 배치 내 모든 레시피를 하나의 트랜잭션으로 처리
         for recipe_data in recipe_batch:
             try:
                 # 1. recipes 테이블에 Upsert
@@ -260,15 +262,18 @@ async def insert_recipe_batch(pool, recipe_batch):
                 
             except Exception as e:
                 logger.error(f"❌ 배치 내 레시피 저장 실패: {recipe_data.get('title', 'N/A')} - {e}")
+                # 개별 레시피 실패는 전체 배치를 중단시키지 않음
                 continue
         
+        # 배치 전체를 하나의 트랜잭션으로 커밋
         conn.commit()
-        logger.info(f"✅ 배치 저장 완료: {success_count}/{len(recipe_batch)}개 성공")
+        logger.info(f"✅ 배치 저장 완료: {success_count}/{len(recipe_batch)}개 성공 (트랜잭션 커밋)")
         
     except (Exception, psycopg2.DatabaseError) as error:
         logger.error(f"❌ 배치 저장 실패: {error}")
         if conn:
             conn.rollback()
+            logger.error("🔄 배치 트랜잭션 롤백 완료")
     finally:
         if conn:
             pool.putconn(conn)
@@ -336,21 +341,23 @@ async def insert_recipe_data(pool, recipe_data):
             pool.putconn(conn)
 
 # --- Synchronous Functions ---
-def get_all_recipe_urls(target_count):
+def get_recipe_urls_generator(target_count):
     """
-    목표 수량에 도달할 때까지 페이지를 넘기며 모든 레시피의 URL을 수집합니다.
+    목표 수량에 도달할 때까지 페이지를 넘기며 레시피 URL을 생성기로 반환합니다.
+    메모리 효율성을 위해 URL을 한 번에 모두 수집하지 않고 스트리밍 방식으로 제공합니다.
     """
-    logger.info(f"🚀 레시피 URL 수집 시작 - 목표: {target_count}개")
+    logger.info(f"🚀 레시피 URL 수집 시작 - 목표: {target_count}개 (스트리밍 모드)")
     start_time = time.time()
-    recipe_urls = set()
+    collected_count = 0
     page = 1
-    while len(recipe_urls) < target_count:
+    
+    while collected_count < target_count:
         list_url = f"{BASE_URL}/recipe/list.html?page={page}"
         if not rp.can_fetch(USER_AGENT, list_url):
             logger.warning(f"⚠️ robots.txt에 의해 페이지 {page} 접근이 차단됨")
             break
 
-        logger.info(f"📄 페이지 {page} 처리 중... (현재 수집: {len(recipe_urls)}/{target_count})")
+        logger.info(f"📄 페이지 {page} 처리 중... (현재 수집: {collected_count}/{target_count})")
         try:
             response = requests.get(list_url, headers=HEADERS)
             response.raise_for_status()
@@ -364,13 +371,15 @@ def get_all_recipe_urls(target_count):
             
             new_links_count = 0
             for link in links_on_page:
+                if collected_count >= target_count:
+                    break
+                    
                 href = link['href']
                 full_url = BASE_URL + href if not href.startswith('http') else href
                 if rp.can_fetch(USER_AGENT, full_url):
-                    recipe_urls.add(full_url)
+                    yield full_url
+                    collected_count += 1
                     new_links_count += 1
-                if len(recipe_urls) >= target_count:
-                    break
             
             logger.info(f"✅ 페이지 {page} 완료 - 새로 수집된 링크: {new_links_count}개")
             page += 1
@@ -381,8 +390,7 @@ def get_all_recipe_urls(target_count):
             time.sleep(REQUEST_DELAY * 2)
 
     elapsed_time = time.time() - start_time
-    logger.info(f"🎯 URL 수집 완료 - 총 {len(recipe_urls)}개 수집 (소요시간: {elapsed_time:.2f}초)")
-    return list(recipe_urls)[:target_count]
+    logger.info(f"🎯 URL 수집 완료 - 총 {collected_count}개 수집 (소요시간: {elapsed_time:.2f}초)")
 
 # --- Asynchronous Functions ---
 async def scrape_recipe_details(session, url, semaphore):
@@ -457,10 +465,11 @@ async def process_chunk(session, urls_chunk, semaphore):
 
 async def main():
     """
-    메모리 효율적인 청크 단위 크롤링 프로세스를 총괄하는 메인 함수.
+    메모리 효율적인 스트리밍 크롤링 프로세스를 총괄하는 메인 함수.
+    URL을 한 번에 모두 수집하지 않고 스트리밍 방식으로 처리하여 OOM을 방지합니다.
     """
     logger.info("=" * 60)
-    logger.info("🚀 만개의 레시피 크롤러 시작 (메모리 효율 모드)")
+    logger.info("🚀 만개의 레시피 크롤러 시작 (스트리밍 모드)")
     logger.info(f"📊 설정: 목표 {TARGET_RECIPE_COUNT}개, 동시 요청 {CONCURRENT_REQUESTS}개")
     logger.info(f"📊 청크 크기: {CHUNK_SIZE}개, 배치 크기: {BATCH_SIZE}개")
     logger.info(f"📊 요청 지연: {REQUEST_DELAY}초, 청크 지연: {CHUNK_DELAY}초")
@@ -474,39 +483,56 @@ async def main():
         return
 
     start_time = time.time()
-    recipe_urls = get_all_recipe_urls(TARGET_RECIPE_COUNT)
-    logger.info(f"\n📋 총 {len(recipe_urls)}개의 URL을 {CHUNK_SIZE}개씩 청크로 나누어 처리합니다.")
-    
     total_scraped = 0
     total_failed = 0
+    chunk_idx = 0
     
-    # URL을 청크로 분할
-    url_chunks = [recipe_urls[i:i + CHUNK_SIZE] for i in range(0, len(recipe_urls), CHUNK_SIZE)]
-    logger.info(f"📋 총 {len(url_chunks)}개의 청크로 분할됨")
-    
+    # URL 생성기로부터 스트리밍 처리
+    url_generator = get_recipe_urls_generator(TARGET_RECIPE_COUNT)
     semaphore = asyncio.Semaphore(CONCURRENT_REQUESTS)
     
     async with aiohttp.ClientSession() as session:
-        for chunk_idx, urls_chunk in enumerate(url_chunks, 1):
-            logger.info(f"🔄 청크 {chunk_idx}/{len(url_chunks)} 처리 시작")
+        current_chunk = []
+        
+        for url in url_generator:
+            current_chunk.append(url)
             
-            # 청크 처리
-            scraped_count = await process_chunk(session, urls_chunk, semaphore)
-            total_scraped += scraped_count
-            total_failed += len(urls_chunk) - scraped_count
-            
-            # 진행률 표시
-            processed_urls = chunk_idx * CHUNK_SIZE
-            progress = min(processed_urls, len(recipe_urls))
-            logger.info(f"📈 전체 진행률: {progress}/{len(recipe_urls)} ({progress/len(recipe_urls)*100:.1f}%)")
-            
-            # 메모리 사용량 체크
-            log_memory_usage()
-            
-            # 마지막 청크가 아니면 지연
-            if chunk_idx < len(url_chunks):
+            # 청크가 가득 차면 처리
+            if len(current_chunk) >= CHUNK_SIZE:
+                chunk_idx += 1
+                logger.info(f"🔄 청크 {chunk_idx} 처리 시작 ({len(current_chunk)}개 URL)")
+                
+                # 청크 처리
+                scraped_count = await process_chunk(session, current_chunk, semaphore)
+                total_scraped += scraped_count
+                total_failed += len(current_chunk) - scraped_count
+                
+                # 진행률 표시
+                progress = min(chunk_idx * CHUNK_SIZE, TARGET_RECIPE_COUNT)
+                logger.info(f"📈 전체 진행률: {progress}/{TARGET_RECIPE_COUNT} ({progress/TARGET_RECIPE_COUNT*100:.1f}%)")
+                
+                # 메모리 사용량 체크
+                log_memory_usage()
+                
+                # 청크 간 지연
                 logger.info(f"⏳ 다음 청크까지 {CHUNK_DELAY}초 대기 (메모리 정리 시간)")
                 await asyncio.sleep(CHUNK_DELAY)
+                
+                # 청크 초기화
+                current_chunk = []
+        
+        # 마지막 청크 처리 (남은 URL들)
+        if current_chunk:
+            chunk_idx += 1
+            logger.info(f"🔄 마지막 청크 {chunk_idx} 처리 시작 ({len(current_chunk)}개 URL)")
+            
+            scraped_count = await process_chunk(session, current_chunk, semaphore)
+            total_scraped += scraped_count
+            total_failed += len(current_chunk) - scraped_count
+            
+            # 최종 진행률 표시
+            logger.info(f"📈 전체 진행률: {TARGET_RECIPE_COUNT}/{TARGET_RECIPE_COUNT} (100.0%)")
+            log_memory_usage()
     
     total_time = time.time() - start_time
     logger.info("=" * 60)
