@@ -5,7 +5,8 @@
 
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 
-const API_BASE_URL = 'https://admin-api-dev.woohalabs.com/v1';
+const API_BASE_URL = 'https://admin-api-dev.woohalabs.com';
+const API_V1_BASE_URL = 'https://admin-api-dev.woohalabs.com/v1';
 
 // API 응답 타입 정의
 export interface RecipeResponse {
@@ -85,39 +86,39 @@ export class ColdRecipeAPI {
     );
   }
 
-  // 헬스체크
+  // 헬스체크 (루트 경로 사용)
   async healthCheck(): Promise<any> {
     const response: AxiosResponse = await this.axiosInstance.get('/health');
     return response.data;
   }
 
-  // 시스템 정보 조회
+  // 시스템 정보 조회 (v1 경로 사용)
   async getSystemInfo(): Promise<any> {
-    const response: AxiosResponse = await this.axiosInstance.get('/system/info');
+    const response: AxiosResponse = await this.axiosInstance.get('/v1/system/info');
     return response.data;
   }
 
-  // 데이터베이스 테이블 정보 조회
+  // 데이터베이스 테이블 정보 조회 (v1 경로 사용)
   async getDatabaseTables(): Promise<any> {
-    const response: AxiosResponse = await this.axiosInstance.get('/system/database/tables');
+    const response: AxiosResponse = await this.axiosInstance.get('/v1/system/database/tables');
     return response.data;
   }
 
-  // 리소스 사용량 조회
+  // 리소스 사용량 조회 (v1 경로 사용)
   async getResourceUsage(): Promise<any> {
-    const response: AxiosResponse = await this.axiosInstance.get('/system/resources');
+    const response: AxiosResponse = await this.axiosInstance.get('/v1/system/resources');
     return response.data;
   }
 
-  // API 엔드포인트 상태 조회
+  // API 엔드포인트 상태 조회 (v1 경로 사용)
   async getApiEndpoints(): Promise<any> {
-    const response: AxiosResponse = await this.axiosInstance.get('/system/api/endpoints');
+    const response: AxiosResponse = await this.axiosInstance.get('/v1/system/api/endpoints');
     return response.data;
   }
 
-  // 최근 활동 조회
+  // 최근 활동 조회 (v1 경로 사용)
   async getRecentActivities(): Promise<any> {
-    const response: AxiosResponse = await this.axiosInstance.get('/system/activities');
+    const response: AxiosResponse = await this.axiosInstance.get('/v1/system/activities');
     return response.data;
   }
 
