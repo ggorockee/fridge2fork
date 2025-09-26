@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     
     # API 설정
-    api_prefix: str = "/v1"
+    api_prefix: str = "/fridge2fork/v1"
     
     # 데이터베이스 설정
     database_url: Optional[str] = None
