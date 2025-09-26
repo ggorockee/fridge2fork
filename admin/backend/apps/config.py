@@ -26,12 +26,6 @@ class Settings(BaseSettings):
     db_user: str = "fridge2fork"
     db_password: str = ""
     
-    # Kubernetes 환경변수 (자동 감지)
-    postgres_server: Optional[str] = None
-    postgres_db: Optional[str] = None
-    postgres_user: Optional[str] = None
-    postgres_password: Optional[str] = None
-    
     # CORS 설정
     cors_origins: list[str] = ["*"]
     cors_methods: list[str] = ["*"]
@@ -45,25 +39,13 @@ class Settings(BaseSettings):
     
     @property
     def database_url_computed(self) -> str:
-        """데이터베이스 URL 계산 (Kubernetes 환경변수 우선)"""
+        """데이터베이스 URL 계산 (Kubernetes Secret 환경변수 우선)"""
         if self.database_url:
             return self.database_url
         
-        # Kubernetes 환경변수 우선 사용
-        if self.postgres_server:
-            host = self.postgres_server
-            port = self.db_port
-            db_name = self.postgres_db or self.db_name
-            user = self.postgres_user or self.db_user
-            password = self.postgres_password or self.db_password
-        else:
-            host = self.db_host
-            port = self.db_port
-            db_name = self.db_name
-            user = self.db_user
-            password = self.db_password
-        
-        return f"postgresql://{user}:{password}@{host}:{port}/{db_name}"
+        # Kubernetes Secret에서 주입된 환경변수 사용
+        # envFrom으로 주입되므로 기본값이 환경변수로 덮어씌워짐
+        return f"postgresql://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
 
 
 # 전역 설정 인스턴스
