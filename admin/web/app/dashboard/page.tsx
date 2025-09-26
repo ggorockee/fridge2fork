@@ -398,7 +398,7 @@ export default function DashboardPage() {
                   <div>
                     <p className="text-sm text-gray-400">총 레시피 수</p>
                     <p className="text-2xl font-bold text-gray-100">
-                      {databaseTables.find(t => t.name === 'recipes')?.rowCount.toLocaleString() || '0'}
+                      {(databaseTables.find(t => t.name === 'recipes')?.rowCount ?? 0).toLocaleString()}
                     </p>
                   </div>
                   <div className="w-12 h-12 bg-orange-500/20 rounded-full flex items-center justify-center">
@@ -416,7 +416,7 @@ export default function DashboardPage() {
                   <div>
                     <p className="text-sm text-gray-400">총 식재료 수</p>
                     <p className="text-2xl font-bold text-gray-100">
-                      {databaseTables.find(t => t.name === 'ingredients')?.rowCount.toLocaleString() || '0'}
+                      {(databaseTables.find(t => t.name === 'ingredients')?.rowCount ?? 0).toLocaleString()}
                     </p>
                   </div>
                   <div className="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center">
@@ -562,7 +562,7 @@ export default function DashboardPage() {
                           </span>
                         </div>
                         <div className="text-sm text-gray-400 mt-1">
-                          {table.rowCount.toLocaleString()} 행 • {table.size} • 인덱스: {table.indexSize}
+                          {(table.rowCount ?? 0).toLocaleString()} 행 • {table.size} • 인덱스: {table.indexSize}
                         </div>
                         <div className="text-xs text-gray-500 mt-1">
                           마지막 업데이트: {table.lastUpdated}
