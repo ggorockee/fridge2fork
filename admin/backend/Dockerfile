@@ -18,9 +18,19 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# requirements 파일 복사 및 패키지 설치
-COPY requirements.prod.txt .
-RUN pip install --no-cache-dir -r requirements.prod.txt
+# requirements 파일들 복사
+COPY requirements.common.txt requirements.dev.txt requirements.prod.txt ./
+
+# 환경별 requirements 파일 설치
+# ENVIRONMENT=development: requirements.dev.txt (개발용)
+# ENVIRONMENT=production: requirements.prod.txt (운영용)
+RUN if [ "$ENVIRONMENT" = "development" ]; then \
+        echo "🛠️ 개발 환경 패키지 설치 중..."; \
+        pip install --no-cache-dir -r requirements.dev.txt; \
+    else \
+        echo "🏭 운영 환경 패키지 설치 중..."; \
+        pip install --no-cache-dir -r requirements.prod.txt; \
+    fi
 
 # 애플리케이션 코드 복사
 COPY . .
