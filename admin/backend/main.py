@@ -10,7 +10,7 @@ import uvicorn
 from apps.config import settings
 from apps.logging_config import setup_logging, get_logger, AccessLogMiddleware
 from apps.database import init_db
-from apps.routers import ingredients, recipes
+from apps.routers import ingredients, recipes, health, system, normalization, audit
 
 # 로깅 시스템 초기화
 setup_logging()
@@ -64,7 +64,7 @@ app.add_middleware(
 )
 
 
-# 헬스체크 엔드포인트
+# 헬스체크 엔드포인트 (기존)
 @app.get("/health", tags=["🏥 헬스체크"], summary="서버 상태 확인")
 async def health_check():
     """서버 상태를 확인합니다."""
@@ -79,6 +79,18 @@ async def health_check():
 
 # API 라우터 등록
 app.include_router(
+    health.router,
+    prefix=settings.api_prefix,
+    responses={404: {"description": "Not found"}}
+)
+
+app.include_router(
+    system.router,
+    prefix=settings.api_prefix,
+    responses={404: {"description": "Not found"}}
+)
+
+app.include_router(
     ingredients.router,
     prefix=settings.api_prefix,
     responses={404: {"description": "Not found"}}
@@ -86,6 +98,18 @@ app.include_router(
 
 app.include_router(
     recipes.router,
+    prefix=settings.api_prefix,
+    responses={404: {"description": "Not found"}}
+)
+
+app.include_router(
+    normalization.router,
+    prefix=settings.api_prefix,
+    responses={404: {"description": "Not found"}}
+)
+
+app.include_router(
+    audit.router,
     prefix=settings.api_prefix,
     responses={404: {"description": "Not found"}}
 )
