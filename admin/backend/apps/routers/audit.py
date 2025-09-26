@@ -13,7 +13,7 @@ from apps.schemas import (
 from apps.logging_config import get_logger
 
 logger = get_logger(__name__)
-router = APIRouter(prefix="/v1/audit", tags=["📝 감사 로그"])
+router = APIRouter(prefix="/audit", tags=["📝 감사 로그"])
 
 
 @router.get(

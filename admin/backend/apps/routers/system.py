@@ -19,7 +19,7 @@ from apps.schemas import (
 )
 from apps.config import settings
 
-router = APIRouter(prefix="/v1/system", tags=["📊 시스템 정보"])
+router = APIRouter(prefix="/system", tags=["📊 시스템 정보"])
 
 
 def get_uptime() -> str:
