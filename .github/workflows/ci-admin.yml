@@ -75,5 +75,5 @@ jobs:
 
       - name: Update infra repository
         run: |
-          python .github/workflows/scripts/update_infra_values.py ${{ needs.build-and-push-admin.outputs.environment }}-sha-${{ needs.build-and-push-admin.outputs.sha }} ${{ secrets.INFRA_GITHUB_TOKEN }} admin-backend
+          python .github/workflows/scripts/update_infra_values.py sha-${{ needs.build-and-push-admin.outputs.sha }} ${{ secrets.INFRA_GITHUB_TOKEN }} admin-backend
 
