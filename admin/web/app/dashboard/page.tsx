@@ -167,7 +167,7 @@ export default function DashboardPage() {
       // 오프라인 모드인 경우 모든 엔드포인트를 down으로 설정
       if (api.getOfflineMode()) {
         const endpoints: ApiEndpoint[] = [
-          { path: '/fridge2fork/health', method: 'GET', status: 'down', responseTime: 0, lastChecked: new Date().toLocaleString('ko-KR') },
+          { path: '/fridge2fork/v1/health', method: 'GET', status: 'down', responseTime: 0, lastChecked: new Date().toLocaleString('ko-KR') },
           { path: '/fridge2fork/v1/recipes/', method: 'GET', status: 'down', responseTime: 0, lastChecked: new Date().toLocaleString('ko-KR') },
           { path: '/fridge2fork/v1/ingredients/', method: 'GET', status: 'down', responseTime: 0, lastChecked: new Date().toLocaleString('ko-KR') }
         ];
@@ -177,7 +177,7 @@ export default function DashboardPage() {
 
       // 실제 API 호출로 상태 확인
       const endpoints: ApiEndpoint[] = [
-        { path: '/fridge2fork/health', method: 'GET', status: 'up', responseTime: 0, lastChecked: new Date().toLocaleString('ko-KR') },
+        { path: '/fridge2fork/v1/health', method: 'GET', status: 'up', responseTime: 0, lastChecked: new Date().toLocaleString('ko-KR') },
         { path: '/fridge2fork/v1/recipes/', method: 'GET', status: 'up', responseTime: 0, lastChecked: new Date().toLocaleString('ko-KR') },
         { path: '/fridge2fork/v1/ingredients/', method: 'GET', status: 'up', responseTime: 0, lastChecked: new Date().toLocaleString('ko-KR') }
       ];
@@ -438,7 +438,7 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-between">
-                    <span className="text-3xl font-bold text-gray-100">{resourceUsage.cpu}%</span>
+                    <span className="text-3xl font-bold text-gray-100">{resourceUsage.cpu?.usage_percent ?? 0}%</span>
                     <div className="w-16 h-16 relative">
                       <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 36 36">
                         <path
@@ -452,7 +452,7 @@ export default function DashboardPage() {
                           className="text-blue-400"
                           stroke="currentColor"
                           strokeWidth="3"
-                          strokeDasharray={`${resourceUsage.cpu}, 100`}
+                          strokeDasharray={`${resourceUsage.cpu?.usage_percent ?? 0}, 100`}
                           fill="none"
                           d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                         />
@@ -468,7 +468,7 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-between">
-                    <span className="text-3xl font-bold text-gray-100">{resourceUsage.memory}%</span>
+                    <span className="text-3xl font-bold text-gray-100">{resourceUsage.memory?.usage_percent ?? 0}%</span>
                     <div className="w-16 h-16 relative">
                       <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 36 36">
                         <path
@@ -482,7 +482,7 @@ export default function DashboardPage() {
                           className="text-green-400"
                           stroke="currentColor"
                           strokeWidth="3"
-                          strokeDasharray={`${resourceUsage.memory}, 100`}
+                          strokeDasharray={`${resourceUsage.memory?.usage_percent ?? 0}, 100`}
                           fill="none"
                           d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                         />
@@ -498,7 +498,7 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-between">
-                    <span className="text-3xl font-bold text-gray-100">{resourceUsage.disk}%</span>
+                    <span className="text-3xl font-bold text-gray-100">{resourceUsage.disk?.usage_percent ?? 0}%</span>
                     <div className="w-16 h-16 relative">
                       <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 36 36">
                         <path
@@ -512,7 +512,7 @@ export default function DashboardPage() {
                           className="text-yellow-400"
                           stroke="currentColor"
                           strokeWidth="3"
-                          strokeDasharray={`${resourceUsage.disk}, 100`}
+                          strokeDasharray={`${resourceUsage.disk?.usage_percent ?? 0}, 100`}
                           fill="none"
                           d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                         />
@@ -530,11 +530,11 @@ export default function DashboardPage() {
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-400">In</span>
-                      <span className="text-sm text-gray-100">{resourceUsage.network.in} MB/s</span>
+                      <span className="text-sm text-gray-100">{resourceUsage.network?.in_mbps ?? 0} MB/s</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-400">Out</span>
-                      <span className="text-sm text-gray-100">{resourceUsage.network.out} MB/s</span>
+                      <span className="text-sm text-gray-100">{resourceUsage.network?.out_mbps ?? 0} MB/s</span>
                     </div>
                   </div>
                 </CardContent>

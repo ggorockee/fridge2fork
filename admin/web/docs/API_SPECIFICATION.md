@@ -43,7 +43,7 @@ Authorization: Bearer <jwt_token>
 
 ### 1. 헬스체크 (Health Check)
 
-#### `GET /fridge2fork/health`
+#### `GET /fridge2fork/v1/health`
 서버 상태를 확인합니다.
 
 **Response:**

@@ -130,10 +130,10 @@ export class ColdRecipeAPI {
     this.isOfflineMode = offline;
   }
 
-  // 헬스체크 (/fridge2fork/health 경로 사용)
+  // 헬스체크 (/fridge2fork/v1/health 경로 사용)
   async healthCheck(): Promise<any> {
     try {
-      const response: AxiosResponse = await this.axiosInstance.get('/fridge2fork/health');
+      const response: AxiosResponse = await this.axiosInstance.get('/fridge2fork/v1/health');
       return response.data;
     } catch (error) {
       // 네트워크 오류 시 기본 응답 반환
@@ -206,12 +206,27 @@ export class ColdRecipeAPI {
     } catch (error) {
       if (this.getOfflineMode()) {
         return {
-          cpu: 0,
-          memory: 0,
-          disk: 0,
+          cpu: {
+            usage_percent: 0,
+            cores: 0,
+            load_average: [0, 0, 0]
+          },
+          memory: {
+            usage_percent: 0,
+            total_gb: 0,
+            used_gb: 0,
+            available_gb: 0
+          },
+          disk: {
+            usage_percent: 0,
+            total_gb: 0,
+            used_gb: 0,
+            available_gb: 0
+          },
           network: {
-            in: 0,
-            out: 0
+            in_mbps: 0,
+            out_mbps: 0,
+            connections: 0
           }
         };
       }
