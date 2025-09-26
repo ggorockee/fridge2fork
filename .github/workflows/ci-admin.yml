@@ -50,6 +50,8 @@ jobs:
           context: ./admin/backend
           file: ./admin/backend/Dockerfile
           push: true
+          build-args: |
+            BUILD_ENVIRONMENT=${{ env.BUILD_ENVIRONMENT }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/fridge2fork-admin:${{ steps.vars.outputs.environment }}-latest
             ${{ secrets.DOCKERHUB_USERNAME }}/fridge2fork-admin:${{ steps.vars.outputs.environment }}-sha-${{ steps.vars.outputs.sha }}

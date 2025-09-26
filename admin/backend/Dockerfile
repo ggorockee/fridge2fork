@@ -18,13 +18,16 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
+# 빌드 인수 정의
+ARG BUILD_ENVIRONMENT=prod
+
 # requirements 파일들 복사
 COPY requirements.common.txt requirements.dev.txt requirements.prod.txt ./
 
 # 환경별 requirements 파일 설치
-# ENVIRONMENT=development: requirements.dev.txt (개발용)
-# ENVIRONMENT=production: requirements.prod.txt (운영용)
-RUN if [ "$ENVIRONMENT" = "development" ]; then \
+# BUILD_ENVIRONMENT=dev: requirements.dev.txt (개발용)
+# BUILD_ENVIRONMENT=prod: requirements.prod.txt (운영용)
+RUN if [ "$BUILD_ENVIRONMENT" = "dev" ]; then \
         echo "🛠️ 개발 환경 패키지 설치 중..."; \
         pip install --no-cache-dir -r requirements.dev.txt; \
     else \
@@ -43,6 +46,6 @@ COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 # 환경 변수에 따른 실행 명령 분기
-# ENVIRONMENT=development: uvicorn (개발용)
-# ENVIRONMENT=production: gunicorn (운영용)
+# BUILD_ENVIRONMENT=dev: uvicorn (개발용)
+# BUILD_ENVIRONMENT=prod: gunicorn (운영용)
 ENTRYPOINT ["/entrypoint.sh"]
