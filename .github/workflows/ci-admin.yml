@@ -53,8 +53,8 @@ jobs:
           build-args: |
             BUILD_ENVIRONMENT=${{ env.BUILD_ENVIRONMENT }}
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/fridge2fork-admin:${{ steps.vars.outputs.environment }}-latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/fridge2fork-admin:${{ steps.vars.outputs.environment }}-sha-${{ steps.vars.outputs.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/fridge2fork-admin-${{ steps.vars.outputs.environment }}:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/fridge2fork-admin-${{ steps.vars.outputs.environment }}:sha-${{ steps.vars.outputs.sha }}
 
   update-infra-repository:
     name: Update Infrastructure Repository for Admin Backend
