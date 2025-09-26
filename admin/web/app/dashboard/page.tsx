@@ -68,19 +68,30 @@ export default function DashboardPage() {
   // 시스템 정보 조회
   const fetchSystemInfo = async () => {
     try {
-      const systemData = await api.getSystemInfo();
-      setSystemInfo({
-        status: systemData.status || 'healthy',
-        uptime: systemData.uptime || '0일 0시간 0분',
-        version: systemData.version || '1.0.0',
-        environment: systemData.environment || 'development'
-      });
+      // 헬스체크로 시스템 상태 확인
+      const healthData = await api.healthCheck();
+      
+      // 오프라인 모드인지 확인
+      if (api.getOfflineMode() || healthData.status === 'offline') {
+        setSystemInfo({
+          status: 'error',
+          uptime: '오프라인 모드',
+          version: '1.0.0',
+          environment: 'development'
+        });
+      } else {
+        setSystemInfo({
+          status: 'healthy',
+          uptime: '개발 모드',
+          version: '1.0.0',
+          environment: 'development'
+        });
+      }
     } catch (error) {
-      console.warn('시스템 정보 API 엔드포인트가 없습니다. 기본값을 사용합니다.');
-      // API 엔드포인트가 없으므로 기본값 설정
+      console.warn('헬스체크 실패. 시스템 오류로 간주합니다.');
       setSystemInfo({
-        status: 'healthy',
-        uptime: '개발 모드',
+        status: 'error',
+        uptime: '연결 실패',
         version: '1.0.0',
         environment: 'development'
       });
@@ -102,7 +113,7 @@ export default function DashboardPage() {
           size: '0 MB',
           indexSize: '0 MB',
           lastUpdated: new Date().toLocaleString('ko-KR'),
-          status: 'active'
+          status: api.getOfflineMode() ? 'inactive' : 'active'
         },
         {
           name: 'ingredients',
@@ -110,7 +121,7 @@ export default function DashboardPage() {
           size: '0 MB',
           indexSize: '0 MB',
           lastUpdated: new Date().toLocaleString('ko-KR'),
-          status: 'active'
+          status: api.getOfflineMode() ? 'inactive' : 'active'
         }
       ];
       setDatabaseTables(defaultTables);
@@ -152,6 +163,18 @@ export default function DashboardPage() {
       setApiEndpoints(endpointsData.endpoints || []);
     } catch (error) {
       console.warn('API 엔드포인트 상태 API가 없습니다. 실제 엔드포인트를 확인합니다.');
+      
+      // 오프라인 모드인 경우 모든 엔드포인트를 down으로 설정
+      if (api.getOfflineMode()) {
+        const endpoints: ApiEndpoint[] = [
+          { path: '/health', method: 'GET', status: 'down', responseTime: 0, lastChecked: new Date().toLocaleString('ko-KR') },
+          { path: '/fridge2fork/v1/recipes/', method: 'GET', status: 'down', responseTime: 0, lastChecked: new Date().toLocaleString('ko-KR') },
+          { path: '/fridge2fork/v1/ingredients/', method: 'GET', status: 'down', responseTime: 0, lastChecked: new Date().toLocaleString('ko-KR') }
+        ];
+        setApiEndpoints(endpoints);
+        return;
+      }
+
       // 실제 API 호출로 상태 확인
       const endpoints: ApiEndpoint[] = [
         { path: '/health', method: 'GET', status: 'up', responseTime: 0, lastChecked: new Date().toLocaleString('ko-KR') },
@@ -318,10 +341,20 @@ export default function DashboardPage() {
         <div className="max-w-7xl mx-auto">
           {/* 헤더 */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-100 mb-2">시스템 대시보드</h1>
-            <p className="text-gray-400">
-              마지막 업데이트: {lastUpdated.toLocaleString('ko-KR')}
-            </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-100 mb-2">시스템 대시보드</h1>
+                <p className="text-gray-400">
+                  마지막 업데이트: {lastUpdated.toLocaleString('ko-KR')}
+                </p>
+              </div>
+              {api.getOfflineMode() && (
+                <div className="flex items-center gap-2 px-4 py-2 bg-red-500/20 border border-red-500/30 rounded-lg">
+                  <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse"></div>
+                  <span className="text-red-400 text-sm font-medium">오프라인 모드</span>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* 시스템 상태 카드 */}
