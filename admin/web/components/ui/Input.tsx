@@ -3,7 +3,9 @@
  * Linear 테마에 맞춘 재사용 가능한 입력 컴포넌트
  */
 
-import React from "react";
+"use client";
+
+import React, { useId } from "react";
 import { cn } from "@/lib/utils";
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -68,7 +70,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     },
     ref
   ) => {
-    const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
+    const generatedId = useId();
+    const inputId = id || generatedId;
     
     const baseStyles = "w-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent";
     
