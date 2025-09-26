@@ -6,7 +6,7 @@ import shutil
 from git import Repo, exc
 from ruamel.yaml import YAML
 
-def update_yaml_file(repo_url, token, image_tag, service_type="onedaypillo", branches_to_try=None):
+def update_yaml_file(repo_url, token, image_tag, service_type="onedaypillo", environment="dev", branches_to_try=None):
     """
     Clones a git repository from a list of possible branches, updates a YAML file,
     and pushes the changes back to the repository.
@@ -15,7 +15,8 @@ def update_yaml_file(repo_url, token, image_tag, service_type="onedaypillo", bra
         repo_url: Git repository URL
         token: GitHub token for authentication
         image_tag: Docker image tag to update
-        service_type: Service type ('onedaypillo' or 'scraper')
+        service_type: Service type ('onedaypillo', 'scraper', 'admin-backend', or 'server')
+        environment: Environment ('dev' or 'prod')
         branches_to_try: List of branches to try cloning
     """
     if branches_to_try is None:
@@ -56,18 +57,18 @@ def update_yaml_file(repo_url, token, image_tag, service_type="onedaypillo", bra
         repo.config_writer().set_value("user", "name", "github bot").release()
         repo.config_writer().set_value("user", "email", "github-bot@example.com").release()
 
-        # Determine file path and field based on service type
+        # Determine file path and field based on service type and environment
         if service_type == "scraper":
-            yaml_file_path = os.path.join(temp_dir, "charts/helm/dev/fridge2fork/values.yaml")
+            yaml_file_path = os.path.join(temp_dir, f"charts/helm/{environment}/fridge2fork/values.yaml")
             field_path = ["scrape", "image", "tag"]
         elif service_type == "admin-backend":
-            yaml_file_path = os.path.join(temp_dir, "charts/helm/dev/fridge2fork/values.yaml")
+            yaml_file_path = os.path.join(temp_dir, f"charts/helm/{environment}/fridge2fork/values.yaml")
             field_path = ["admin", "image", "tag"]
         elif service_type == "server":
-            yaml_file_path = os.path.join(temp_dir, "charts/helm/dev/fridge2fork/values.yaml")
+            yaml_file_path = os.path.join(temp_dir, f"charts/helm/{environment}/fridge2fork/values.yaml")
             field_path = ["server", "image", "tag"]
         else:  # onedaypillo (default)
-            yaml_file_path = os.path.join(temp_dir, "charts/argocd/applicationsets/valuefiles/dev/onedaypillo/values.yaml")
+            yaml_file_path = os.path.join(temp_dir, f"charts/argocd/applicationsets/valuefiles/{environment}/onedaypillo/values.yaml")
             field_path = ["image", "tag"]
 
         if not os.path.exists(yaml_file_path):
@@ -80,7 +81,7 @@ def update_yaml_file(repo_url, token, image_tag, service_type="onedaypillo", bra
         with open(yaml_file_path, 'r') as f:
             data = yaml.load(f)
 
-        print(f"Updating {service_type} image tag to: {image_tag}")
+        print(f"Updating {service_type} image tag to: {image_tag} in {environment} environment")
         
         # Navigate to the correct field and update it
         current_data = data
@@ -99,7 +100,7 @@ def update_yaml_file(repo_url, token, image_tag, service_type="onedaypillo", bra
         if repo.is_dirty(untracked_files=True):
             print("Committing changes...")
             repo.git.add(A=True)
-            commit_message = f"ci: Update image tag to {image_tag} for {service_type}"
+            commit_message = f"ci: Update image tag to {image_tag} for {service_type} in {environment} environment"
             repo.index.commit(commit_message)
             
             print("Pushing changes...")
@@ -118,15 +119,17 @@ def update_yaml_file(repo_url, token, image_tag, service_type="onedaypillo", bra
         shutil.rmtree(temp_dir)
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3 or len(sys.argv) > 4:
-        print("Usage: python update_infra_values.py <IMAGE_TAG> <INFRA_GITHUB_TOKEN> [SERVICE_TYPE]")
+    if len(sys.argv) < 3 or len(sys.argv) > 5:
+        print("Usage: python update_infra_values.py <IMAGE_TAG> <INFRA_GITHUB_TOKEN> [SERVICE_TYPE] [ENVIRONMENT]")
         print("SERVICE_TYPE: 'onedaypillo' (default), 'scraper', 'admin-backend', or 'server'")
+        print("ENVIRONMENT: 'dev' (default) or 'prod'")
         sys.exit(1)
 
     image_tag_arg = sys.argv[1]
     infra_token_arg = sys.argv[2]
-    service_type_arg = sys.argv[3] if len(sys.argv) == 4 else "onedaypillo"
+    service_type_arg = sys.argv[3] if len(sys.argv) >= 4 else "onedaypillo"
+    environment_arg = sys.argv[4] if len(sys.argv) == 5 else "dev"
     
     infra_repo_url = "https://github.com/ggorockee/infra.git"
 
-    update_yaml_file(infra_repo_url, infra_token_arg, image_tag_arg, service_type_arg)
+    update_yaml_file(infra_repo_url, infra_token_arg, image_tag_arg, service_type_arg, environment_arg)
