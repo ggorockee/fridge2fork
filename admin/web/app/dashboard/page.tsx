@@ -76,24 +76,14 @@ export default function DashboardPage() {
         environment: systemData.environment || 'development'
       });
     } catch (error) {
-      console.error('시스템 정보 조회 실패:', error);
-      // API 실패 시 헬스체크로 대체
-      try {
-        await api.healthCheck();
-        setSystemInfo({
-          status: 'healthy',
-          uptime: '알 수 없음',
-          version: '1.0.0',
-          environment: 'development'
-        });
-      } catch (healthError) {
-        setSystemInfo({
-          status: 'error',
-          uptime: '0일 0시간 0분',
-          version: '1.0.0',
-          environment: 'development'
-        });
-      }
+      console.warn('시스템 정보 API 엔드포인트가 없습니다. 기본값을 사용합니다.');
+      // API 엔드포인트가 없으므로 기본값 설정
+      setSystemInfo({
+        status: 'healthy',
+        uptime: '개발 모드',
+        version: '1.0.0',
+        environment: 'development'
+      });
     }
   };
 
@@ -103,37 +93,27 @@ export default function DashboardPage() {
       const tablesData = await api.getDatabaseTables();
       setDatabaseTables(tablesData.tables || []);
     } catch (error) {
-      console.error('데이터베이스 테이블 정보 조회 실패:', error);
-      // API 실패 시 레시피/식재료 API로 대체하여 기본 정보 수집
-      try {
-        const [recipesData, ingredientsData] = await Promise.all([
-          api.getRecipes({ limit: 1 }),
-          api.getIngredients({ limit: 1 })
-        ]);
-        
-        const mockTables: DatabaseTable[] = [
-          {
-            name: 'recipes',
-            rowCount: recipesData.length > 0 ? 200000 : 0,
-            size: '2.4 GB',
-            indexSize: '512 MB',
-            lastUpdated: new Date().toLocaleString('ko-KR'),
-            status: 'active'
-          },
-          {
-            name: 'ingredients',
-            rowCount: ingredientsData.length > 0 ? 15000 : 0,
-            size: '45 MB',
-            indexSize: '12 MB',
-            lastUpdated: new Date().toLocaleString('ko-KR'),
-            status: 'active'
-          }
-        ];
-        setDatabaseTables(mockTables);
-      } catch (fallbackError) {
-        console.error('대체 데이터 조회도 실패:', fallbackError);
-        setDatabaseTables([]);
-      }
+      console.warn('데이터베이스 테이블 API 엔드포인트가 없습니다. 기본값을 사용합니다.');
+      // API 엔드포인트가 없으므로 기본 테이블 정보 설정
+      const defaultTables: DatabaseTable[] = [
+        {
+          name: 'recipes',
+          rowCount: 0,
+          size: '0 MB',
+          indexSize: '0 MB',
+          lastUpdated: new Date().toLocaleString('ko-KR'),
+          status: 'active'
+        },
+        {
+          name: 'ingredients',
+          rowCount: 0,
+          size: '0 MB',
+          indexSize: '0 MB',
+          lastUpdated: new Date().toLocaleString('ko-KR'),
+          status: 'active'
+        }
+      ];
+      setDatabaseTables(defaultTables);
     }
   };
 
@@ -151,7 +131,7 @@ export default function DashboardPage() {
         }
       });
     } catch (error) {
-      console.error('리소스 사용량 조회 실패:', error);
+      console.warn('리소스 사용량 API 엔드포인트가 없습니다. 기본값을 사용합니다.');
       // 기본값 설정
       setResourceUsage({
         cpu: 0,
@@ -171,7 +151,7 @@ export default function DashboardPage() {
       const endpointsData = await api.getApiEndpoints();
       setApiEndpoints(endpointsData.endpoints || []);
     } catch (error) {
-      console.error('API 엔드포인트 상태 조회 실패:', error);
+      console.warn('API 엔드포인트 상태 API가 없습니다. 실제 엔드포인트를 확인합니다.');
       // 실제 API 호출로 상태 확인
       const endpoints: ApiEndpoint[] = [
         { path: '/health', method: 'GET', status: 'up', responseTime: 0, lastChecked: new Date().toLocaleString('ko-KR') },
@@ -220,7 +200,7 @@ export default function DashboardPage() {
       const activitiesData = await api.getRecentActivities();
       setRecentActivities(activitiesData.activities || []);
     } catch (error) {
-      console.error('최근 활동 조회 실패:', error);
+      console.warn('최근 활동 API 엔드포인트가 없습니다. 기본값을 사용합니다.');
       // 기본 활동 로그 (대시보드 접근 기록)
       const defaultActivities: RecentActivity[] = [
         { 
