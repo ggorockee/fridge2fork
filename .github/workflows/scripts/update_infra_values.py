@@ -63,6 +63,9 @@ def update_yaml_file(repo_url, token, image_tag, service_type="onedaypillo", bra
         elif service_type == "admin-backend":
             yaml_file_path = os.path.join(temp_dir, "charts/helm/dev/fridge2fork/values.yaml")
             field_path = ["admin", "image", "tag"]
+        elif service_type == "server":
+            yaml_file_path = os.path.join(temp_dir, "charts/helm/dev/fridge2fork/values.yaml")
+            field_path = ["server", "image", "tag"]
         else:  # onedaypillo (default)
             yaml_file_path = os.path.join(temp_dir, "charts/argocd/applicationsets/valuefiles/dev/onedaypillo/values.yaml")
             field_path = ["image", "tag"]
@@ -117,7 +120,7 @@ def update_yaml_file(repo_url, token, image_tag, service_type="onedaypillo", bra
 if __name__ == "__main__":
     if len(sys.argv) < 3 or len(sys.argv) > 4:
         print("Usage: python update_infra_values.py <IMAGE_TAG> <INFRA_GITHUB_TOKEN> [SERVICE_TYPE]")
-        print("SERVICE_TYPE: 'onedaypillo' (default), 'scraper', or 'admin-backend'")
+        print("SERVICE_TYPE: 'onedaypillo' (default), 'scraper', 'admin-backend', or 'server'")
         sys.exit(1)
 
     image_tag_arg = sys.argv[1]

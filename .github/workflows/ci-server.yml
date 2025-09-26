@@ -17,6 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      packages: write
     outputs:
       sha: ${{ steps.vars.outputs.sha }}
       environment: ${{ steps.vars.outputs.environment }}
@@ -71,4 +72,4 @@ jobs:
 
       - name: Update infra repository
         run: |
-          python .github/workflows/scripts/update_infra_values.py ${{ needs.build-and-push.outputs.environment }}-sha-${{ needs.build-and-push.outputs.sha }} ${{ secrets.INFRA_GITHUB_TOKEN }}
+          python .github/workflows/scripts/update_infra_values.py sha-${{ needs.build-and-push.outputs.sha }} ${{ secrets.INFRA_GITHUB_TOKEN }} server

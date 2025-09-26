@@ -51,8 +51,8 @@ jobs:
           file: ./scrape/Dockerfile
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/fridge2fork-scrape:${{ steps.vars.outputs.environment }}-latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/fridge2fork-scrape:${{ steps.vars.outputs.environment }}-sha-${{ steps.vars.outputs.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/fridge2fork-${{ steps.vars.outputs.environment }}-scrape:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/fridge2fork-${{ steps.vars.outputs.environment }}-scrape:sha-${{ steps.vars.outputs.sha }}
 
   update-infra-repository:
     name: Update Infrastructure Repository for Scraper
@@ -73,4 +73,4 @@ jobs:
 
       - name: Update infra repository
         run: |
-          python .github/workflows/scripts/update_infra_values.py ${{ needs.build-and-push-scraper.outputs.environment }}-sha-${{ needs.build-and-push-scraper.outputs.sha }} ${{ secrets.INFRA_GITHUB_TOKEN }} scraper
+          python .github/workflows/scripts/update_infra_values.py sha-${{ needs.build-and-push-scraper.outputs.sha }} ${{ secrets.INFRA_GITHUB_TOKEN }} scraper
