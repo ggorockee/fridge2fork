@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 import uvicorn
 
 from apps.config import settings
-from apps.logging_config import setup_logging, get_logger
+from apps.logging_config import setup_logging, get_logger, AccessLogMiddleware
 from apps.database import init_db
 from apps.routers import ingredients, recipes
 
@@ -50,6 +50,9 @@ app = FastAPI(
     openapi_url=f"{settings.api_prefix}/openapi.json",
     lifespan=lifespan
 )
+
+# Access Log 미들웨어 설정 (가장 먼저 추가)
+app.add_middleware(AccessLogMiddleware)
 
 # CORS 미들웨어 설정
 app.add_middleware(
@@ -105,9 +108,10 @@ async def root():
 async def global_exception_handler(request, exc):
     """전역 예외 처리"""
     logger.error(f"❌ 전역 예외 발생: {exc}")
-    return HTTPException(
+    from fastapi.responses import JSONResponse
+    return JSONResponse(
         status_code=500,
-        detail="서버 내부 오류가 발생했습니다"
+        content={"detail": "서버 내부 오류가 발생했습니다"}
     )
 
 

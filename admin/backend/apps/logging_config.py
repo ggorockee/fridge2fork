@@ -3,7 +3,10 @@
 """
 import logging
 import sys
+import time
 from typing import Any
+from fastapi import Request, Response
+from starlette.middleware.base import BaseHTTPMiddleware
 from apps.config import settings
 
 
@@ -68,3 +71,46 @@ def setup_logging():
 def get_logger(name: str) -> logging.Logger:
     """로거 인스턴스 반환"""
     return logging.getLogger(name)
+
+
+class AccessLogMiddleware(BaseHTTPMiddleware):
+    """HTTP 요청/응답 로깅 미들웨어"""
+    
+    def __init__(self, app):
+        super().__init__(app)
+        self.logger = get_logger("access")
+    
+    async def dispatch(self, request: Request, call_next):
+        """요청 처리 및 로깅"""
+        # 요청 시작 시간 기록
+        start_time = time.time()
+        
+        # 클라이언트 IP 추출
+        client_ip = request.client.host if request.client else "unknown"
+        
+        # User-Agent 추출
+        user_agent = request.headers.get("user-agent", "unknown")
+        
+        # 요청 정보 로깅
+        self.logger.info(
+            f"🌐 {request.method} {request.url.path} - "
+            f"IP: {client_ip} - "
+            f"UA: {user_agent[:50]}{'...' if len(user_agent) > 50 else ''}"
+        )
+        
+        # 요청 처리
+        response = await call_next(request)
+        
+        # 처리 시간 계산
+        process_time = time.time() - start_time
+        
+        # 응답 정보 로깅
+        status_emoji = "✅" if 200 <= response.status_code < 300 else "⚠️" if 300 <= response.status_code < 400 else "❌"
+        
+        self.logger.info(
+            f"{status_emoji} {request.method} {request.url.path} - "
+            f"Status: {response.status_code} - "
+            f"Time: {process_time:.3f}s"
+        )
+        
+        return response

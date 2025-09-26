@@ -156,3 +156,17 @@ pytest tests/test_ingredients.py
 
 - [API 문서](http://localhost:8000/v1/docs) - Swagger UI
 - [데이터베이스 스키마](docs/database_schema_row.md)
+
+
+# 사용자 서비스
+개발: api-dev.woohalabs.com/fridge2fork/v1
+운영: api.woohalabs.com/fridge2fork/v1
+개발웹: dev.woohalabs.com/fridge2fork  
+운영웹: woohalabs.com/fridge2fork
+
+# 관리자 서비스  
+개발: admin-api-dev.woohalabs.com/fridge2fork/v1
+개발웹: admin-dev.woohalabs.com/fridge2fork
+
+운영: admin-api.woohalabs.com/fridge2fork/v1
+운영웹: admin.woohalabs.com/fridge2fork
