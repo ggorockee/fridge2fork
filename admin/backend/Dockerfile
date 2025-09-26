@@ -18,8 +18,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# 빌드 인수 정의
-ARG BUILD_ENVIRONMENT=prod
+# 빌드 인수 정의 (개발환경 기본값)
+ARG BUILD_ENVIRONMENT=dev
+
+# 환경 변수로 설정 (entrypoint.sh에서 사용)
+ENV BUILD_ENVIRONMENT=${BUILD_ENVIRONMENT}
 
 # requirements 파일들 복사
 COPY requirements.common.txt requirements.dev.txt requirements.prod.txt ./
