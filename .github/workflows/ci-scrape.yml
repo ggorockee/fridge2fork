@@ -10,6 +10,13 @@ on:
     paths:
       - 'scrape/**'
       - '.github/workflows/ci-scrape.yml'
+  pull_request:
+    branches:
+      - main
+      - dev
+    paths:
+      - 'scrape/**'
+      - '.github/workflows/ci-scrape.yml'
   workflow_dispatch: # Allows manual triggering
 
 jobs:
@@ -58,6 +65,7 @@ jobs:
     name: Update Infrastructure Repository for Scraper
     runs-on: ubuntu-latest
     needs: build-and-push-scraper
+    if: github.event_name == 'push'  # Only update infra on push, not on PR
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
