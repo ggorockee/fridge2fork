@@ -17,6 +17,6 @@ if [ "$ENVIRONMENT" = "development" ]; then
     exec uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 else
     echo "🏭 운영 모드로 시작합니다 (gunicorn)"
-    echo "📍 워커: 4개, 호스트: 0.0.0.0, 포트: 8000"
-    exec gunicorn main:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000
+    echo "📍 워커: 2개, 호스트: 0.0.0.0, 포트: 8000"
+    exec gunicorn main:app -w 2 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000
 fi
