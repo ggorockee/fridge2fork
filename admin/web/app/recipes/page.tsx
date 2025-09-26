@@ -33,13 +33,20 @@ export default function RecipesPage() {
     try {
       setLoading(true);
       setError(null);
+      console.log('레시피 API 호출 중...', {
+        skip: currentPage * itemsPerPage,
+        limit: itemsPerPage,
+        search: searchTerm || undefined,
+      });
       const data = await api.getRecipes({
         skip: currentPage * itemsPerPage,
         limit: itemsPerPage,
         search: searchTerm || undefined,
       });
-      setRecipes(data);
+      console.log('레시피 API 응답:', data, '타입:', typeof data, '배열 여부:', Array.isArray(data));
+      setRecipes(Array.isArray(data) ? data : []);
     } catch (err) {
+      console.error('레시피 API 오류:', err);
       setError(err instanceof Error ? err.message : "레시피를 불러오는데 실패했습니다.");
     } finally {
       setLoading(false);

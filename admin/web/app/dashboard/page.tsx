@@ -22,10 +22,10 @@ interface SystemInfo {
 
 interface DatabaseTable {
   name: string;
-  rowCount: number;
+  row_count: number;
   size: string;
-  indexSize: string;
-  lastUpdated: string;
+  index_size: string;
+  last_updated: string;
   status: 'active' | 'inactive' | 'error';
 }
 
@@ -111,7 +111,7 @@ export default function DashboardPage() {
       const defaultTables: DatabaseTable[] = [
         {
           name: 'recipes',
-          rowCount: 0,
+          row_count: 0,
           size: '0 MB',
           indexSize: '0 MB',
           lastUpdated: new Date().toLocaleString('ko-KR'),
@@ -119,7 +119,7 @@ export default function DashboardPage() {
         },
         {
           name: 'ingredients',
-          rowCount: 0,
+          row_count: 0,
           size: '0 MB',
           indexSize: '0 MB',
           lastUpdated: new Date().toLocaleString('ko-KR'),
@@ -400,7 +400,7 @@ export default function DashboardPage() {
                   <div>
                     <p className="text-sm text-gray-400">총 레시피 수</p>
                     <p className="text-2xl font-bold text-gray-100">
-                      {(databaseTables.find(t => t.name === 'recipes')?.rowCount ?? 0).toLocaleString()}
+                      {(databaseTables.find(t => t.name === 'recipes')?.row_count ?? 0).toLocaleString()}
                     </p>
                     {api.getOfflineMode() && (
                       <p className="text-xs text-red-400 mt-1">오프라인 모드</p>
@@ -421,7 +421,7 @@ export default function DashboardPage() {
                   <div>
                     <p className="text-sm text-gray-400">총 식재료 수</p>
                     <p className="text-2xl font-bold text-gray-100">
-                      {(databaseTables.find(t => t.name === 'ingredients')?.rowCount ?? 0).toLocaleString()}
+                      {(databaseTables.find(t => t.name === 'ingredients')?.row_count ?? 0).toLocaleString()}
                     </p>
                     {api.getOfflineMode() && (
                       <p className="text-xs text-red-400 mt-1">오프라인 모드</p>
@@ -570,10 +570,10 @@ export default function DashboardPage() {
                           </span>
                         </div>
                         <div className="text-sm text-gray-400 mt-1">
-                          {(table.rowCount ?? 0).toLocaleString()} 행 • {table.size} • 인덱스: {table.indexSize}
+                          {(table.row_count ?? 0).toLocaleString()} 행 • {table.size} • 인덱스: {table.index_size}
                         </div>
                         <div className="text-xs text-gray-500 mt-1">
-                          마지막 업데이트: {table.lastUpdated}
+                          마지막 업데이트: {table.last_updated}
                         </div>
                       </div>
                     </div>

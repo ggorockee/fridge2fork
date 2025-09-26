@@ -284,10 +284,11 @@ export class ColdRecipeAPI {
     search?: string;
   } = {}): Promise<RecipeResponse[]> {
     try {
-      const response: AxiosResponse<RecipeResponse[]> = await this.axiosInstance.get('/fridge2fork/v1/recipes/', {
+      const response: AxiosResponse = await this.axiosInstance.get('/fridge2fork/v1/recipes/', {
         params,
       });
-      return response.data;
+      // API 명세서에 따르면 { recipes: [], total, skip, limit } 형태로 응답
+      return response.data.recipes || [];
     } catch (error) {
       if (this.getOfflineMode()) {
         // 오프라인 모드에서는 빈 배열 반환
@@ -325,10 +326,11 @@ export class ColdRecipeAPI {
     is_vague?: boolean;
   } = {}): Promise<IngredientResponse[]> {
     try {
-      const response: AxiosResponse<IngredientResponse[]> = await this.axiosInstance.get('/fridge2fork/v1/ingredients/', {
+      const response: AxiosResponse = await this.axiosInstance.get('/fridge2fork/v1/ingredients/', {
         params,
       });
-      return response.data;
+      // API 명세서에 따르면 { ingredients: [], total, skip, limit } 형태로 응답
+      return response.data.ingredients || [];
     } catch (error) {
       if (this.getOfflineMode()) {
         // 오프라인 모드에서는 빈 배열 반환
