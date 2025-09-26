@@ -291,6 +291,9 @@ class RecipeDeleteResponse(BaseModel):
 class IngredientWithRecipeCount(IngredientResponse):
     """🥕 레시피 개수가 포함된 식재료 스키마"""
     recipe_count: int = Field(..., description="사용된 레시피 개수")
+    normalization_status: Optional[str] = Field(None, description="정규화 상태")
+    suggested_normalized_name: Optional[str] = Field(None, description="제안된 정규화 이름")
+    confidence_score: Optional[float] = Field(None, description="신뢰도 점수")
 
 
 class IngredientListResponse(BaseModel):

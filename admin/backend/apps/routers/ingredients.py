@@ -82,7 +82,10 @@ async def get_ingredients(
             name=ingredient.name,
             is_vague=ingredient.is_vague,
             vague_description=ingredient.vague_description,
-            recipe_count=recipe_count
+            recipe_count=recipe_count,
+            normalization_status=None,
+            suggested_normalized_name=None,
+            confidence_score=None
         ))
     
     logger.info(f"✅ {len(ingredients)}개의 식재료 조회 완료 (총 {total}개)")
