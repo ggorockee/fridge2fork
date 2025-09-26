@@ -298,8 +298,7 @@ export default function DashboardPage() {
 
   // 네비게이션 메뉴
   const menuItems = [
-    { label: "홈", href: "/", active: false },
-    { label: "대시보드", href: "/dashboard", active: true },
+    { label: "홈", href: "/", active: true },
     { label: "레시피 관리", href: "/recipes", active: false },
     { label: "식재료 관리", href: "/ingredients", active: false },
     { label: "시스템", href: "/system", active: false },
@@ -325,7 +324,7 @@ export default function DashboardPage() {
             <div className="w-8 h-8 bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">F2F</span>
             </div>
-            <span className="text-xl font-semibold text-gray-100">Fridge2Fork</span>
+            <span className="text-xl font-semibold text-gray-100">냉털레시피</span>
           </div>
         }
         menuItems={menuItems}
