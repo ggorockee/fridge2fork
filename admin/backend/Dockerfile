@@ -9,6 +9,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     gcc \
     libpq-dev \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Python 패키지 캐시 최적화를 위한 환경 변수
@@ -31,5 +32,11 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# 실행 명령
-CMD ["gunicorn", "main:app", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8000"]
+# entrypoint.sh 스크립트를 실행 파일로 복사
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# 환경 변수에 따른 실행 명령 분기
+# ENVIRONMENT=development: uvicorn (개발용)
+# ENVIRONMENT=production: gunicorn (운영용)
+ENTRYPOINT ["/entrypoint.sh"]
