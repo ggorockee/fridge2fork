@@ -101,10 +101,12 @@ export default function DashboardPage() {
   // 데이터베이스 테이블 정보 조회
   const fetchDatabaseTables = async () => {
     try {
+      console.log('데이터베이스 테이블 API 호출 중...');
       const tablesData = await api.getDatabaseTables();
+      console.log('데이터베이스 테이블 응답:', tablesData);
       setDatabaseTables(tablesData.tables || []);
     } catch (error) {
-      console.warn('데이터베이스 테이블 API 엔드포인트가 없습니다. 기본값을 사용합니다.');
+      console.warn('데이터베이스 테이블 API 엔드포인트가 없습니다. 기본값을 사용합니다.', error);
       // API 엔드포인트가 없으므로 기본 테이블 정보 설정
       const defaultTables: DatabaseTable[] = [
         {
@@ -400,6 +402,9 @@ export default function DashboardPage() {
                     <p className="text-2xl font-bold text-gray-100">
                       {(databaseTables.find(t => t.name === 'recipes')?.rowCount ?? 0).toLocaleString()}
                     </p>
+                    {api.getOfflineMode() && (
+                      <p className="text-xs text-red-400 mt-1">오프라인 모드</p>
+                    )}
                   </div>
                   <div className="w-12 h-12 bg-orange-500/20 rounded-full flex items-center justify-center">
                     <svg className="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -418,6 +423,9 @@ export default function DashboardPage() {
                     <p className="text-2xl font-bold text-gray-100">
                       {(databaseTables.find(t => t.name === 'ingredients')?.rowCount ?? 0).toLocaleString()}
                     </p>
+                    {api.getOfflineMode() && (
+                      <p className="text-xs text-red-400 mt-1">오프라인 모드</p>
+                    )}
                   </div>
                   <div className="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center">
                     <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
