@@ -56,3 +56,24 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/fridge2fork-admin:${{ steps.vars.outputs.environment }}-latest
             ${{ secrets.DOCKERHUB_USERNAME }}/fridge2fork-admin:${{ steps.vars.outputs.environment }}-sha-${{ steps.vars.outputs.sha }}
 
+  update-infra-repository:
+    name: Update Infrastructure Repository for Admin Backend
+    runs-on: ubuntu-latest
+    needs: build-and-push-admin
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Python dependencies
+        run: |
+          pip install ruamel.yaml GitPython
+
+      - name: Update infra repository
+        run: |
+          python .github/workflows/scripts/update_infra_values.py ${{ needs.build-and-push-admin.outputs.environment }}-sha-${{ needs.build-and-push-admin.outputs.sha }} ${{ secrets.INFRA_GITHUB_TOKEN }} admin-backend
+
