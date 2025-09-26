@@ -3,6 +3,8 @@
  * Linear 테마에 맞춘 재사용 가능한 네비게이션 바 컴포넌트
  */
 
+"use client";
+
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
