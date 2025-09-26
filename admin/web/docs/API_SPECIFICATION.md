@@ -635,7 +635,289 @@ API 엔드포인트 상태를 조회합니다.
 
 ---
 
-### 6. 감사 로그 (Audit Logs)
+### 6. 식재료 정규화 관리 (Ingredient Normalization Management)
+
+#### `GET /fridge2fork/v1/ingredients/normalization/pending`
+정규화가 필요한 식재료 목록을 조회합니다.
+
+**Query Parameters:**
+- `env` (optional): `dev` | `prod` (기본값: `dev`)
+- `skip` (optional): 건너뛸 개수 (기본값: 0)
+- `limit` (optional): 조회할 개수 (기본값: 20, 최대: 100)
+- `search` (optional): 검색어 (이름에서 검색)
+- `sort` (optional): 정렬 기준 (`name`, `created_at`, `recipe_count`)
+- `order` (optional): 정렬 순서 (`asc`, `desc`)
+
+**Response:**
+```json
+{
+  "ingredients": [
+    {
+      "ingredient_id": 7823,
+      "name": "오징어 두마리",
+      "is_vague": false,
+      "vague_description": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "recipe_count": 5,
+      "normalization_status": "pending",
+      "suggested_normalized_name": "오징어",
+      "confidence_score": 0.85
+    },
+    {
+      "ingredient_id": 76738,
+      "name": "닭 1.2kg",
+      "is_vague": false,
+      "vague_description": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "recipe_count": 12,
+      "normalization_status": "pending",
+      "suggested_normalized_name": "닭고기",
+      "confidence_score": 0.92
+    }
+  ],
+  "total": 150,
+  "skip": 0,
+  "limit": 20
+}
+```
+
+#### `GET /fridge2fork/v1/ingredients/normalization/suggestions`
+식재료 정규화 제안 목록을 조회합니다.
+
+**Query Parameters:**
+- `env` (optional): `dev` | `prod` (기본값: `dev`)
+- `ingredient_id` (optional): 특정 식재료 ID
+- `confidence_threshold` (optional): 신뢰도 임계값 (기본값: 0.7)
+
+**Response:**
+```json
+{
+  "suggestions": [
+    {
+      "ingredient_id": 7823,
+      "original_name": "오징어 두마리",
+      "suggested_name": "오징어",
+      "confidence_score": 0.85,
+      "reason": "수량 정보 제거",
+      "similar_ingredients": [
+        {
+          "ingredient_id": 1234,
+          "name": "오징어",
+          "recipe_count": 25
+        }
+      ]
+    },
+    {
+      "ingredient_id": 76738,
+      "original_name": "닭 1.2kg",
+      "suggested_name": "닭고기",
+      "confidence_score": 0.92,
+      "reason": "무게 정보 제거 및 일반화",
+      "similar_ingredients": [
+        {
+          "ingredient_id": 5678,
+          "name": "닭고기",
+          "recipe_count": 18
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### `POST /fridge2fork/v1/ingredients/normalization/apply`
+식재료 정규화를 적용합니다.
+
+**Headers:**
+- `Authorization: Bearer <token>`
+
+**Request Body:**
+```json
+{
+  "ingredient_id": 7823,
+  "normalized_name": "오징어",
+  "is_vague": false,
+  "vague_description": null,
+  "merge_with_ingredient_id": 1234,
+  "reason": "수량 정보 제거하여 정규화"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "식재료 정규화가 성공적으로 적용되었습니다",
+  "success": true,
+  "normalization": {
+    "ingredient_id": 7823,
+    "original_name": "오징어 두마리",
+    "normalized_name": "오징어",
+    "merged_with": 1234,
+    "affected_recipes": 5,
+    "applied_at": "2024-01-01T00:00:00Z"
+  }
+}
+```
+
+#### `POST /fridge2fork/v1/ingredients/normalization/batch-apply`
+여러 식재료 정규화를 일괄 적용합니다.
+
+**Headers:**
+- `Authorization: Bearer <token>`
+
+**Request Body:**
+```json
+{
+  "normalizations": [
+    {
+      "ingredient_id": 7823,
+      "normalized_name": "오징어",
+      "merge_with_ingredient_id": 1234
+    },
+    {
+      "ingredient_id": 76738,
+      "normalized_name": "닭고기",
+      "merge_with_ingredient_id": 5678
+    }
+  ],
+  "reason": "일괄 정규화 작업"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "일괄 정규화가 성공적으로 적용되었습니다",
+  "success": true,
+  "results": [
+    {
+      "ingredient_id": 7823,
+      "status": "success",
+      "affected_recipes": 5
+    },
+    {
+      "ingredient_id": 76738,
+      "status": "success",
+      "affected_recipes": 12
+    }
+  ],
+  "total_affected_recipes": 17,
+  "applied_at": "2024-01-01T00:00:00Z"
+}
+```
+
+#### `GET /fridge2fork/v1/ingredients/normalization/history`
+식재료 정규화 이력을 조회합니다.
+
+**Query Parameters:**
+- `env` (optional): `dev` | `prod` (기본값: `dev`)
+- `skip` (optional): 건너뛸 개수 (기본값: 0)
+- `limit` (optional): 조회할 개수 (기본값: 50, 최대: 100)
+- `ingredient_id` (optional): 특정 식재료 ID
+- `user` (optional): 사용자명 필터링
+- `start_date` (optional): 시작 날짜 (ISO 8601)
+- `end_date` (optional): 종료 날짜 (ISO 8601)
+
+**Response:**
+```json
+{
+  "history": [
+    {
+      "id": "norm_001",
+      "ingredient_id": 7823,
+      "original_name": "오징어 두마리",
+      "normalized_name": "오징어",
+      "merged_with_ingredient_id": 1234,
+      "user": "admin",
+      "reason": "수량 정보 제거하여 정규화",
+      "affected_recipes": 5,
+      "applied_at": "2024-01-01T00:00:00Z",
+      "status": "completed"
+    }
+  ],
+  "total": 250,
+  "skip": 0,
+  "limit": 50
+}
+```
+
+#### `POST /fridge2fork/v1/ingredients/normalization/revert`
+식재료 정규화를 되돌립니다.
+
+**Headers:**
+- `Authorization: Bearer <token>`
+
+**Request Body:**
+```json
+{
+  "normalization_id": "norm_001",
+  "reason": "정규화 오류로 인한 되돌림"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "정규화가 성공적으로 되돌려졌습니다",
+  "success": true,
+  "reverted": {
+    "normalization_id": "norm_001",
+    "ingredient_id": 7823,
+    "restored_name": "오징어 두마리",
+    "affected_recipes": 5,
+    "reverted_at": "2024-01-01T00:00:00Z"
+  }
+}
+```
+
+#### `GET /fridge2fork/v1/ingredients/normalization/statistics`
+식재료 정규화 통계를 조회합니다.
+
+**Query Parameters:**
+- `env` (optional): `dev` | `prod` (기본값: `dev`)
+- `period` (optional): 기간 (`day`, `week`, `month`) (기본값: `month`)
+
+**Response:**
+```json
+{
+  "statistics": {
+    "total_ingredients": 50000,
+    "normalized_ingredients": 1200,
+    "pending_normalization": 150,
+    "normalization_rate": 0.024,
+    "recent_activity": {
+      "last_24_hours": 5,
+      "last_7_days": 25,
+      "last_30_days": 120
+    },
+    "top_normalizers": [
+      {
+        "user": "admin",
+        "count": 45,
+        "last_activity": "2024-01-01T00:00:00Z"
+      }
+    ],
+    "common_patterns": [
+      {
+        "pattern": "수량 정보 제거",
+        "count": 35,
+        "examples": ["오징어 두마리", "닭 1.2kg", "양파 3개"]
+      },
+      {
+        "pattern": "색상 정보 제거",
+        "count": 20,
+        "examples": ["색색파프리카", "노란색 식용색소"]
+      }
+    ]
+  }
+}
+```
+
+---
+
+### 7. 감사 로그 (Audit Logs)
 
 #### `GET /fridge2fork/v1/audit/logs`
 감사 로그를 조회합니다.
@@ -850,6 +1132,12 @@ API 엔드포인트 상태를 조회합니다.
 
 ## 📝 변경 이력 (Changelog)
 
+### v1.1.0 (2024-01-01)
+- 식재료 정규화 관리 API 추가
+- 정규화 제안, 일괄 적용, 되돌리기 기능
+- 정규화 통계 및 이력 관리
+- AI 기반 정규화 제안 시스템
+
 ### v1.0.0 (2024-01-01)
 - 초기 API 명세서 작성
 - 기본 CRUD 기능 정의
@@ -865,4 +1153,4 @@ API 엔드포인트 상태를 조회합니다.
 
 **문서 작성자**: Fridge2Fork 개발팀  
 **최종 수정일**: 2024-01-01  
-**버전**: 1.0.0
+**버전**: 1.1.0
