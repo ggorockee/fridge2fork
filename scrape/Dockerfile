@@ -25,7 +25,7 @@ COPY scripts/ ./scripts/
 COPY migrations/ ./migrations/
 # datas 디렉토리 생성 및 CSV 파일 복사 (1개씩 처리)
 RUN mkdir -p ./datas
-COPY datas/TB_RECIPE_SEARCH_241226.csv ./datas/TB_RECIPE_SEARCH_241226.csv
+COPY datas/TB_RECIPE_SEARCH-220701.csv ./datas/TB_RECIPE_SEARCH-220701.csv
 COPY alembic.ini ./alembic.ini
 COPY crawler.py ./crawler.py
 COPY entrypoint.sh ./entrypoint.sh
