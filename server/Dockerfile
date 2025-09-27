@@ -56,10 +56,14 @@ RUN chmod +x /app/entrypoint.sh
 RUN mkdir -p /app/logs /app/data && \
     chown -R appuser:appuser /app
 
+# Build argument for environment
+ARG BUILD_MODE=production
+
 # Set environment variables
 ENV PYTHONPATH=/app \
     PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
+    PYTHONDONTWRITEBYTECODE=1 \
+    BUILD_MODE=${BUILD_MODE}
 
 # Expose port
 EXPOSE 8000

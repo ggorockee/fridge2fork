@@ -4,8 +4,8 @@
 set -e
 
 # Default values
-APP_ENV=${APP_ENV:-production}
-ENVIRONMENT=${ENVIRONMENT:-production}
+APP_ENV=${APP_ENV:-${BUILD_MODE:-production}}
+ENVIRONMENT=${ENVIRONMENT:-${BUILD_MODE:-production}}
 HOST=${HOST:-0.0.0.0}
 PORT=${PORT:-8000}
 WORKERS=${WORKERS:-4}
