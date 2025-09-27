@@ -19,11 +19,17 @@ RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt && \
     pip install --no-cache-dir -r requirements-api.txt
 
+# 디렉토리 생성
+RUN mkdir -p ./datas/sample
+
 # 애플리케이션 코드 복사
 COPY app/ ./app/
 COPY scripts/ ./scripts/
 COPY migrations/ ./migrations/
-COPY datas/ ./datas/
+COPY datas/TB_RECIPE_SEARCH_241226.csv ./datas/TB_RECIPE_SEARCH_241226.csv
+COPY datas/TB_RECIPE_SEARCH-20231130.csv ./datas/TB_RECIPE_SEARCH-20231130.csv
+COPY datas/TB_RECIPE_SEARCH-220701.csv ./datas/TB_RECIPE_SEARCH-220701.csv
+COPY datas/sample/sample_data.csv ./datas/sample/sample_data.csv
 COPY alembic.ini ./alembic.ini
 COPY crawler.py ./crawler.py
 COPY entrypoint.sh ./entrypoint.sh
