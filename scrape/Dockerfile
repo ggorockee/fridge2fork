@@ -23,11 +23,8 @@ RUN pip install --upgrade pip && \
 COPY app/ ./app/
 COPY scripts/ ./scripts/
 COPY migrations/ ./migrations/
+# datas 디렉토리 복사 (폴더 구조 유지)
 COPY datas/ ./datas/
-# CSV 파일이 누락되는 경우를 대비해 개별 복사 추가
-COPY datas/TB_RECIPE_SEARCH_241226.csv ./datas/TB_RECIPE_SEARCH_241226.csv
-COPY datas/TB_RECIPE_SEARCH-20231130.csv ./datas/TB_RECIPE_SEARCH-20231130.csv
-COPY datas/TB_RECIPE_SEARCH-220701.csv ./datas/TB_RECIPE_SEARCH-220701.csv
 COPY alembic.ini ./alembic.ini
 COPY crawler.py ./crawler.py
 COPY entrypoint.sh ./entrypoint.sh
