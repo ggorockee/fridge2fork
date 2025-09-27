@@ -122,6 +122,32 @@ insert_basic_data() {
     fi
 }
 
+# 자동 마이그레이션 체크
+check_and_run_migration() {
+    log_info "데이터베이스 스키마 버전 확인 중..."
+    
+    # Alembic 현재 버전 확인
+    python -m alembic current 2>/dev/null || {
+        log_warning "Alembic 버전 정보를 확인할 수 없습니다. 마이그레이션을 실행합니다."
+        python run_migration.py
+        return
+    }
+    
+    # 최신 버전과 현재 버전 비교
+    CURRENT_VERSION=$(python -m alembic current 2>/dev/null | grep -o '^[a-f0-9]\+' || echo "none")
+    HEAD_VERSION=$(python -m alembic heads 2>/dev/null | grep -o '^[a-f0-9]\+' || echo "none")
+    
+    log_info "현재 버전: $CURRENT_VERSION"
+    log_info "최신 버전: $HEAD_VERSION"
+    
+    if [ "$CURRENT_VERSION" != "$HEAD_VERSION" ]; then
+        log_info "스키마 업데이트가 필요합니다. 마이그레이션을 실행합니다."
+        python run_migration.py
+    else
+        log_info "스키마가 최신 상태입니다. 마이그레이션을 건너뜁니다."
+    fi
+}
+
 # CSV 데이터 마이그레이션
 run_csv_migration() {
     log_info "==================== CSV 데이터 마이그레이션 시작 ===================="
@@ -229,6 +255,12 @@ main() {
             # 데이터베이스 스키마 마이그레이션만
             log_info "데이터베이스 스키마 마이그레이션 실행"
             python run_migration.py
+            ;;
+            
+        auto-migration)
+            # 자동 마이그레이션 (스키마 버전 체크 후 필요시에만 실행)
+            log_info "자동 마이그레이션 모드"
+            check_and_run_migration
             ;;
 
         *)
