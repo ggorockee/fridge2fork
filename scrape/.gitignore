@@ -4,12 +4,60 @@
 
 # Environment variables
 .env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
 
 # Python cache
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Database
+*.db
+*.sqlite3
 
 # IDE / OS specific
 .vscode/
 .idea/
 .DS_Store
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+
+# Data files (except samples)
+datas/*.csv
+!datas/sample_*.csv
+
+# Migrations (generated)
+migrations/versions/*.py
+!migrations/versions/__init__.py
