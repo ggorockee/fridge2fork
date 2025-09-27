@@ -150,9 +150,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               
               // 냉장고 부분 - 높이 제한
               SizedBox(
-                height: 400, // 고정 높이로 설정 (551에서 400으로 줄임)
+                height: 280, // 높이를 더 줄임 (400에서 280으로)
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(0, 0, 0, 16), // 하단 여백을 20에서 16으로 줄임 (20% 감소)
+                  padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -175,6 +175,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
               
+              // 냉장고 섹션과 인기 레시피 사이 여백 추가
+              const SizedBox(height: 40),
+              
               // 추천 레시피 부분 - 고정 높이
               const SizedBox(
                 height: 220, // 제목 + 카드(160px) + 패딩을 고려한 고정 높이
@@ -187,10 +190,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ],
           ),
           
-          // 플로팅 액션 버튼 - 냉장고 영역 우하단에 위치
+          // 플로팅 액션 버튼 - 냉장고 메시지 하단 영역에 위치
           Positioned(
             right: 16, // body 전체 기준 우측에서 16px 마진
-            bottom: 220 + 80 + 15, // 추천 레시피 높이(220) + 하단 네비(80) + 마진(15)
+            bottom: 280 + 40 + 220 + 80 + 15, // 냉장고섹션(280) + 여백(40) + 레시피섹션(220) + 하단네비(80) + 마진(15)
             child: Showcase(
               key: homeScreenAddButtonKey,
               description: '냉장고에 식재료를 추가하려면 이 버튼을 누르세요!',
