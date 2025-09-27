@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:showcaseview/showcaseview.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../widgets/widgets.dart';
 import '../widgets/ad_banner_widget.dart';
 import '../providers/ingredients_provider.dart';
@@ -113,9 +114,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     
     return Scaffold(
       backgroundColor: AppTheme.backgroundWhite,
-      appBar: const CustomAppBar(
-        title: '냉털레시피',
-        hasSearch: false,
+      appBar: AppBar(
+        backgroundColor: AppTheme.backgroundWhite,
+        foregroundColor: AppTheme.textPrimary,
+        elevation: 0,
+        centerTitle: true,
+        title: const Text(
+          '냉털레시피',
+          style: TextStyle(
+            fontFamily: 'Brandon Grotesque',
+            fontSize: 24,
+            fontWeight: FontWeight.w500,
+            letterSpacing: -0.24,
+            color: AppTheme.textPrimary,
+          ),
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: _onRefresh,
@@ -385,12 +398,41 @@ class _RecipeRecommendationSection extends ConsumerWidget {
                     return _RecipeCard(
                       recipe: recipe,
                       isLast: index == recipes.length - 1,
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => RecipeDetailScreen(recipe: recipe.toRecipe()),
-                          ),
-                        );
+                      onTap: () async {
+                        // URL로 이동 (url_launcher 패키지 사용)
+                        final url = recipe.url;
+                        if (url != null && url.isNotEmpty) {
+                          try {
+                            final uri = Uri.parse(url);
+                            if (await canLaunchUrl(uri)) {
+                              await launchUrl(uri, mode: LaunchMode.externalApplication);
+                            } else {
+                              if (mounted) {
+                                SnackBarHelper.showSnackBar(
+                                  context,
+                                  '링크를 열 수 없습니다.',
+                                  backgroundColor: Colors.red,
+                                );
+                              }
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              SnackBarHelper.showSnackBar(
+                                context,
+                                '링크를 열 수 없습니다: $e',
+                                backgroundColor: Colors.red,
+                              );
+                            }
+                          }
+                        } else {
+                          if (mounted) {
+                            SnackBarHelper.showSnackBar(
+                              context,
+                              '레시피 링크가 없습니다.',
+                              backgroundColor: Colors.orange,
+                            );
+                          }
+                        }
                       },
                     );
                   },
@@ -587,23 +629,26 @@ class _RecipeCard extends StatelessWidget {
 
                   const SizedBox(height: 4), // 간격을 카드에 맞게 조정
 
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.access_time,
-                        size: 12, // 아이콘 크기를 카드에 맞게 조정
-                        color: AppTheme.textSecondary,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${recipe.cookingTimeMinutes}분',
-                        style: const TextStyle(
-                          fontSize: 12, // 폰트 크기를 카드에 맞게 조정
-                          color: AppTheme.textPrimary,
+                  // 조리시간이 0보다 클 때만 표시
+                  if (recipe.cookingTimeMinutes > 0) ...[
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.access_time,
+                          size: 12, // 아이콘 크기를 카드에 맞게 조정
+                          color: AppTheme.textSecondary,
                         ),
-                      ),
-                    ],
-                  ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${recipe.cookingTimeMinutes}분',
+                          style: const TextStyle(
+                            fontSize: 12, // 폰트 크기를 카드에 맞게 조정
+                            color: AppTheme.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
