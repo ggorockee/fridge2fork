@@ -37,6 +37,9 @@ async_session = sessionmaker(
 # Base 클래스
 Base = declarative_base()
 
+# 모든 모델 import (관계 설정을 위해 필요)
+from app.models import *  # noqa: F401, F403
+
 # Redis 연결 (세션 저장용)
 redis_client = None
 

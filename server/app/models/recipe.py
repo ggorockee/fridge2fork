@@ -36,35 +36,36 @@ class Recipe(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
-    # 관계 정의
-    favorites = relationship("UserFavorite", back_populates="recipe", cascade="all, delete-orphan")
-    cooking_history = relationship("CookingHistory", back_populates="recipe", cascade="all, delete-orphan")
+    # 관계 정의 (auth 없이는 사용 불가하므로 비활성화)
+    # favorites = relationship("UserFavorite", back_populates="recipe", cascade="all, delete-orphan")
+    # cooking_history = relationship("CookingHistory", back_populates="recipe", cascade="all, delete-orphan")
 
 
-class UserFavorite(Base):
-    """사용자 즐겨찾기 모델"""
-    __tablename__ = "user_favorites"
+# auth 없이는 사용 불가하므로 비활성화
+# class UserFavorite(Base):
+#     """사용자 즐겨찾기 모델"""
+#     __tablename__ = "user_favorites"
+# 
+#     id = Column(Integer, primary_key=True, index=True)
+#     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+#     recipe_id = Column(String(50), ForeignKey("recipes.id"), nullable=False)
+#     created_at = Column(DateTime(timezone=True), server_default=func.now())
+# 
+#     # 관계 정의
+#     user = relationship("User", back_populates="favorites")
+#     recipe = relationship("Recipe", back_populates="favorites")
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    recipe_id = Column(String(50), ForeignKey("recipes.id"), nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    # 관계 정의
-    user = relationship("User", back_populates="favorites")
-    recipe = relationship("Recipe", back_populates="favorites")
-
-
-class CookingHistory(Base):
-    """요리 히스토리 모델"""
-    __tablename__ = "cooking_history"
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    recipe_id = Column(String(50), ForeignKey("recipes.id"), nullable=False)
-    used_ingredients = Column(JSON, nullable=False)  # 사용한 재료 목록
-    cooked_at = Column(DateTime(timezone=True), server_default=func.now())
-
-    # 관계 정의
-    user = relationship("User", back_populates="cooking_history")
-    recipe = relationship("Recipe", back_populates="cooking_history")
+# class CookingHistory(Base):
+#     """요리 히스토리 모델"""
+#     __tablename__ = "cooking_history"
+# 
+#     id = Column(Integer, primary_key=True, index=True)
+#     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+#     recipe_id = Column(String(50), ForeignKey("recipes.id"), nullable=False)
+#     used_ingredients = Column(JSON, nullable=False)  # 사용한 재료 목록
+#     cooked_at = Column(DateTime(timezone=True), server_default=func.now())
+# 
+#     # 관계 정의
+#     user = relationship("User", back_populates="cooking_history")
+#     recipe = relationship("Recipe", back_populates="cooking_history")
