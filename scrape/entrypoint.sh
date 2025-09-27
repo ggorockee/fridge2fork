@@ -225,6 +225,12 @@ main() {
             exec /bin/bash
             ;;
 
+        db-migration)
+            # 데이터베이스 스키마 마이그레이션만
+            log_info "데이터베이스 스키마 마이그레이션 실행"
+            python run_migration.py
+            ;;
+
         *)
             # 직접 명령어 실행
             log_info "직접 명령어 실행: $@"

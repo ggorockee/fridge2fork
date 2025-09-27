@@ -69,6 +69,8 @@ async def run_migration():
             else:
                 print("❌ 마이그레이션 실패!")
                 print(result.stderr)
+                # 실패 시에도 컨테이너가 종료되지 않도록 예외 발생
+                raise Exception(f"마이그레이션 실패: {result.stderr}")
                 
         await engine.dispose()
         
