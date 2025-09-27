@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../widgets/widgets.dart';
 import '../providers/ingredients_provider.dart';
+import '../providers/api/ingredient_api_provider.dart';
+import '../models/api/api_ingredient.dart';
 
 /// 식재료 추가 화면 (Modal Bottom Sheet)
 /// 사용자가 냉장고에 추가할 식재료를 선택할 수 있는 화면
@@ -25,6 +27,15 @@ class AddIngredientScreen extends ConsumerStatefulWidget {
 class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  
+  @override
+  void initState() {
+    super.initState();
+    // API에서 식재료 목록 로드
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(ingredientApiProvider.notifier).loadActiveIngredients();
+    });
+  }
 
 
 
@@ -181,11 +192,12 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final categories = ref.watch(categoriesProvider);
+    final categories = ref.watch(apiCategoriesProvider);
     final selectedCategory = ref.watch(selectedCategoryProvider);
-    final filteredIngredients = ref.watch(filteredIngredientsProvider);
-    final categorizedIngredients = ref.watch(categorizedIngredientsProvider);
+    final filteredIngredients = ref.watch(apiIngredientNamesProvider);
+    final categorizedIngredients = ref.watch(apiCategorizedIngredientNamesProvider);
     final selectedIngredients = ref.watch(tempSelectedIngredientsProvider);
+    final ingredientsState = ref.watch(ingredientApiProvider);
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.9, // 화면의 90% 높이 사용
@@ -196,8 +208,30 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
           topRight: Radius.circular(AppTheme.radiusLarge),
         ),
       ),
-      child: Column(
-        children: [
+      child: ingredientsState.when(
+        data: (ingredients) => _buildContent(
+          categories: categories,
+          selectedCategory: selectedCategory,
+          filteredIngredients: filteredIngredients,
+          categorizedIngredients: categorizedIngredients,
+          selectedIngredients: selectedIngredients,
+        ),
+        loading: () => _buildLoadingState(),
+        error: (error, stack) => _buildErrorState(error.toString()),
+      ),
+    );
+  }
+
+  /// 메인 콘텐츠 빌드
+  Widget _buildContent({
+    required List<String> categories,
+    required String selectedCategory,
+    required List<String> filteredIngredients,
+    required Map<String, List<String>> categorizedIngredients,
+    required List<String> selectedIngredients,
+  }) {
+    return Column(
+      children: [
           // Modal 상단 핸들 바
           Container(
             width: 40,
@@ -271,6 +305,10 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
                       controller: _searchController,
                       onChanged: (value) {
                         ref.read(searchTextProvider.notifier).state = value;
+                        // API 검색 실행
+                        if (value.isNotEmpty) {
+                          ref.read(ingredientApiProvider.notifier).searchIngredients(value);
+                        }
                       },
                       style: const TextStyle(
                         fontSize: 14,
@@ -492,6 +530,154 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
           ],
         ],
       ),
+    );
+  }
+
+  /// 로딩 상태 UI
+  Widget _buildLoadingState() {
+    return Column(
+      children: [
+        // Modal 상단 핸들 바
+        Container(
+          width: 40,
+          height: 4,
+          margin: const EdgeInsets.symmetric(vertical: AppTheme.spacingM),
+          decoration: BoxDecoration(
+            color: AppTheme.textSecondary.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        
+        // 헤더 영역
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingM),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '식재료를 검색해보세요',
+                  style: AppTheme.headingMedium.copyWith(
+                    color: AppTheme.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(
+                  Icons.close,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+        
+        // 로딩 인디케이터
+        Expanded(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const CircularProgressIndicator(
+                  color: AppTheme.primaryOrange,
+                ),
+                const SizedBox(height: AppTheme.spacingM),
+                Text(
+                  '식재료 목록을 불러오는 중...',
+                  style: AppTheme.bodyMedium.copyWith(
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 에러 상태 UI
+  Widget _buildErrorState(String error) {
+    return Column(
+      children: [
+        // Modal 상단 핸들 바
+        Container(
+          width: 40,
+          height: 4,
+          margin: const EdgeInsets.symmetric(vertical: AppTheme.spacingM),
+          decoration: BoxDecoration(
+            color: AppTheme.textSecondary.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        
+        // 헤더 영역
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingM),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '식재료를 검색해보세요',
+                  style: AppTheme.headingMedium.copyWith(
+                    color: AppTheme.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(
+                  Icons.close,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+        
+        // 에러 메시지와 재시도 버튼
+        Expanded(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.error_outline,
+                  size: 64,
+                  color: AppTheme.textSecondary,
+                ),
+                const SizedBox(height: AppTheme.spacingM),
+                Text(
+                  '식재료 목록을 불러올 수 없습니다',
+                  style: AppTheme.headingSmall.copyWith(
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: AppTheme.spacingS),
+                Text(
+                  error,
+                  style: AppTheme.bodySmall.copyWith(
+                    color: AppTheme.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppTheme.spacingL),
+                CustomButton(
+                  text: '다시 시도',
+                  onPressed: () {
+                    ref.read(ingredientApiProvider.notifier).refresh();
+                  },
+                  type: ButtonType.primary,
+                  height: 48,
+                  icon: Icons.refresh,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

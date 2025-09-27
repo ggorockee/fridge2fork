@@ -5,12 +5,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart'; // Firebase Core 패키지 임포트
 import 'config/app_config.dart';
 import 'providers/app_state_provider.dart';
+import 'providers/api/api_connection_provider.dart';
 import 'screens/splash_screen.dart';
 import 'screens/recipe_detail_screen.dart';
 import 'models/recipe.dart';
 import 'theme/app_theme.dart';
 import 'services/ad_service.dart';
 import 'services/interstitial_ad_manager.dart';
+import 'services/cache_service.dart';
+import 'services/offline_service.dart';
 
 void main() async {
   // Flutter 엔진과 위젯 바인딩 초기화
@@ -36,6 +39,12 @@ void main() async {
   
   // 전면 광고 관리자 초기화 (앱 시작 후 광고 기회 제공)
   InterstitialAdManager().onAppLaunched();
+  
+  // 캐시 서비스 초기화
+  await CacheService.initialize();
+  
+  // 오프라인 서비스 초기화
+  await OfflineService.initialize();
   
   // SharedPreferences 인스턴스 로드
   final prefs = await SharedPreferences.getInstance();
@@ -63,11 +72,19 @@ void main() async {
 
 /// 냉털레시피 앱의 메인 애플리케이션 클래스
 /// 냉장고 털어서 만드는 한식 레시피 추천 앱
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // API 클라이언트 초기화
+    ref.listen(apiClientInitializedProvider, (previous, next) {
+      if (!next) {
+        // API 클라이언트가 초기화되지 않았다면 초기화
+        initializeApiClient(ref);
+      }
+    });
+
     return MaterialApp(
       title: AppConfig.appName,
       debugShowCheckedModeBanner: false,

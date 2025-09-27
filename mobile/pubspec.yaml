@@ -47,6 +47,9 @@ dependencies:
   # 이미지 캐싱
   cached_network_image: ^3.3.0
   
+  # 네트워크 연결 상태 확인
+  connectivity_plus: ^6.0.5
+  
   # 국제화
   intl: ^0.19.0
   showcaseview: ^4.0.1

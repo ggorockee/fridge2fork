@@ -5,10 +5,13 @@ import '../theme/app_theme.dart';
 import '../widgets/widgets.dart';
 import '../widgets/ad_banner_widget.dart';
 import '../providers/ingredients_provider.dart';
+import '../providers/api/recipe_api_provider.dart';
+import '../models/api/api_recipe.dart';
 import '../services/interstitial_ad_manager.dart';
 import '../services/analytics_service.dart';
 import 'add_ingredient_screen.dart';
 import 'my_fridge_screen.dart';
+import 'recipe_detail_screen.dart';
 
 // HomeScreen의 Showcase Key를 MainScreen에서 참조할 수 있도록 전역 변수로 선언
 final homeScreenAddButtonKey = GlobalKey();
@@ -217,11 +220,23 @@ class _EmptyStateMessage extends StatelessWidget {
 }
 
 /// 레시피 추천 섹션 - 가로 스크롤 가능한 레시피 카드들
-class _RecipeRecommendationSection extends StatelessWidget {
+class _RecipeRecommendationSection extends ConsumerWidget {
   const _RecipeRecommendationSection();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selectedIngredients = ref.watch(selectedIngredientsProvider);
+    final recipesState = ref.watch(recipeApiProvider);
+    
+    // 보유 재료가 있을 때만 API 호출
+    if (selectedIngredients.isNotEmpty) {
+      ref.listen(selectedIngredientsProvider, (previous, next) {
+        if (next.isNotEmpty && (previous == null || previous.isEmpty)) {
+          // 재료가 새로 추가되었을 때 API 호출
+          ref.read(recipeApiProvider.notifier).loadRecipesByIngredients(next);
+        }
+      });
+    }
     return Container(
       padding: const EdgeInsets.only(left: AppTheme.spacingM, top: AppTheme.spacingM),
       child: Column(
@@ -243,24 +258,28 @@ class _RecipeRecommendationSection extends StatelessWidget {
           // 가로 스크롤 레시피 카드들
           SizedBox(
             height: 160, // 카드 높이와 동일하게 고정
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: 5, // 샘플 데이터
-              itemBuilder: (context, index) {
-                final recipes = [
-                  {'title': '제육볶음', 'time': '25분'},
-                  {'title': '김치찌개', 'time': '30분'},
-                  {'title': '불고기', 'time': '20분'},
-                  {'title': '된장찌개', 'time': '15분'},
-                  {'title': '비빔밥', 'time': '10분'},
-                ];
+            child: recipesState.when(
+              data: (recipes) {
+                if (recipes.isEmpty) {
+                  return _buildNoRecipesWidget();
+                }
                 
-                return _RecipeCard(
-                  title: recipes[index]['title']!,
-                  cookingTime: recipes[index]['time']!,
-                  isLast: index == 4, // 마지막 아이템인지 확인
+                return ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: recipes.length,
+                  itemBuilder: (context, index) {
+                    final recipe = recipes[index];
+                    
+                    return _RecipeCard(
+                      recipe: recipe,
+                      isLast: index == recipes.length - 1,
+                      onTap: () => _navigateToRecipeDetail(context, recipe),
+                    );
+                  },
                 );
               },
+              loading: () => _buildLoadingWidget(),
+              error: (error, stack) => _buildErrorWidget(),
             ),
           ),
         ],
@@ -271,51 +290,53 @@ class _RecipeRecommendationSection extends StatelessWidget {
 
 /// 레시피 카드 위젯
 class _RecipeCard extends StatelessWidget {
-  final String title;
-  final String cookingTime;
+  final ApiRecipe recipe;
   final bool isLast;
+  final VoidCallback? onTap;
 
   const _RecipeCard({
-    required this.title,
-    required this.cookingTime,
+    required this.recipe,
     this.isLast = false,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 140,
-      height: 160, // 카드 높이를 160으로 고정
-      margin: EdgeInsets.only(
-        right: isLast ? 0 : AppTheme.spacingM, // 마지막 아이템은 우측 마진 없음
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppTheme.radiusCard),
-        border: Border.all(
-          color: Colors.grey.withOpacity(0.2),
-          width: 1,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 140,
+        height: 160, // 카드 높이를 160으로 고정
+        margin: EdgeInsets.only(
+          right: isLast ? 0 : AppTheme.spacingM, // 마지막 아이템은 우측 마진 없음
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 레시피 이미지 (placeholder)
-          Container(
-            height: 100, // 이미지 높이를 카드에 맞게 조정
-            decoration: BoxDecoration(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(AppTheme.radiusCard),
-                topRight: Radius.circular(AppTheme.radiusCard),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+          border: Border.all(
+            color: Colors.grey.withOpacity(0.2),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 레시피 이미지
+            Container(
+              height: 100, // 이미지 높이를 카드에 맞게 조정
+              decoration: BoxDecoration(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(AppTheme.radiusCard),
+                  topRight: Radius.circular(AppTheme.radiusCard),
+                ),
               ),
-            ),
-            child: ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(AppTheme.radiusCard),
-                topRight: Radius.circular(AppTheme.radiusCard),
-              ),
-              child: Image.network(
-                'https://picsum.photos/300/200?random=${title.hashCode.abs() % 1000}',
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(AppTheme.radiusCard),
+                  topRight: Radius.circular(AppTheme.radiusCard),
+                ),
+                child: Image.network(
+                  recipe.imageUrl ?? 'https://picsum.photos/300/200?random=${recipe.id.hashCode.abs() % 1000}',
                 width: double.infinity,
                 height: 100,
                 fit: BoxFit.cover,
@@ -345,7 +366,7 @@ class _RecipeCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  recipe.name,
                   style: const TextStyle(
                     fontSize: 14, // 폰트 크기를 카드에 맞게 조정
                     fontWeight: FontWeight.w600,
@@ -366,7 +387,7 @@ class _RecipeCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      cookingTime,
+                      '${recipe.cookingTimeMinutes}분',
                       style: const TextStyle(
                         fontSize: 12, // 폰트 크기를 카드에 맞게 조정
                         color: AppTheme.textPrimary,
@@ -375,6 +396,70 @@ class _RecipeCard extends StatelessWidget {
                   ],
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 레시피 상세 화면으로 네비게이션
+  void _navigateToRecipeDetail(BuildContext context, ApiRecipe recipe) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => RecipeDetailScreen(recipe: recipe.toRecipe()),
+      ),
+    );
+  }
+
+  /// 로딩 위젯
+  Widget _buildLoadingWidget() {
+    return const Center(
+      child: CircularProgressIndicator(
+        color: AppTheme.primaryOrange,
+      ),
+    );
+  }
+
+  /// 에러 위젯
+  Widget _buildErrorWidget() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.error_outline,
+            size: 48,
+            color: AppTheme.textSecondary,
+          ),
+          const SizedBox(height: AppTheme.spacingS),
+          Text(
+            '레시피를 불러올 수 없습니다',
+            style: AppTheme.bodySmall.copyWith(
+              color: AppTheme.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 레시피가 없을 때 위젯
+  Widget _buildNoRecipesWidget() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.restaurant_menu,
+            size: 48,
+            color: AppTheme.textSecondary,
+          ),
+          const SizedBox(height: AppTheme.spacingS),
+          Text(
+            '추천 레시피가 없습니다',
+            style: AppTheme.bodySmall.copyWith(
+              color: AppTheme.textSecondary,
             ),
           ),
         ],
