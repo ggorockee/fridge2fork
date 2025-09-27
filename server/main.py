@@ -32,6 +32,12 @@ async def lifespan(app: FastAPI):
     logger.info(f"환경: {settings.ENVIRONMENT}")
     logger.info(f"디버그 모드: {settings.DEBUG}")
     
+    # OpenAPI 스키마 로딩을 위한 지연
+    import asyncio
+    logger.info("OpenAPI 스키마 초기화 중...")
+    await asyncio.sleep(2)  # 2초 지연으로 스키마 로딩 시간 확보
+    logger.info("OpenAPI 스키마 초기화 완료")
+    
     yield
     
     # 종료 시
@@ -48,7 +54,14 @@ app = FastAPI(
     description="냉장고 재료 기반 한식 레시피 추천 API",
     docs_url=f"{settings.API_V1_STR}/docs" if settings.DEBUG else None,
     redoc_url=f"{settings.API_V1_STR}/redoc" if settings.DEBUG else None,
-    lifespan=lifespan
+    lifespan=lifespan,
+    # OpenAPI 스키마 최적화
+    openapi_url=f"{settings.API_V1_STR}/openapi.json" if settings.DEBUG else None,
+    # 서버 시작 시간 증가를 위한 설정
+    servers=[
+        {"url": "/", "description": "Default server"},
+        {"url": "/fridge2fork", "description": "Kubernetes ingress path"}
+    ]
 )
 
 # CORS 미들웨어 설정
@@ -107,5 +120,10 @@ if __name__ == "__main__":
         port=8000,
         reload=settings.DEBUG,
         log_level=settings.LOG_LEVEL.lower(),
-        access_log=settings.DEBUG
+        access_log=settings.DEBUG,
+        # OpenAPI 스키마 로딩을 위한 성능 설정
+        timeout_keep_alive=30,
+        timeout_graceful_shutdown=30,
+        limit_concurrency=1000,
+        limit_max_requests=1000
     )

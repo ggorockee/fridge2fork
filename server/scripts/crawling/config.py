@@ -55,3 +55,4 @@ class CrawlingConfig:
     # Supabase 설정
     SUPABASE_BATCH_SIZE = 100     # Supabase 배치 삽입 크기
 
+

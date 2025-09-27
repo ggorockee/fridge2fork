@@ -112,17 +112,11 @@ if [ "$APP_ENV" = "production" ]; then
     log "Keep-alive: $KEEPALIVE seconds"
     
     exec gunicorn main:app \
-        -k uvicorn.workers.UvicornWorker \
+        -c gunicorn.conf.py \
         --bind $HOST:$PORT \
         --workers $WORKERS \
         --timeout $TIMEOUT \
-        --keepalive $KEEPALIVE \
-        --max-requests 1000 \
-        --max-requests-jitter 100 \
-        --preload \
-        --access-logfile - \
-        --error-logfile - \
-        --log-level info
+        --keepalive $KEEPALIVE
 elif [ "$APP_ENV" = "development" ] || [ "$APP_ENV" = "dev" ] || [ "$APP_ENV" = "develop" ]; then
     log "🔧 Running Uvicorn for development..."
     exec uvicorn main:app \

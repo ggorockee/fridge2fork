@@ -342,3 +342,4 @@ python scripts/optimized_crawling.py --extreme --target 15000
 
 *마지막 업데이트: 2025년 9월 22일*
 
+
