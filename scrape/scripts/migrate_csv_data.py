@@ -64,6 +64,30 @@ class CSVDataMigrator:
         self.engine = None
         self.async_session = None
         self.parser = IngredientParser()
+        
+        # 환경변수 디버깅
+        print("🔍 환경변수 확인:")
+        print(f"POSTGRES_DB: {os.getenv('POSTGRES_DB', 'NOT SET')}")
+        print(f"POSTGRES_USER: {os.getenv('POSTGRES_USER', 'NOT SET')}")
+        print(f"POSTGRES_PASSWORD: {'SET' if os.getenv('POSTGRES_PASSWORD') else 'NOT SET'}")
+        print(f"POSTGRES_SERVER: {os.getenv('POSTGRES_SERVER', 'NOT SET')}")
+        print(f"POSTGRES_PORT: {os.getenv('POSTGRES_PORT', 'NOT SET')}")
+        print(f"DATABASE_URL: {os.getenv('DATABASE_URL', 'NOT SET')}")
+        
+        # DATABASE_URL이 없으면 환경변수로 구성 시도
+        if not os.getenv('DATABASE_URL'):
+            db = os.getenv('POSTGRES_DB')
+            user = os.getenv('POSTGRES_USER')
+            password = os.getenv('POSTGRES_PASSWORD')
+            server = os.getenv('POSTGRES_SERVER')
+            port = os.getenv('POSTGRES_PORT')
+            
+            if all([db, user, password, server, port]):
+                database_url = f"postgresql://{user}:{password}@{server}:{port}/{db}"
+                os.environ['DATABASE_URL'] = database_url
+                print(f"✅ DATABASE_URL 자동 구성: postgresql://{user}:***@{server}:{port}/{db}")
+            else:
+                print("⚠️ DATABASE_URL 구성에 필요한 환경변수가 부족합니다.")
 
         # 캐시
         self.category_cache = {}  # 카테고리 ID 캐시
@@ -405,6 +429,19 @@ async def main(args):
         logger.info("🔍 CSV 파일 검색 중...")
         datas_dir = project_root / "datas"
         logger.info(f"    - 검색 디렉토리: {datas_dir}")
+        
+        # 디렉토리 존재 확인
+        if not datas_dir.exists():
+            logger.error(f"❌ datas 디렉토리가 존재하지 않습니다: {datas_dir}")
+            logger.info("현재 작업 디렉토리 내용:")
+            for item in project_root.iterdir():
+                logger.info(f"    - {item.name} ({'디렉토리' if item.is_dir() else '파일'})")
+            return
+        
+        # 디렉토리 내용 확인
+        logger.info(f"datas 디렉토리 내용:")
+        for item in datas_dir.iterdir():
+            logger.info(f"    - {item.name} ({'디렉토리' if item.is_dir() else '파일'})")
         
         # 여러 패턴으로 CSV 파일 검색
         csv_patterns = [
