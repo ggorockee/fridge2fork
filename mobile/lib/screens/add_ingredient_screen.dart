@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../widgets/widgets.dart';
 import '../providers/ingredients_provider.dart';
 import '../providers/api/ingredient_api_provider.dart';
-import '../models/api/api_ingredient.dart';
+import '../providers/api_ingredients_provider.dart';
 
 /// 식재료 추가 화면 (Modal Bottom Sheet)
 /// 사용자가 냉장고에 추가할 식재료를 선택할 수 있는 화면
@@ -529,8 +529,7 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
             SizedBox(height: MediaQuery.of(context).padding.bottom + AppTheme.spacingM),
           ],
         ],
-      ),
-    );
+      );
   }
 
   /// 로딩 상태 UI
