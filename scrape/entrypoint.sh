@@ -1,11 +1,23 @@
 #!/bin/bash
 set -e
 
+# 환경변수 디버깅
+echo "🔍 환경변수 확인:"
+echo "POSTGRES_DB: ${POSTGRES_DB:-'NOT SET'}"
+echo "POSTGRES_USER: ${POSTGRES_USER:-'NOT SET'}"
+echo "POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:+SET}"
+echo "POSTGRES_SERVER: ${POSTGRES_SERVER:-'NOT SET'}"
+echo "POSTGRES_PORT: ${POSTGRES_PORT:-'NOT SET'}"
+echo "DATABASE_URL: ${DATABASE_URL:-'NOT SET'}"
+
 # Kubernetes Secret에서 주입된 환경변수로 DATABASE_URL 구성
 if [ -n "$POSTGRES_DB" ] && [ -n "$POSTGRES_USER" ] && [ -n "$POSTGRES_PASSWORD" ] && [ -n "$POSTGRES_SERVER" ] && [ -n "$POSTGRES_PORT" ]; then
     # DATABASE_URL 구성
     export DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_SERVER}:${POSTGRES_PORT}/${POSTGRES_DB}"
     echo "✅ DATABASE_URL 구성 완료: postgresql://${POSTGRES_USER}:***@${POSTGRES_SERVER}:${POSTGRES_PORT}/${POSTGRES_DB}"
+else
+    echo "⚠️ 일부 PostgreSQL 환경변수가 설정되지 않았습니다."
+    echo "필요한 환경변수: POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_SERVER, POSTGRES_PORT"
 fi
 
 # 색상 정의
@@ -128,8 +140,15 @@ run_csv_migration() {
     log_info "마이그레이션 옵션: $MIGRATION_ARGS"
 
     # CSV 파일 확인
-    log_info "CSV 파일 확인..."
-    ls -lh datas/*.csv 2>/dev/null || log_warning "CSV 파일을 찾을 수 없습니다."
+    log_info "CSV 파일 확인 중..."
+    if ls datas/*.csv >/dev/null 2>&1; then
+        log_info "발견된 CSV 파일들:"
+        ls -lh datas/*.csv
+    else
+        log_warning "⚠️ CSV 파일이 없습니다. 볼륨이 마운트되었는지 확인하세요."
+        log_info "현재 datas 디렉토리 내용:"
+        ls -la datas/ || log_warning "datas 디렉토리가 존재하지 않습니다."
+    fi
 
     # 마이그레이션 실행
     python scripts/migrate_csv_data.py $MIGRATION_ARGS
