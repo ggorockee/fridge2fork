@@ -13,19 +13,19 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Fridge2Fork API"
     PROJECT_VERSION: str = "1.0.0"
     API_V1_STR: str = "/v1"
-    DEBUG: bool = False
+    DEBUG: bool = True
     ENVIRONMENT: str = "dev"
     
     # 데이터베이스 설정
-    DATABASE_URL: str
-    DB_HOST: str
+    DATABASE_URL: str = "postgresql+asyncpg://fridge2fork:password123@localhost:5432/fridge2fork_db"
+    DB_HOST: str = "localhost"
     DB_PORT: int = 5432
-    DB_NAME: str
-    DB_USER: str
-    DB_PASSWORD: str
+    DB_NAME: str = "fridge2fork_db"
+    DB_USER: str = "fridge2fork"
+    DB_PASSWORD: str = "password123"
     
     # JWT 설정
-    JWT_SECRET_KEY: str
+    JWT_SECRET_KEY: str = "your-super-secret-jwt-key-change-this-in-production"
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 30
     JWT_REFRESH_EXPIRE_MINUTES: int = 10080  # 7일
