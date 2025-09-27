@@ -136,42 +136,46 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         onRefresh: _onRefresh,
         color: AppTheme.primaryOrange,
         backgroundColor: Colors.white,
-        child: Column(
+        child: Stack(
           children: [
-            // 상단 배너 광고 (수익성 극대화 - 첫 화면 최상단)
-            const AdBannerWidget(isTop: true),
-            
-            // 냉장고 영역 - 고정 높이 (280px)
-            SizedBox(
-              height: 280,
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // 냉장고 아이콘 - 주황색 둥근 사각형
-                    const _FridgeIcon(),
-                    
-                    const SizedBox(height: AppTheme.spacingM),
-                    
-                    // 메시지 영역 또는 선택된 재료 표시
-                    selectedIngredients.isEmpty 
-                      ? const _EmptyStateMessage()
-                      : _SelectedIngredientsSection(
-                          ingredients: selectedIngredients,
-                          showAll: showAllIngredients,
-                          onRemove: _removeIngredient,
-                          onToggleShowAll: _toggleShowAllIngredients,
-                        ),
-                  ],
-                ),
+            // 냉장고 영역 - 나머지 공간 전부 차지
+            Positioned.fill(
+              child: Column(
+                children: [
+                  const AdBannerWidget(isTop: true),
+
+                  // 냉장고 + 상태
+                  Expanded(
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const _FridgeIcon(),
+                          const SizedBox(height: AppTheme.spacingM),
+                          selectedIngredients.isEmpty
+                              ? const _EmptyStateMessage()
+                              : _SelectedIngredientsSection(
+                                  ingredients: selectedIngredients,
+                                  showAll: showAllIngredients,
+                                  onRemove: _removeIngredient,
+                                  onToggleShowAll: _toggleShowAllIngredients,
+                                ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 200), // 레시피 영역 차지할 공간 확보
+                ],
               ),
             ),
-            
-            // 인기 레시피 - 남은 공간 채우기
-            Expanded(
+
+            // 하단 레시피 영역 고정
+            Align(
+              alignment: Alignment.bottomCenter,
               child: Container(
+                height: 200,
+                padding: const EdgeInsets.only(bottom: 16),
                 color: AppTheme.backgroundGray,
-                padding: const EdgeInsets.only(bottom: 16), // bottom nav와 간격
                 child: _RecipeRecommendationSection(),
               ),
             ),
