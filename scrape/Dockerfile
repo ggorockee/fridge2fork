@@ -13,8 +13,9 @@ WORKDIR /app
 # 의존성 파일 복사
 COPY requirements*.txt ./
 
-# 모든 의존성 설치
-RUN pip install --upgrade pip "setuptools>=65.5.0" wheel && \
+# Python 3.12 호환성을 위한 최신 도구 설치
+RUN pip install --upgrade pip && \
+    pip install --upgrade setuptools>=68.0.0 wheel && \
     pip install --no-cache-dir -r requirements.txt && \
     pip install --no-cache-dir -r requirements-api.txt
 
