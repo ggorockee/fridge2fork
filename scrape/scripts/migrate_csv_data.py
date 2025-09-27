@@ -126,14 +126,18 @@ class CSVDataMigrator:
 
     def read_csv_file(self, file_path: Path) -> pd.DataFrame:
         """CSV 파일 읽기"""
+        logger.info("🔍 파일 인코딩 감지 중...")
         encoding = self.detect_encoding(file_path)
         encodings_to_try = [encoding] if encoding else []
         encodings_to_try.extend(['EUC-KR', 'UTF-8', 'CP949'])
 
+        logger.info(f"📂 CSV 파일 읽기 시작: {file_path.name}")
         for enc in encodings_to_try:
             try:
                 df = pd.read_csv(file_path, encoding=enc)
-                logger.info(f"Successfully read {file_path.name} with {enc} encoding")
+                logger.info(f"✅ CSV 파일 로드 성공: {enc} 인코딩 사용")
+                logger.info(f"📊 데이터 크기: {len(df):,}개 행, {len(df.columns)}개 열")
+                logger.info(f"📋 컬럼 목록: {', '.join(df.columns[:5])}{'...' if len(df.columns) > 5 else ''}")
                 return df
             except:
                 continue
@@ -142,7 +146,13 @@ class CSVDataMigrator:
 
     async def migrate_file(self, file_path: Path):
         """단일 CSV 파일 마이그레이션"""
-        logger.info(f"Starting migration of {file_path.name}")
+        logger.info("=" * 60)
+        logger.info(f"📚 CSV 파일 마이그레이션 시작")
+        logger.info(f"📄 파일: {file_path.name}")
+        logger.info(f"📁 경로: {file_path}")
+        file_size_mb = file_path.stat().st_size / (1024 * 1024)
+        logger.info(f"📊 크기: {file_size_mb:.2f} MB")
+        logger.info("=" * 60)
 
         # CSV 파일 읽기
         df = self.read_csv_file(file_path)
@@ -151,20 +161,30 @@ class CSVDataMigrator:
         # 최대 레코드 수 제한
         if self.max_records:
             df = df.head(self.max_records)
-            logger.info(f"Limited to {self.max_records} records")
+            logger.info(f"⚠️  테스트 모드: {self.max_records:,}개 레코드로 제한")
 
         # 필요한 컬럼 확인 및 매핑
+        logger.info("🔍 컬럼 매핑 검색 중...")
         column_mapping = self.detect_columns(df)
         if not column_mapping:
-            logger.error(f"Required columns not found in {file_path.name}")
+            logger.error(f"❌ 필수 컬럼을 찾을 수 없음: {file_path.name}")
             return
+        logger.info(f"✅ 컬럼 매핑 완료:")
+        for key, value in column_mapping.items():
+            logger.info(f"    - {key}: {value}")
 
         # 청크 단위로 처리
         total_chunks = (len(df) + self.chunk_size - 1) // self.chunk_size
+        logger.info(f"🔄 마이그레이션 시작:")
+        logger.info(f"    - 총 레코드: {len(df):,}개")
+        logger.info(f"    - 청크 수: {total_chunks}개")
+        logger.info(f"    - 청크 크기: {self.chunk_size}개")
 
         with tqdm(total=len(df), desc=f"Migrating {file_path.name}") as pbar:
             for chunk_idx in range(0, len(df), self.chunk_size):
                 chunk = df.iloc[chunk_idx:chunk_idx + self.chunk_size]
+                chunk_num = (chunk_idx // self.chunk_size) + 1
+                logger.debug(f"📦 청크 {chunk_num}/{total_chunks} 처리 중...")
                 await self.process_chunk(chunk, column_mapping)
                 pbar.update(len(chunk))
 
@@ -361,38 +381,65 @@ class CSVDataMigrator:
 
 async def main(args):
     """메인 함수"""
+    logger.info("\n" + "="*70)
+    logger.info("🚀 레시피 CSV 데이터 마이그레이션 시작")
+    logger.info("="*70)
+
     # 마이그레이터 초기화
+    logger.info("🏭 마이그레이터 초기화 중...")
     migrator = CSVDataMigrator(
         chunk_size=args.chunk_size,
         max_records=args.max_records
     )
+    logger.info(f"    - 청크 크기: {args.chunk_size}")
+    if args.max_records:
+        logger.info(f"    - 최대 레코드: {args.max_records:,}")
 
     try:
-        # 초기화
+        # 데이터베이스 연결
+        logger.info("🔗 데이터베이스 연결 중...")
         await migrator.initialize()
+        logger.info("✅ 데이터베이스 연결 성공")
 
         # CSV 파일 찾기
+        logger.info("🔍 CSV 파일 검색 중...")
         datas_dir = project_root / "datas"
+        logger.info(f"    - 검색 디렉토리: {datas_dir}")
         csv_files = sorted(datas_dir.glob("TB_RECIPE_SEARCH*.csv"))
 
         if not csv_files:
-            logger.error("No CSV files found")
+            logger.error("❌ CSV 파일을 찾을 수 없습니다!")
+            logger.error(f"    - 검색 경로: {datas_dir}")
+            logger.error("    - 패턴: TB_RECIPE_SEARCH*.csv")
             return 1
 
-        logger.info(f"Found {len(csv_files)} CSV files")
+        logger.info(f"✅ {len(csv_files)}개 CSV 파일 발견:")
+        for i, csv_file in enumerate(csv_files, 1):
+            logger.info(f"    {i}. {csv_file.name} ({csv_file.stat().st_size / (1024*1024):.2f} MB)")
 
         # 각 파일 마이그레이션
-        for csv_file in csv_files:
+        logger.info("\n🔄 CSV 파일 처리 시작...")
+        for idx, csv_file in enumerate(csv_files, 1):
+            logger.info(f"\n[파일 {idx}/{len(csv_files)}] {csv_file.name} 처리 중...")
             await migrator.migrate_file(csv_file)
+            logger.info(f"✅ [파일 {idx}/{len(csv_files)}] {csv_file.name} 처리 완료")
 
         # 통계 출력
+        logger.info("\n📊 마이그레이션 통계 출력 중...")
         await migrator.print_statistics()
 
-        logger.info("\n🎉 마이그레이션 완료!")
+        logger.info("\n" + "="*70)
+        logger.info("🎉 모든 CSV 파일 마이그레이션 성공!")
+        logger.info("="*70)
         return 0
 
     except Exception as e:
-        logger.error(f"Migration failed: {e}")
+        logger.error("\n" + "="*70)
+        logger.error("❌ 마이그레이션 실패")
+        logger.error(f"🔥 오류: {e}")
+        logger.error("="*70)
+        import traceback
+        logger.error(traceback.format_exc())
         return 1
 
     finally:

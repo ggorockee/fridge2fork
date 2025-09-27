@@ -61,3 +61,6 @@ datas/*.csv
 # Migrations (generated)
 migrations/versions/*.py
 !migrations/versions/__init__.py
+
+# Helm chart (not to be uploaded to git)
+scrape/

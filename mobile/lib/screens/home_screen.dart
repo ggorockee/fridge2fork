@@ -183,7 +183,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             // 플로팅 액션 버튼 - 냉장고 영역 하단에 위치
             Positioned(
               right: 16,
-              bottom: 260 + 16, // 레시피 영역 높이 + 패딩
+              bottom: 260 + 92, // 레시피 영역 높이 + 패딩
               child: Showcase(
                 key: homeScreenAddButtonKey,
                 description: '냉장고에 식재료를 추가하려면 이 버튼을 누르세요!',
