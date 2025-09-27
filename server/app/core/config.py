@@ -16,13 +16,20 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     ENVIRONMENT: str = "dev"
     
-    # 데이터베이스 설정
-    DATABASE_URL: str = "postgresql+asyncpg://fridge2fork:password123@localhost:5432/fridge2fork_db"
-    DB_HOST: str = "localhost"
+    # 데이터베이스 설정 (Kubernetes 시크릿에서 환경변수로 주입됨)
+    POSTGRES_DB: str = ""
+    POSTGRES_PASSWORD: str = ""
+    POSTGRES_PORT: int = 5432
+    POSTGRES_SERVER: str = ""
+    POSTGRES_USER: str = ""
+    
+    # 호환성을 위한 별칭 (기존 코드와의 호환성)
+    DATABASE_URL: str = ""
+    DB_HOST: str = ""
     DB_PORT: int = 5432
-    DB_NAME: str = "fridge2fork_db"
-    DB_USER: str = "fridge2fork"
-    DB_PASSWORD: str = "password123"
+    DB_NAME: str = ""
+    DB_USER: str = ""
+    DB_PASSWORD: str = ""
     
     # JWT 설정
     JWT_SECRET_KEY: str = "your-super-secret-jwt-key-change-this-in-production"
@@ -54,6 +61,7 @@ class Settings(BaseSettings):
         env_file = ".env.common"
         env_file_encoding = "utf-8"
         case_sensitive = True
+        extra = "ignore"  # 추가 환경변수 무시
 
 
 class TestSettings(BaseSettings):
@@ -98,6 +106,7 @@ class TestSettings(BaseSettings):
     
     class Config:
         case_sensitive = True
+        extra = "ignore"  # 추가 환경변수 무시
 
 
 def get_settings():
@@ -108,15 +117,43 @@ def get_settings():
     if env == "test":
         return TestSettings()
     
+    # 환경변수에서 데이터베이스 설정을 동적으로 생성
+    postgres_db = os.getenv("POSTGRES_DB", "")
+    postgres_user = os.getenv("POSTGRES_USER", "")
+    postgres_password = os.getenv("POSTGRES_PASSWORD", "")
+    postgres_server = os.getenv("POSTGRES_SERVER", "")
+    postgres_port = os.getenv("POSTGRES_PORT", "5432")
+    
+    # 환경변수가 모두 설정된 경우에만 DATABASE_URL 생성
+    if all([postgres_db, postgres_user, postgres_password, postgres_server]):
+        database_url = f"postgresql+asyncpg://{postgres_user}:{postgres_password}@{postgres_server}:{postgres_port}/{postgres_db}"
+    else:
+        database_url = ""
+    
+    # 환경변수 설정
+    env_vars = {
+        "DATABASE_URL": database_url,
+        "DB_HOST": postgres_server,
+        "DB_PORT": int(postgres_port) if postgres_port else 5432,
+        "DB_NAME": postgres_db,
+        "DB_USER": postgres_user,
+        "DB_PASSWORD": postgres_password,
+        "POSTGRES_DB": postgres_db,
+        "POSTGRES_USER": postgres_user,
+        "POSTGRES_PASSWORD": postgres_password,
+        "POSTGRES_SERVER": postgres_server,
+        "POSTGRES_PORT": int(postgres_port) if postgres_port else 5432,
+    }
+    
     # 일반 환경인 경우 Settings 사용
     common_env = ".env.common"
     env_file = f".env.{env}"
     
     # 환경별 설정 파일 존재 확인
     if os.path.exists(env_file):
-        return Settings(_env_file=[common_env, env_file])
+        return Settings(_env_file=[common_env, env_file], **env_vars)
     else:
-        return Settings(_env_file=common_env)
+        return Settings(_env_file=common_env, **env_vars)
 
 
 # 전역 설정 인스턴스

@@ -11,8 +11,18 @@ from typing import AsyncGenerator
 from app.core.config import settings
 
 # PostgreSQL 연결
+# DATABASE_URL이 설정되지 않은 경우 기본값 사용
+database_url = settings.DATABASE_URL
+if not database_url:
+    # 개발 환경에서 기본값 사용
+    database_url = "sqlite+aiosqlite:///./dev.db"
+else:
+    # PostgreSQL URL을 asyncpg로 변환
+    if database_url.startswith("postgresql://"):
+        database_url = database_url.replace("postgresql://", "postgresql+asyncpg://")
+
 engine = create_async_engine(
-    settings.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://"),
+    database_url,
     echo=settings.DEBUG,
     future=True,
 )
