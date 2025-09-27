@@ -46,12 +46,11 @@ COPY --from=builder /opt/venv /opt/venv
 # Add virtual environment to PATH
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Copy entrypoint script first and set permissions
-COPY entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
-
 # Copy application source code (excluding files in .dockerignore)
 COPY --chown=appuser:appuser . /app
+
+# Set entrypoint script permissions
+RUN chmod +x /app/entrypoint.sh
 
 # Create necessary directories with proper permissions
 RUN mkdir -p /app/logs /app/data && \
