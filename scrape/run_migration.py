@@ -21,21 +21,23 @@ load_dotenv()
 async def run_migration():
     """데이터베이스 마이그레이션 실행"""
     
-    # DATABASE_URL 설정
-    database_url = os.getenv('DATABASE_URL')
-    if not database_url:
-        db = os.getenv('POSTGRES_DB')
-        user = os.getenv('POSTGRES_USER')
-        password = os.getenv('POSTGRES_PASSWORD')
-        server = os.getenv('POSTGRES_SERVER')
-        port = os.getenv('POSTGRES_PORT')
-        
-        if all([db, user, password, server, port]):
-            database_url = f"postgresql://{user}:{password}@{server}:{port}/{db}"
-            os.environ['DATABASE_URL'] = database_url
-        else:
-            print("❌ DATABASE_URL을 설정할 수 없습니다.")
-            return
+    # DATABASE_URL 구성
+    db = os.getenv('POSTGRES_DB')
+    user = os.getenv('POSTGRES_USER')
+    password = os.getenv('POSTGRES_PASSWORD')
+    server = os.getenv('POSTGRES_SERVER')
+    port = os.getenv('POSTGRES_PORT')
+    
+    if not all([db, user, password, server, port]):
+        print("❌ 필요한 PostgreSQL 환경변수가 설정되지 않았습니다.")
+        print(f"POSTGRES_DB: {db}")
+        print(f"POSTGRES_USER: {user}")
+        print(f"POSTGRES_PASSWORD: {'SET' if password else 'NOT SET'}")
+        print(f"POSTGRES_SERVER: {server}")
+        print(f"POSTGRES_PORT: {port}")
+        return
+    
+    database_url = f"postgresql://{user}:{password}@{server}:{port}/{db}"
     
     # PostgreSQL URL을 asyncpg용으로 변환
     if database_url.startswith('postgresql://'):
