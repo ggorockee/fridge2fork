@@ -148,11 +148,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 // 상단 배너 광고 (수익성 극대화 - 첫 화면 최상단)
                 const AdBannerWidget(isTop: true),
               
-              // 냉장고 부분 - 높이 제한
-              SizedBox(
-                height: 280, // 높이를 더 줄임 (400에서 280으로)
+              // 냉장고 부분 - 화면 크기에 맞춰 자동 조정
+              Flexible(
+                flex: 2, // 냉장고 영역 비율
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
+                  padding: const EdgeInsets.only(bottom: 16),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -175,17 +175,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
               
-              // 냉장고 섹션과 인기 레시피 사이 여백 추가
-              const SizedBox(height: 40),
-              
-              // 추천 레시피 부분 - 고정 높이
-              const SizedBox(
-                height: 220, // 제목 + 카드(160px) + 패딩을 고려한 고정 높이
-                child: _RecipeRecommendationSection(),
+              // 추천 레시피 부분 - 자동으로 하단에 붙기
+              Expanded(
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 16), // 바텀 네비 위 여백
+                    child: SizedBox(
+                      height: 220,
+                      child: _RecipeRecommendationSection(),
+                    ),
+                  ),
+                ),
               ),
-              
-              // 남은 공간 채우기 (여백 최소화)
-              const SizedBox(height: 5),
               
             ],
           ),
@@ -193,7 +195,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           // 플로팅 액션 버튼 - 냉장고 메시지 하단 영역에 위치
           Positioned(
             right: 16, // body 전체 기준 우측에서 16px 마진
-            bottom: 280 + 40 + 220 + 80 + 5, // 냉장고섹션(280) + 여백(40) + 레시피섹션(220) + 하단네비(80) + 마진(5)
+            bottom: 220 + 80 + 16, // 레시피섹션(220) + 하단네비(80) + 마진(16)
             child: Showcase(
               key: homeScreenAddButtonKey,
               description: '냉장고에 식재료를 추가하려면 이 버튼을 누르세요!',
