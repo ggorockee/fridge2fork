@@ -119,6 +119,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         foregroundColor: AppTheme.textPrimary,
         elevation: 0,
         centerTitle: true,
+        surfaceTintColor: AppTheme.backgroundWhite, // 스크롤 시 색상 변경 방지
+        scrolledUnderElevation: 0, // 스크롤 시 elevation 변경 방지
         title: const Text(
           '냉털레시피',
           style: TextStyle(
@@ -407,31 +409,25 @@ class _RecipeRecommendationSection extends ConsumerWidget {
                             if (await canLaunchUrl(uri)) {
                               await launchUrl(uri, mode: LaunchMode.externalApplication);
                             } else {
-                              if (mounted) {
-                                SnackBarHelper.showSnackBar(
-                                  context,
-                                  '링크를 열 수 없습니다.',
-                                  backgroundColor: Colors.red,
-                                );
-                              }
-                            }
-                          } catch (e) {
-                            if (mounted) {
                               SnackBarHelper.showSnackBar(
                                 context,
-                                '링크를 열 수 없습니다: $e',
+                                '링크를 열 수 없습니다.',
                                 backgroundColor: Colors.red,
                               );
                             }
-                          }
-                        } else {
-                          if (mounted) {
+                          } catch (e) {
                             SnackBarHelper.showSnackBar(
                               context,
-                              '레시피 링크가 없습니다.',
-                              backgroundColor: Colors.orange,
+                              '링크를 열 수 없습니다: $e',
+                              backgroundColor: Colors.red,
                             );
                           }
+                        } else {
+                          SnackBarHelper.showSnackBar(
+                            context,
+                            '레시피 링크가 없습니다.',
+                            backgroundColor: Colors.orange,
+                          );
                         }
                       },
                     );
