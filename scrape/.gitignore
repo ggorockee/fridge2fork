@@ -55,8 +55,8 @@ htmlcov/
 .tox/
 
 # Data files (except samples)
-datas/*.csv
-!datas/sample_*.csv
+# datas/*.csv
+# !datas/sample_*.csv
 
 # Migrations (generated)
 migrations/versions/*.py
