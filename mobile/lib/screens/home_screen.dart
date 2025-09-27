@@ -152,7 +152,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Expanded(
                 flex: 2,
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(0, 0, 0, 20), // 상단 여백, 하단 여백
+                  padding: const EdgeInsets.fromLTRB(0, 0, 0, 16), // 하단 여백을 20에서 16으로 줄임 (20% 감소)
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
