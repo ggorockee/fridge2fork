@@ -141,85 +141,70 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             // 상단 배너 광고 (수익성 극대화 - 첫 화면 최상단)
             const AdBannerWidget(isTop: true),
             
-            // 냉장고 영역 (flex: 2)
-            Expanded(
-              flex: 2,
-              child: Container(
-                color: Colors.white, // 냉장고 영역은 흰색
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // 냉장고 아이콘 - 주황색 둥근 사각형
-                      const _FridgeIcon(),
-                      
-                      const SizedBox(height: AppTheme.spacingM),
-                      
-                      // 메시지 영역 또는 선택된 재료 표시
-                      selectedIngredients.isEmpty 
-                        ? const _EmptyStateMessage()
-                        : _SelectedIngredientsSection(
-                            ingredients: selectedIngredients,
-                            showAll: showAllIngredients,
-                            onRemove: _removeIngredient,
-                            onToggleShowAll: _toggleShowAllIngredients,
-                          ),
-                    ],
-                  ),
+            // 냉장고 영역 - 고정 높이 (280px)
+            SizedBox(
+              height: 280,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // 냉장고 아이콘 - 주황색 둥근 사각형
+                    const _FridgeIcon(),
+                    
+                    const SizedBox(height: AppTheme.spacingM),
+                    
+                    // 메시지 영역 또는 선택된 재료 표시
+                    selectedIngredients.isEmpty 
+                      ? const _EmptyStateMessage()
+                      : _SelectedIngredientsSection(
+                          ingredients: selectedIngredients,
+                          showAll: showAllIngredients,
+                          onRemove: _removeIngredient,
+                          onToggleShowAll: _toggleShowAllIngredients,
+                        ),
+                  ],
                 ),
               ),
             ),
             
-            // 인기 레시피 영역 (flex: 3)
+            // 인기 레시피 - 남은 공간 채우기
             Expanded(
-              flex: 3,
-              child: Stack(
-                children: [
-                  Container(
-                    color: AppTheme.backgroundGray, // 인기 레시피 배경
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 16), // BottomNav 위 여백
-                      child: _RecipeRecommendationSection(),
-                    ),
-                  ),
-                  
-                  // 플로팅 액션 버튼 - 냉장고 영역 우하단에 위치
-                  Positioned(
-                    right: 16,
-                    bottom: 16,
-                    child: Showcase(
-                      key: homeScreenAddButtonKey,
-                      description: '냉장고에 식재료를 추가하려면 이 버튼을 누르세요!',
-                      onTargetClick: _onAddButtonPressed,
-                      disposeOnTap: true,
-                      child: FloatingActionButton(
-                        onPressed: _onAddButtonPressed,
-                        backgroundColor: Colors.white,
-                        elevation: 0, // 그림자 제거
-                        heroTag: "home_fab", // Hero 애니메이션 방지
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          side: const BorderSide(
-                            color: AppTheme.primaryOrange,
-                            width: 2,
-                          ),
-                        ),
-                        child: const Padding(
-                          padding: EdgeInsets.all(4),
-                          child: Icon(
-                            Icons.add,
-                            color: AppTheme.primaryOrange,
-                            size: 32,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+              child: Container(
+                color: AppTheme.backgroundGray,
+                padding: const EdgeInsets.only(bottom: 16), // bottom nav와 간격
+                child: _RecipeRecommendationSection(),
               ),
             ),
           ],
         ),
+      ),
+      
+      // 플로팅 액션 버튼 - Scaffold 기본 위치
+      floatingActionButton: Showcase(
+        key: homeScreenAddButtonKey,
+        description: '냉장고에 식재료를 추가하려면 이 버튼을 누르세요!',
+        onTargetClick: _onAddButtonPressed,
+        disposeOnTap: true,
+        child: FloatingActionButton(
+          onPressed: _onAddButtonPressed,
+          backgroundColor: Colors.white,
+          elevation: 0,
+          heroTag: "home_fab",
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(
+              color: AppTheme.primaryOrange,
+              width: 2,
+            ),
+          ),
+          child: const Icon(
+            Icons.add,
+            color: AppTheme.primaryOrange,
+            size: 32,
+          ),
+        ),
+      ),
+      ),
     );
   }
 }
