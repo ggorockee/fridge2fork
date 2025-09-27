@@ -1,243 +1,186 @@
 """
-레시피 관련 API 엔드포인트
+레시피 관련 API 엔드포인트 (실제 PostgreSQL 스키마 기반)
 """
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_, or_
-import sqlalchemy as sa
-from typing import Optional, List
+from sqlalchemy import select, func, and_, or_, text
+from sqlalchemy.orm import selectinload
+from typing import Optional, List, Dict, Any
 import math
 
 from app.core.database import get_db
-from app.models.recipe import Recipe
-from app.schemas.recipe import (
-    Recipe as RecipeSchema,
-    RecipeList,
-    RecipeListResponse,
-    CategoriesResponse,
-    CategoryInfo,
-    PopularRecipesResponse,
-    RelatedRecipesResponse
-)
+from app.models.recipe import Recipe, Ingredient, RecipeIngredient
 
 router = APIRouter()
 
-# 카테고리 매핑
-CATEGORY_DISPLAY_NAMES = {
-    "stew": "찌개류",
-    "stirFry": "볶음류",
-    "sideDish": "반찬류",
-    "rice": "밥류",
-    "kimchi": "김치류",
-    "soup": "국물류",
-    "noodles": "면류"
-}
 
-# 난이도 매핑
-DIFFICULTY_LEVELS = ["easy", "medium", "hard"]
-
-# 정렬 옵션
-SORT_OPTIONS = ["popularity", "rating", "cookingTime", "matchingRate"]
-
-
-def calculate_matching_rate(recipe_ingredients: List[dict], user_ingredients: List[str]) -> float:
-    """재료 매칭율 계산"""
-    if not recipe_ingredients or not user_ingredients:
-        return 0.0
-    
-    essential_ingredients = [ing for ing in recipe_ingredients if ing.get("isEssential", True)]
-    if not essential_ingredients:
-        essential_ingredients = recipe_ingredients
-    
-    matched_count = 0
-    for ingredient in essential_ingredients:
-        if ingredient["name"] in user_ingredients:
-            matched_count += 1
-    
-    return (matched_count / len(essential_ingredients)) * 100
-
-
-@router.get("", response_model=RecipeListResponse)
+@router.get("/", response_model=Dict[str, Any])
 async def get_recipes(
+    db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="페이지 번호"),
-    limit: int = Query(10, ge=1, le=50, description="페이지당 아이템 수"),
-    search: Optional[str] = Query(None, description="검색어"),
-    category: Optional[str] = Query(None, description="카테고리 필터"),
-    difficulty: Optional[str] = Query(None, description="난이도 필터"),
-    ingredients: Optional[List[str]] = Query(None, description="보유 재료 목록"),
-    sort: str = Query("popularity", description="정렬 기준"),
-    db: AsyncSession = Depends(get_db)
+    size: int = Query(10, ge=1, le=100, description="페이지 크기"),
+    search: Optional[str] = Query(None, description="검색어")
 ):
-    """레시피 목록 조회"""
-    
-    # 기본 쿼리
-    query = select(Recipe)
-    
-    # 필터 적용
-    conditions = []
-    
-    if search:
-        search_pattern = f"%{search}%"
-        conditions.append(
-            or_(
-                Recipe.name.ilike(search_pattern),
-                Recipe.description.ilike(search_pattern),
-                func.cast(Recipe.ingredients, sa.Text).ilike(search_pattern)
-            )
-        )
-    
-    if category and category in CATEGORY_DISPLAY_NAMES:
-        conditions.append(Recipe.category == category)
-    
-    if difficulty and difficulty in DIFFICULTY_LEVELS:
-        conditions.append(Recipe.difficulty == difficulty)
-    
-    if conditions:
-        query = query.where(and_(*conditions))
-    
-    # 정렬 적용
-    if sort == "popularity":
-        query = query.order_by(Recipe.is_popular.desc(), Recipe.review_count.desc())
-    elif sort == "rating":
-        query = query.order_by(Recipe.rating.desc(), Recipe.review_count.desc())
-    elif sort == "cookingTime":
-        query = query.order_by(Recipe.cooking_time_minutes.asc())
-    # matchingRate는 별도 처리
-    
-    # 전체 개수 조회
-    count_query = select(func.count()).select_from(query.subquery())
-    total_result = await db.execute(count_query)
-    total = total_result.scalar()
-    
-    # 페이지네이션 적용
-    offset = (page - 1) * limit
-    query = query.offset(offset).limit(limit)
-    
-    # 레시피 조회
-    result = await db.execute(query)
-    recipes = result.scalars().all()
-    
-    # 응답 데이터 구성
-    recipe_list = [RecipeList.model_validate(recipe) for recipe in recipes]
-    
-    # 매칭율 계산 (재료 목록이 제공된 경우)
-    matching_rates = {}
-    if ingredients and sort == "matchingRate":
-        for recipe in recipes:
-            rate = calculate_matching_rate(recipe.ingredients, ingredients)
-            matching_rates[recipe.id] = rate
+    """레시피 목록 조회 (실제 PostgreSQL 스키마 기반)"""
+    try:
+        # 기본 쿼리
+        query = select(Recipe).options(selectinload(Recipe.ingredients).selectinload(RecipeIngredient.ingredient))
+        count_query = select(func.count(Recipe.recipe_id))
         
-        # 매칭율로 정렬
-        recipe_list.sort(key=lambda r: matching_rates.get(r.id, 0), reverse=True)
-    elif ingredients:
+        # 검색 필터
+        if search:
+            search_filter = or_(
+                Recipe.title.ilike(f"%{search}%"),
+                Recipe.description.ilike(f"%{search}%")
+            )
+            query = query.where(search_filter)
+            count_query = count_query.where(search_filter)
+        
+        # 정렬 (최신순)
+        query = query.order_by(Recipe.created_at.desc())
+        
+        # 페이지네이션
+        offset = (page - 1) * size
+        query = query.offset(offset).limit(size)
+        
+        # 쿼리 실행
+        total_result = await db.execute(count_query)
+        total = total_result.scalar()
+        
+        result = await db.execute(query)
+        recipes = result.scalars().all()
+        
+        # 응답 데이터 구성
+        recipe_list = []
         for recipe in recipes:
-            rate = calculate_matching_rate(recipe.ingredients, ingredients)
-            matching_rates[recipe.id] = rate
-    
-    # 페이지네이션 정보
-    total_pages = math.ceil(total / limit)
-    pagination = {
-        "total": total,
-        "page": page,
-        "limit": limit,
-        "totalPages": total_pages
-    }
-    
-    return RecipeListResponse(
-        recipes=recipe_list,
-        pagination=pagination,
-        matching_rates=matching_rates if matching_rates else None
-    )
+            # 재료 정보 구성
+            ingredients = []
+            for ri in recipe.ingredients:
+                ingredient_info = {
+                    "name": ri.ingredient.name,
+                    "quantity_from": float(ri.quantity_from) if ri.quantity_from else None,
+                    "quantity_to": float(ri.quantity_to) if ri.quantity_to else None,
+                    "unit": ri.unit,
+                    "importance": ri.importance
+                }
+                ingredients.append(ingredient_info)
+            
+            recipe_dict = {
+                "recipe_id": recipe.recipe_id,
+                "url": recipe.url,
+                "title": recipe.title,
+                "description": recipe.description,
+                "image_url": recipe.image_url,
+                "created_at": recipe.created_at,
+                "ingredients": ingredients
+            }
+            recipe_list.append(recipe_dict)
+        
+        # 응답 생성
+        total_pages = math.ceil(total / size) if total > 0 else 1
+        
+        return {
+            "recipes": recipe_list,
+            "pagination": {
+                "page": page,
+                "size": size,
+                "total": total,
+                "total_pages": total_pages,
+                "has_next": page < total_pages,
+                "has_prev": page > 1
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"레시피 목록 조회 중 오류가 발생했습니다: {str(e)}"
+        )
 
 
-@router.get("/categories", response_model=CategoriesResponse)
-async def get_categories(db: AsyncSession = Depends(get_db)):
-    """레시피 카테고리 목록 조회"""
-    # 카테고리별 레시피 수 조회
-    query = select(Recipe.category, func.count(Recipe.id)).group_by(Recipe.category)
-    result = await db.execute(query)
-    category_counts = result.all()
-    
-    categories = []
-    for category, count in category_counts:
-        categories.append(CategoryInfo(
-            name=category,
-            display_name=CATEGORY_DISPLAY_NAMES.get(category, category),
-            count=count
-        ))
-    
-    return CategoriesResponse(categories=categories)
-
-
-@router.get("/popular", response_model=PopularRecipesResponse)
-async def get_popular_recipes(
-    limit: int = Query(10, ge=1, le=20, description="레시피 수"),
-    period: str = Query("week", description="기간 (day, week, month, all)"),
-    db: AsyncSession = Depends(get_db)
-):
-    """인기 레시피 목록 조회"""
-    # 기간별 필터링은 향후 조회수 데이터 추가 시 구현
-    # 현재는 인기 레시피 플래그와 평점 기준으로 정렬
-    query = select(Recipe).order_by(
-        Recipe.is_popular.desc(),
-        Recipe.rating.desc(),
-        Recipe.review_count.desc()
-    ).limit(limit)
-    
-    result = await db.execute(query)
-    recipes = result.scalars().all()
-    
-    recipe_list = [RecipeList.model_validate(recipe) for recipe in recipes]
-    
-    return PopularRecipesResponse(recipes=recipe_list)
-
-
-@router.get("/{recipe_id}", response_model=RecipeSchema)
+@router.get("/{recipe_id}", response_model=Dict[str, Any])
 async def get_recipe(
-    recipe_id: str,
+    recipe_id: int,
     db: AsyncSession = Depends(get_db)
 ):
-    """특정 레시피 상세 정보 조회"""
-    result = await db.execute(select(Recipe).where(Recipe.id == recipe_id))
-    recipe = result.scalar_one_or_none()
-    
-    if not recipe:
+    """특정 레시피 상세 조회"""
+    try:
+        # 레시피 조회 (재료 정보 포함)
+        query = select(Recipe).options(
+            selectinload(Recipe.ingredients).selectinload(RecipeIngredient.ingredient)
+        ).where(Recipe.recipe_id == recipe_id)
+        
+        result = await db.execute(query)
+        recipe = result.scalar_one_or_none()
+        
+        if not recipe:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"레시피 ID {recipe_id}를 찾을 수 없습니다."
+            )
+        
+        # 재료 정보 구성
+        ingredients = []
+        for ri in recipe.ingredients:
+            ingredient_info = {
+                "name": ri.ingredient.name,
+                "quantity_from": float(ri.quantity_from) if ri.quantity_from else None,
+                "quantity_to": float(ri.quantity_to) if ri.quantity_to else None,
+                "unit": ri.unit,
+                "importance": ri.importance
+            }
+            ingredients.append(ingredient_info)
+        
+        return {
+            "recipe_id": recipe.recipe_id,
+            "url": recipe.url,
+            "title": recipe.title,
+            "description": recipe.description,
+            "image_url": recipe.image_url,
+            "created_at": recipe.created_at,
+            "ingredients": ingredients
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="레시피를 찾을 수 없습니다"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"레시피 조회 중 오류가 발생했습니다: {str(e)}"
         )
-    
-    return RecipeSchema.model_validate(recipe)
 
 
-@router.get("/{recipe_id}/related", response_model=RelatedRecipesResponse)
-async def get_related_recipes(
-    recipe_id: str,
-    limit: int = Query(3, ge=1, le=10, description="추천 레시피 수"),
-    db: AsyncSession = Depends(get_db)
-):
-    """관련 레시피 추천"""
-    # 기준 레시피 조회
-    result = await db.execute(select(Recipe).where(Recipe.id == recipe_id))
-    base_recipe = result.scalar_one_or_none()
-    
-    if not base_recipe:
+@router.get("/stats/summary", response_model=Dict[str, Any])
+async def get_recipe_stats(db: AsyncSession = Depends(get_db)):
+    """레시피 통계 정보"""
+    try:
+        # 전체 레시피 수
+        recipe_count_result = await db.execute(select(func.count(Recipe.recipe_id)))
+        recipe_count = recipe_count_result.scalar()
+        
+        # 전체 재료 수
+        ingredient_count_result = await db.execute(select(func.count(Ingredient.ingredient_id)))
+        ingredient_count = ingredient_count_result.scalar()
+        
+        # 평균 재료 수
+        avg_ingredients_result = await db.execute(
+            select(func.avg(
+                select(func.count(RecipeIngredient.ingredient_id))
+                .where(RecipeIngredient.recipe_id == Recipe.recipe_id)
+                .scalar_subquery()
+            ))
+        )
+        avg_ingredients = float(avg_ingredients_result.scalar() or 0)
+        
+        return {
+            "total_recipes": recipe_count,
+            "total_ingredients": ingredient_count,
+            "average_ingredients_per_recipe": round(avg_ingredients, 1),
+            "last_updated": "2024-01-01T00:00:00Z"  # 실제로는 최신 레시피의 created_at
+        }
+        
+    except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="레시피를 찾을 수 없습니다"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"레시피 통계 조회 중 오류가 발생했습니다: {str(e)}"
         )
-    
-    # 같은 카테고리의 다른 레시피 조회
-    query = select(Recipe).where(
-        and_(
-            Recipe.category == base_recipe.category,
-            Recipe.id != recipe_id
-        )
-    ).order_by(Recipe.rating.desc(), Recipe.review_count.desc()).limit(limit)
-    
-    result = await db.execute(query)
-    related_recipes = result.scalars().all()
-    
-    recipe_list = [RecipeList.model_validate(recipe) for recipe in related_recipes]
-    
-    return RelatedRecipesResponse(recipes=recipe_list)

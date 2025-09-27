@@ -1,7 +1,8 @@
 """
 데이터베이스 연결 및 세션 관리
 """
-from sqlalchemy import create_engine
+import logging
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -10,16 +11,21 @@ from typing import AsyncGenerator
 
 from app.core.config import settings
 
+logger = logging.getLogger(__name__)
+
 # PostgreSQL 연결
 # DATABASE_URL이 설정되지 않은 경우 기본값 사용
 database_url = settings.DATABASE_URL
 if not database_url:
     # 개발 환경에서 기본값 사용
     database_url = "sqlite+aiosqlite:///./dev.db"
+    logger.info("📝 DATABASE_URL이 설정되지 않음. SQLite 사용: sqlite+aiosqlite:///./dev.db")
 else:
     # PostgreSQL URL을 asyncpg로 변환
     if database_url.startswith("postgresql://"):
         database_url = database_url.replace("postgresql://", "postgresql+asyncpg://")
+        logger.info("🐘 PostgreSQL 데이터베이스 URL 감지. asyncpg 드라이버로 변환")
+    logger.info(f"🔗 데이터베이스 연결 URL: {database_url[:50]}...")
 
 engine = create_async_engine(
     database_url,
@@ -75,3 +81,37 @@ async def close_redis_connection():
     global redis_client
     if redis_client:
         await redis_client.aclose()
+
+
+async def test_database_connection():
+    """데이터베이스 연결 테스트"""
+    try:
+        async with engine.begin() as conn:
+            # 간단한 쿼리로 연결 테스트
+            result = await conn.execute(text("SELECT 1"))
+            logger.info("✅ 데이터베이스 연결 성공!")
+            
+            # PostgreSQL인 경우 추가 정보 확인
+            if "postgresql" in database_url:
+                # 테이블 존재 여부 확인
+                tables_result = await conn.execute(text("""
+                    SELECT table_name 
+                    FROM information_schema.tables 
+                    WHERE table_schema = 'public'
+                    ORDER BY table_name
+                """))
+                tables = [row[0] for row in tables_result.fetchall()]
+                logger.info(f"📊 사용 가능한 테이블: {tables}")
+                
+                # 각 테이블의 레코드 수 확인
+                for table in tables:
+                    if table in ['recipes', 'ingredients', 'recipe_ingredients']:
+                        count_result = await conn.execute(text(f"SELECT COUNT(*) FROM {table}"))
+                        count = count_result.scalar()
+                        logger.info(f"📈 {table} 테이블: {count:,}개 레코드")
+            
+            return True
+            
+    except Exception as e:
+        logger.error(f"❌ 데이터베이스 연결 실패: {e}")
+        return False

@@ -31,15 +31,22 @@ async def lifespan(app: FastAPI):
     logger.info(f"🚀 {settings.PROJECT_NAME} v{settings.PROJECT_VERSION} 시작")
     logger.info(f"환경: {settings.ENVIRONMENT}")
     logger.info(f"디버그 모드: {settings.DEBUG}")
-    
+
+    # 데이터베이스 연결 테스트
+    from app.core.database import test_database_connection
+    logger.info("🔍 데이터베이스 연결 테스트 중...")
+    db_connected = await test_database_connection()
+    if not db_connected:
+        logger.warning("⚠️ 데이터베이스 연결 실패. 일부 기능이 제한될 수 있습니다.")
+
     # OpenAPI 스키마 로딩을 위한 지연
     import asyncio
     logger.info("OpenAPI 스키마 초기화 중...")
     await asyncio.sleep(2)  # 2초 지연으로 스키마 로딩 시간 확보
     logger.info("OpenAPI 스키마 초기화 완료")
-    
+
     yield
-    
+
     # 종료 시
     logger.info("애플리케이션 종료 중...")
     await close_db_connection()
