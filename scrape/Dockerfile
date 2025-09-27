@@ -27,6 +27,7 @@ COPY datas/ ./datas/
 COPY alembic.ini ./alembic.ini
 COPY crawler.py ./crawler.py
 COPY entrypoint.sh ./entrypoint.sh
+COPY run_migration.py ./run_migration.py
 
 # 스크립트 실행 권한 부여
 RUN chmod +x scripts/*.py && \
