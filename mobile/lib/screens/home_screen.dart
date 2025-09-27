@@ -39,17 +39,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       await initializeApiClient(ref);
       if (kDebugMode) debugPrint('🏠 [Home Screen] API client initialization completed');
 
-      // API 클라이언트 초기화 후 기본 데이터 로드
-      if (kDebugMode) debugPrint('🏠 [Home Screen] Loading default recommended recipes...');
-      ref.read(recipeApiProvider.notifier).loadPopularRecipes(size: 6);
+      // API 클라이언트 초기화 완료 후 기본 데이터 로드
+      final isApiClientInitialized = ref.read(apiClientInitializedProvider);
+      if (isApiClientInitialized) {
+        if (kDebugMode) debugPrint('🏠 [Home Screen] Loading default recommended recipes...');
+        ref.read(recipeApiProvider.notifier).loadPopularRecipes(size: 6);
 
-      if (kDebugMode) debugPrint('🏠 [Home Screen] Loading ingredients for selection...');
-      ref.read(ingredientApiProvider.notifier).loadIngredients(
-        filter: const IngredientSearchFilter(
-          page: 1,
-          size: 200, // 전체 식재료 로드
-        ),
-      );
+        if (kDebugMode) debugPrint('🏠 [Home Screen] Loading ingredients for selection...');
+        ref.read(ingredientApiProvider.notifier).loadIngredients(
+          filter: const IngredientSearchFilter(
+            page: 1,
+            size: 200, // 전체 식재료 로드
+          ),
+        );
+      } else {
+        if (kDebugMode) debugPrint('⚠️ [Home Screen] API client not initialized, skipping data load');
+      }
     });
   }
 

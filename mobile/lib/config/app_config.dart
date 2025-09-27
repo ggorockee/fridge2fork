@@ -44,15 +44,26 @@ class AppConfig {
     _currentEnvironment = environment;
 
     try {
-      // 공통 설정 로드
-      await dotenv.load(fileName: '.env.common');
+      // 공통 설정 로드 (파일이 없어도 계속 진행)
+      try {
+        await dotenv.load(fileName: '.env.common');
+        print('✅ Loaded .env.common');
+      } catch (e) {
+        print('ℹ️ .env.common not found, using defaults: $e');
+      }
 
-      // 환경별 설정 로드 및 병합
+      // 환경별 설정 로드 및 병합 (파일이 없어도 계속 진행)
       final envFile = environment == AppEnvironment.development ? '.env.dev' : '.env.prod';
-      await dotenv.load(fileName: envFile, mergeWith: dotenv.env);
+      try {
+        await dotenv.load(fileName: envFile, mergeWith: dotenv.env);
+        print('✅ Loaded $envFile');
+      } catch (e) {
+        print('ℹ️ $envFile not found, using defaults: $e');
+      }
 
       _isInitialized = true;
       print('✅ AppConfig initialized for ${environment.value} environment');
+      print('🔧 API Base URL: ${apiBaseUrl}');
     } catch (e) {
       print('❌ Failed to initialize AppConfig: $e');
       _isInitialized = false;
@@ -82,7 +93,7 @@ class AppConfig {
   // API 설정
   // ===========================================
 
-  static String get apiBaseUrl => dotenv.env['API_BASE_URL'] ?? 'https://api.example.com';
+  static String get apiBaseUrl => dotenv.env['API_BASE_URL'] ?? 'https://api-dev.woohalabs.com';
   static String get apiKey => dotenv.env['API_KEY'] ?? '';
   static int get apiTimeoutMs => _getInt('API_TIMEOUT_MS', defaultValue: 30000);
 
