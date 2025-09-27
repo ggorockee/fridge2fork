@@ -41,3 +41,4 @@ class SupabaseMCPClient:
 
 # 전역 클라이언트 인스턴스
 supabase_client = SupabaseMCPClient()
+
