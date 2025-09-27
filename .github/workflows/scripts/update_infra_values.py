@@ -23,7 +23,7 @@ def update_yaml_file(repo_url, token, image_tag, service_type="onedaypillo", env
         if environment == "prod":
             branches_to_try = ["main", "master"]
         else:
-            branches_to_try = ["develop", "dev"]
+            branches_to_try = ["dev", "develop"]
 
     temp_dir = tempfile.mkdtemp()
     try:
