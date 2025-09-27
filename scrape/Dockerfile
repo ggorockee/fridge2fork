@@ -14,9 +14,9 @@ WORKDIR /app
 COPY requirements*.txt ./
 
 # 모든 의존성 설치
-RUN pip install --upgrade pip && \
+RUN pip install --upgrade pip setuptools wheel && \
     pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir -r requirements-api.txt || true
+    pip install --no-cache-dir -r requirements-api.txt
 
 # 애플리케이션 코드 복사
 COPY app/ ./app/
