@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     # 기본 설정
     PROJECT_NAME: str = "Fridge2Fork API"
     PROJECT_VERSION: str = "1.0.0"
-    API_V1_STR: str = "/v1"
+    API_V1_STR: str = "/fridge2fork/v1"
     DEBUG: bool = True
     ENVIRONMENT: str = "dev"
     
@@ -70,7 +70,7 @@ class TestSettings(BaseSettings):
     # 기본 설정
     PROJECT_NAME: str = "Fridge2Fork API"
     PROJECT_VERSION: str = "1.0.0"
-    API_V1_STR: str = "/v1"
+    API_V1_STR: str = "/fridge2fork/v1"
     DEBUG: bool = False
     ENVIRONMENT: str = "test"
     
