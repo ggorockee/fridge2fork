@@ -9,7 +9,7 @@
 
 ## 🌐 기본 정보
 
-- **Base URL**: `https://your-api-domain.com`
+- **Base URL**: `https://api-dev.woohalabs.com`
 - **API Prefix**: `/fridge2fork/v1`
 - **Content-Type**: `application/json`
 - **환경**: `dev` (기본값), `prod`

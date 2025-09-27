@@ -28,8 +28,8 @@
 
 ### 현재 데이터 구조
 - **API 기반**: 환경별 API 서버에서 모든 데이터 로드
-  - **개발**: `https://admin-api-dev.woohalabs.com/fridge2fork/v1`
-  - **운영**: `https://admin-api.woohalabs.com/fridge2fork/v1`
+  - **개발**: `https://api-dev.woohalabs.com/fridge2fork/v1`
+  - **운영**: `https://api.woohalabs.com/fridge2fork/v1`
 - **로컬 캐시**: SharedPreferences 및 로컬 캐시로 오프라인 지원
 - **폴백 데이터**: API 실패 시 기본 샘플 데이터 제공
 
@@ -140,8 +140,8 @@
 ### 1. API 클라이언트 설정
 
 - **베이스 URL**: 환경별 API 서버 URL
-  - **개발**: `https://admin-api-dev.woohalabs.com/fridge2fork/v1`
-  - **운영**: `https://admin-api.woohalabs.com/fridge2fork/v1`
+  - **개발**: `https://api-dev.woohalabs.com/fridge2fork/v1`
+  - **운영**: `https://api.woohalabs.com/fridge2fork/v1`
 - **환경 설정**: 개발/운영 환경 분리 지원 (dev/prod)
 - **타임아웃 설정**: 연결 및 응답 타임아웃 10초
 - **인터셉터**: 요청/응답 로깅 및 에러 처리

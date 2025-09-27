@@ -10,8 +10,8 @@
 ## 🌐 기본 정보
 
 - **Base URL**: 
-  - **개발**: `https://admin-api-dev.woohalabs.com`
-  - **운영**: `https://admin-api.woohalabs.com`
+  - **개발**: `https://api-dev.woohalabs.com`
+  - **운영**: `https://api.woohalabs.com`
 - **API Prefix**: `/fridge2fork/v1`
 - **Content-Type**: `application/json`
 
