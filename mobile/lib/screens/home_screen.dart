@@ -173,39 +173,43 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Align(
               alignment: Alignment.bottomCenter,
               child: Container(
-                height: 280,
+                height: 260,
                 padding: const EdgeInsets.only(bottom: 16),
-                color: AppTheme.backgroundGray,
+                color: AppTheme.backgroundWhite,
                 child: _RecipeRecommendationSection(),
               ),
             ),
-          ],
-        ),
-      ),
-      
-      // 플로팅 액션 버튼 - Scaffold 기본 위치
-      floatingActionButton: Showcase(
-        key: homeScreenAddButtonKey,
-        description: '냉장고에 식재료를 추가하려면 이 버튼을 누르세요!',
-        onTargetClick: _onAddButtonPressed,
-        disposeOnTap: true,
-        child: FloatingActionButton(
-          onPressed: _onAddButtonPressed,
-          backgroundColor: Colors.white,
-          elevation: 0,
-          heroTag: "home_fab",
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(
-              color: AppTheme.primaryOrange,
-              width: 2,
+
+            // 플로팅 액션 버튼 - 냉장고 영역 하단에 위치
+            Positioned(
+              right: 16,
+              bottom: 260 + 16, // 레시피 영역 높이 + 패딩
+              child: Showcase(
+                key: homeScreenAddButtonKey,
+                description: '냉장고에 식재료를 추가하려면 이 버튼을 누르세요!',
+                onTargetClick: _onAddButtonPressed,
+                disposeOnTap: true,
+                child: FloatingActionButton(
+                  onPressed: _onAddButtonPressed,
+                  backgroundColor: Colors.white,
+                  elevation: 0,
+                  heroTag: "home_fab",
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: const BorderSide(
+                      color: AppTheme.primaryOrange,
+                      width: 2,
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.add,
+                    color: AppTheme.primaryOrange,
+                    size: 32,
+                  ),
+                ),
+              ),
             ),
-          ),
-          child: const Icon(
-            Icons.add,
-            color: AppTheme.primaryOrange,
-            size: 32,
-          ),
+          ],
         ),
       ),
     );
