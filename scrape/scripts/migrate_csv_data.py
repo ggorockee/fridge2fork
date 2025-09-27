@@ -123,23 +123,35 @@ class CSVDataMigrator:
         )
         self.async_session = sessionmaker(self.engine, class_=AsyncSession, expire_on_commit=False)
 
-        # 캐시 로드
-        await self.load_caches()
+        # 캐시 로드 (선택적)
+        try:
+            await self.load_caches()
+        except Exception as e:
+            logger.warning(f"캐시 로딩 실패, 나중에 다시 시도: {e}")
+            # 캐시 로딩 실패해도 계속 진행
 
     async def load_caches(self):
         """카테고리와 재료 캐시 로드"""
         async with self.async_session() as session:
             # 카테고리 캐시 로드
-            result = await session.execute(select(IngredientCategory))
-            categories = result.scalars().all()
-            self.category_cache = {cat.name: cat.id for cat in categories}
-            logger.info(f"Loaded {len(self.category_cache)} categories to cache")
+            try:
+                result = await session.execute(select(IngredientCategory))
+                categories = result.scalars().all()
+                self.category_cache = {cat.name: cat.id for cat in categories}
+                logger.info(f"Loaded {len(self.category_cache)} categories to cache")
+            except Exception as e:
+                logger.warning(f"카테고리 캐시 로딩 실패: {e}")
+                self.category_cache = {}
 
             # 재료 캐시 로드
-            result = await session.execute(select(Ingredient))
-            ingredients = result.scalars().all()
-            self.ingredient_cache = {ing.normalized_name: ing.id for ing in ingredients}
-            logger.info(f"Loaded {len(self.ingredient_cache)} ingredients to cache")
+            try:
+                result = await session.execute(select(Ingredient))
+                ingredients = result.scalars().all()
+                self.ingredient_cache = {ing.normalized_name: ing.id for ing in ingredients}
+                logger.info(f"Loaded {len(self.ingredient_cache)} ingredients to cache")
+            except Exception as e:
+                logger.warning(f"재료 캐시 로딩 실패: {e}")
+                self.ingredient_cache = {}
 
     def detect_encoding(self, file_path):
         """파일 인코딩 감지"""
