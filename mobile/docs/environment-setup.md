@@ -41,71 +41,35 @@ flutter build ios --flavor prod
 ## 환경 설정 사용법
 
 ### 1. 기본 사용법
-```dart
-import 'package:myapp/config/app_config.dart';
-
-// 현재 환경 확인
-if (AppConfig.isDevelopment) {
-  print('개발 환경에서 실행 중');
-}
-
-// API URL 사용
-final apiUrl = AppConfig.apiBaseUrl;
-
-// 디버그 모드 확인
-if (AppConfig.debugMode) {
-  print('디버그 모드 활성화');
-}
-```
+- **환경 확인**: 현재 실행 중인 환경 (개발/운영) 확인
+- **API URL 사용**: 환경별로 다른 API 서버 URL 사용
+- **디버그 모드**: 개발 환경에서만 디버그 기능 활성화
 
 ### 2. 기능 플래그 사용
-```dart
-// 기능 플래그 확인
-if (AppConfig.featureMockData) {
-  // 목 데이터 사용
-  return MockDataService();
-} else {
-  // 실제 API 사용
-  return ApiService();
-}
-```
+- **목 데이터**: 개발 환경에서 목 데이터 사용 여부
+- **실제 API**: 운영 환경에서 실제 API 서비스 사용
+- **조건부 기능**: 환경에 따른 기능 활성화/비활성화
 
 ### 3. 환경별 조건부 실행
-```dart
-// 환경별 다른 동작
-void initializeServices() {
-  if (AppConfig.isDevelopment) {
-    // 개발환경 전용 서비스 초기화
-    initializeDevServices();
-  } else {
-    // 운영환경 서비스 초기화
-    initializeProductionServices();
-  }
-}
-```
+- **개발환경**: 개발 전용 서비스 초기화
+- **운영환경**: 운영 환경 서비스 초기화
+- **환경 분리**: 환경별로 다른 설정 및 동작
 
 ## 환경 변수 추가하기
 
 ### 1. .env 파일에 변수 추가
-```bash
-# .env.dev
-NEW_FEATURE_ENABLED=true
-CUSTOM_API_ENDPOINT=https://dev-api.example.com
-```
+- **개발환경**: `.env.dev` 파일에 새 변수 추가
+- **운영환경**: `.env.prod` 파일에 새 변수 추가
+- **공통 설정**: `.env.common` 파일에 공통 변수 추가
 
 ### 2. AppConfig 클래스에 getter 추가
-```dart
-// lib/config/app_config.dart
-static bool get newFeatureEnabled => _getBool('NEW_FEATURE_ENABLED', defaultValue: false);
-static String get customApiEndpoint => dotenv.env['CUSTOM_API_ENDPOINT'] ?? '';
-```
+- **설정 클래스**: 환경 변수에 접근하는 getter 메서드 추가
+- **타입 변환**: 문자열을 적절한 타입으로 변환
+- **기본값 설정**: 변수가 없을 때 사용할 기본값 정의
 
 ### 3. 앱에서 사용
-```dart
-if (AppConfig.newFeatureEnabled) {
-  // 새 기능 활성화
-}
-```
+- **조건부 실행**: 환경 변수에 따른 기능 활성화/비활성화
+- **동적 설정**: 런타임에 환경별 다른 동작
 
 ## 주의사항
 
@@ -115,50 +79,14 @@ if (AppConfig.newFeatureEnabled) {
 
 ## 디버깅
 
-환경 설정 디버깅을 위해 다음 메서드 사용:
-```dart
-// 현재 설정 출력
-AppConfig.printConfig();
+환경 설정 디버깅을 위해 다음 기능 사용:
+- **현재 설정 출력**: 모든 환경 변수 값 확인
+- **특정 환경 변수 확인**: 개별 변수 값 조회
+- **모든 환경 변수 확인**: 전체 설정 정보 조회
 
-// 특정 환경 변수 확인
-final value = AppConfig.getEnv('CUSTOM_KEY');
+## API 서비스 예제
 
-// 모든 환경 변수 확인
-final allEnv = AppConfig.getAllEnv();
-```
-
-## 예제 코드
-
-```dart
-// lib/services/api_service.dart
-class ApiService {
-  late final String _baseUrl;
-  late final Duration _timeout;
-
-  ApiService() {
-    _baseUrl = AppConfig.apiBaseUrl;
-    _timeout = Duration(milliseconds: AppConfig.apiTimeoutMs);
-  }
-
-  Future<Response> getData() async {
-    final client = http.Client();
-    
-    try {
-      final response = await client
-          .get(Uri.parse('$_baseUrl/data'))
-          .timeout(_timeout);
-      
-      if (AppConfig.enableNetworkLogging) {
-        print('API Response: ${response.body}');
-      }
-      
-      return response;
-    } catch (e) {
-      if (AppConfig.debugMode) {
-        print('API Error: $e');
-      }
-      rethrow;
-    }
-  }
-}
-```
+- **베이스 URL 설정**: 환경별 다른 API 서버 URL 사용
+- **타임아웃 설정**: 환경별 다른 네트워크 타임아웃 설정
+- **로깅 활성화**: 개발 환경에서만 네트워크 로깅 활성화
+- **에러 처리**: 환경별 다른 에러 처리 방식

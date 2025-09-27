@@ -440,72 +440,17 @@ GET /fridge2fork/v1/audit/logs/{log_id}
 
 ## 🚀 사용 예시
 
-### Flutter/Dart에서 API 호출 예시
+### API 사용 예시
 
-```dart
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+#### 식재료 목록 조회
+- **URL**: `GET /fridge2fork/v1/ingredients/`
+- **파라미터**: 환경, 페이지네이션, 검색, 필터링, 정렬 옵션
+- **응답**: 식재료 목록과 메타데이터 (총 개수, 페이지 정보)
 
-class Fridge2ForkAPI {
-  static const String baseUrl = 'https://your-api-domain.com/fridge2fork/v1';
-  
-  // 식재료 목록 조회
-  static Future<Map<String, dynamic>> getIngredients({
-    String env = 'dev',
-    int skip = 0,
-    int limit = 20,
-    String? search,
-    bool? isVague,
-    String sort = 'name',
-    String order = 'asc',
-  }) async {
-    final uri = Uri.parse('$baseUrl/ingredients/').replace(
-      queryParameters: {
-        'env': env,
-        'skip': skip.toString(),
-        'limit': limit.toString(),
-        if (search != null) 'search': search,
-        if (isVague != null) 'is_vague': isVague.toString(),
-        'sort': sort,
-        'order': order,
-      },
-    );
-    
-    final response = await http.get(uri);
-    
-    if (response.statusCode == 200) {
-      return json.decode(response.body);
-    } else {
-      throw Exception('Failed to load ingredients: ${response.statusCode}');
-    }
-  }
-  
-  // 식재료 생성
-  static Future<Map<String, dynamic>> createIngredient({
-    required String name,
-    bool isVague = false,
-    String? vagueDescription,
-  }) async {
-    final uri = Uri.parse('$baseUrl/ingredients/');
-    
-    final response = await http.post(
-      uri,
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({
-        'name': name,
-        'is_vague': isVague,
-        if (vagueDescription != null) 'vague_description': vagueDescription,
-      }),
-    );
-    
-    if (response.statusCode == 201) {
-      return json.decode(response.body);
-    } else {
-      throw Exception('Failed to create ingredient: ${response.statusCode}');
-    }
-  }
-}
-```
+#### 식재료 생성
+- **URL**: `POST /fridge2fork/v1/ingredients/`
+- **요청 본문**: 식재료 이름, 모호성 여부, 설명
+- **응답**: 생성된 식재료 정보
 
 ## 📝 참고사항
 
