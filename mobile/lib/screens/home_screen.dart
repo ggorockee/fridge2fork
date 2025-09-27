@@ -136,23 +136,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         onRefresh: _onRefresh,
         color: AppTheme.primaryOrange,
         backgroundColor: Colors.white,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: SizedBox(
-            height: MediaQuery.of(context).size.height -
-                   (AppBar().preferredSize.height + MediaQuery.of(context).padding.top),
-            child: Stack(
-              children: [
-                Column(
-                  children: [
-                // 상단 배너 광고 (수익성 극대화 - 첫 화면 최상단)
-                const AdBannerWidget(isTop: true),
-              
-              // 냉장고 부분 - 화면 크기에 맞춰 자동 조정
-              Flexible(
-                flex: 2, // 냉장고 영역 비율
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
+        child: Column(
+          children: [
+            // 상단 배너 광고 (수익성 극대화 - 첫 화면 최상단)
+            const AdBannerWidget(isTop: true),
+            
+            // 냉장고 영역 (flex: 2)
+            Expanded(
+              flex: 2,
+              child: Container(
+                color: Colors.white, // 냉장고 영역은 흰색
+                child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -174,60 +168,57 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ),
               ),
-              
-              // 추천 레시피 부분 - 자동으로 하단에 붙기
-              Expanded(
-                child: Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 16), // 바텀 네비 위 여백
-                    child: SizedBox(
-                      height: 220,
+            ),
+            
+            // 인기 레시피 영역 (flex: 3)
+            Expanded(
+              flex: 3,
+              child: Stack(
+                children: [
+                  Container(
+                    color: AppTheme.backgroundGray, // 인기 레시피 배경
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 16), // BottomNav 위 여백
                       child: _RecipeRecommendationSection(),
                     ),
                   ),
-                ),
-              ),
-              
-            ],
-          ),
-          
-          // 플로팅 액션 버튼 - 냉장고 메시지 하단 영역에 위치
-          Positioned(
-            right: 16, // body 전체 기준 우측에서 16px 마진
-            bottom: 220 + 80 + 16, // 레시피섹션(220) + 하단네비(80) + 마진(16)
-            child: Showcase(
-              key: homeScreenAddButtonKey,
-              description: '냉장고에 식재료를 추가하려면 이 버튼을 누르세요!',
-              onTargetClick: _onAddButtonPressed,
-              disposeOnTap: true,
-              child: FloatingActionButton(
-                onPressed: _onAddButtonPressed,
-                backgroundColor: Colors.white,
-                elevation: 0, // 그림자 제거
-                heroTag: "home_fab", // Hero 애니메이션 방지
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: const BorderSide(
-                    color: AppTheme.primaryOrange,
-                    width: 2,
+                  
+                  // 플로팅 액션 버튼 - 냉장고 영역 우하단에 위치
+                  Positioned(
+                    right: 16,
+                    bottom: 16,
+                    child: Showcase(
+                      key: homeScreenAddButtonKey,
+                      description: '냉장고에 식재료를 추가하려면 이 버튼을 누르세요!',
+                      onTargetClick: _onAddButtonPressed,
+                      disposeOnTap: true,
+                      child: FloatingActionButton(
+                        onPressed: _onAddButtonPressed,
+                        backgroundColor: Colors.white,
+                        elevation: 0, // 그림자 제거
+                        heroTag: "home_fab", // Hero 애니메이션 방지
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: const BorderSide(
+                            color: AppTheme.primaryOrange,
+                            width: 2,
+                          ),
+                        ),
+                        child: const Padding(
+                          padding: EdgeInsets.all(4),
+                          child: Icon(
+                            Icons.add,
+                            color: AppTheme.primaryOrange,
+                            size: 32,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-                child: const Padding(
-                  padding: EdgeInsets.all(4),
-                  child: Icon(
-                    Icons.add,
-                    color: AppTheme.primaryOrange,
-                    size: 32,
-                  ),
-                ),
+                ],
               ),
             ),
-          ),
-        ],
-      ),
-            ),
-          ),
+          ],
         ),
     );
   }
