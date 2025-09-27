@@ -164,7 +164,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 200), // 레시피 영역 차지할 공간 확보
+                  const SizedBox(height: 280), // 레시피 영역 차지할 공간 확보
                 ],
               ),
             ),
@@ -173,7 +173,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Align(
               alignment: Alignment.bottomCenter,
               child: Container(
-                height: 200,
+                height: 280,
                 padding: const EdgeInsets.only(bottom: 16),
                 color: AppTheme.backgroundGray,
                 child: _RecipeRecommendationSection(),
@@ -207,7 +207,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             size: 32,
           ),
         ),
-      ),
       ),
     );
   }
