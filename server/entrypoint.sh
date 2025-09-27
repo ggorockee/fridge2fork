@@ -123,7 +123,7 @@ if [ "$APP_ENV" = "production" ]; then
         --access-logfile - \
         --error-logfile - \
         --log-level info
-elif [ "$APP_ENV" = "development" ]; then
+elif [ "$APP_ENV" = "development" ] || [ "$APP_ENV" = "dev" ] || [ "$APP_ENV" = "develop" ]; then
     log "🔧 Running Uvicorn for development..."
     exec uvicorn main:app \
         --host $HOST \
@@ -131,6 +131,6 @@ elif [ "$APP_ENV" = "development" ]; then
         --reload \
         --log-level debug
 else
-    error "Invalid APP_ENV: $APP_ENV. Must be 'production' or 'development'"
+    error "Invalid APP_ENV: $APP_ENV. Must be 'production', 'development', 'dev', or 'develop'"
     exit 1
 fi
