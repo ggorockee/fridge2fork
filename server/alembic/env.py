@@ -41,7 +41,15 @@ target_metadata = Base.metadata
 
 def get_url():
     """환경별 데이터베이스 URL 가져오기"""
-    return settings.DATABASE_URL
+    if settings.DATABASE_URL:
+        # asyncpg를 동기식으로 변환
+        url = settings.DATABASE_URL
+        if url.startswith("postgresql+asyncpg://"):
+            return url.replace("postgresql+asyncpg://", "postgresql://")
+        return url
+    else:
+        # 환경변수가 설정되지 않은 경우 기본 SQLite URL 반환 (동기식)
+        return "sqlite:///./dev.db"
 
 
 def run_migrations_offline() -> None:
