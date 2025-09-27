@@ -148,9 +148,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 // 상단 배너 광고 (수익성 극대화 - 첫 화면 최상단)
                 const AdBannerWidget(isTop: true),
               
-              // 냉장고 부분 - 전체 화면의 2/3
-              Expanded(
-                flex: 2,
+              // 냉장고 부분 - 높이 제한
+              SizedBox(
+                height: 400, // 고정 높이로 설정 (551에서 400으로 줄임)
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(0, 0, 0, 16), // 하단 여백을 20에서 16으로 줄임 (20% 감소)
                   child: Column(
