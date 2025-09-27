@@ -14,7 +14,7 @@ WORKDIR /app
 COPY requirements*.txt ./
 
 # 모든 의존성 설치
-RUN pip install --upgrade pip setuptools wheel && \
+RUN pip install --upgrade pip "setuptools>=65.5.0" wheel && \
     pip install --no-cache-dir -r requirements.txt && \
     pip install --no-cache-dir -r requirements-api.txt
 
