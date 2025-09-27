@@ -154,8 +154,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(0, 0, 0, 16), // 하단 여백을 20에서 16으로 줄임 (20% 감소)
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.start,
                     children: [
+                      const SizedBox(height: AppTheme.spacingL), // 상단 여백 추가
                       // 냉장고 아이콘 - 주황색 둥근 사각형
                       const _FridgeIcon(),
                       
