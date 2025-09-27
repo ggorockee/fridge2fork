@@ -181,8 +181,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: _RecipeRecommendationSection(),
               ),
               
-              // 남은 공간 채우기
-              const SizedBox(height: 30),
+              // 남은 공간 채우기 (15px로 줄임)
+              const SizedBox(height: 15),
               
             ],
           ),
@@ -190,7 +190,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           // 플로팅 액션 버튼 - 냉장고 영역 우하단에 위치
           Positioned(
             right: 16, // body 전체 기준 우측에서 16px 마진
-            bottom: 220 + 80 + 16, // 추천 레시피 높이(220) + 하단 네비(80) + 마진(16)
+            bottom: 220 + 80 + 15, // 추천 레시피 높이(220) + 하단 네비(80) + 마진(15)
             child: Showcase(
               key: homeScreenAddButtonKey,
               description: '냉장고에 식재료를 추가하려면 이 버튼을 누르세요!',
