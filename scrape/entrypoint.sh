@@ -1,6 +1,13 @@
 #!/bin/bash
 set -e
 
+# Kubernetes Secret에서 주입된 환경변수로 DATABASE_URL 구성
+if [ -n "$POSTGRES_DB" ] && [ -n "$POSTGRES_USER" ] && [ -n "$POSTGRES_PASSWORD" ] && [ -n "$POSTGRES_SERVER" ] && [ -n "$POSTGRES_PORT" ]; then
+    # DATABASE_URL 구성
+    export DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_SERVER}:${POSTGRES_PORT}/${POSTGRES_DB}"
+    echo "✅ DATABASE_URL 구성 완료: postgresql://${POSTGRES_USER}:***@${POSTGRES_SERVER}:${POSTGRES_PORT}/${POSTGRES_DB}"
+fi
+
 # 색상 정의
 RED='\033[0;31m'
 GREEN='\033[0;32m'

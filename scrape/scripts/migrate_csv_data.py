@@ -405,7 +405,22 @@ async def main(args):
         logger.info("🔍 CSV 파일 검색 중...")
         datas_dir = project_root / "datas"
         logger.info(f"    - 검색 디렉토리: {datas_dir}")
-        csv_files = sorted(datas_dir.glob("TB_RECIPE_SEARCH*.csv"))
+        
+        # 여러 패턴으로 CSV 파일 검색
+        csv_patterns = [
+            "TB_RECIPE_SEARCH*.csv",
+            "*.csv"
+        ]
+        
+        csv_files = []
+        for pattern in csv_patterns:
+            found_files = sorted(datas_dir.glob(pattern))
+            csv_files.extend(found_files)
+            if found_files:
+                logger.info(f"    - 패턴 '{pattern}'으로 {len(found_files)}개 파일 발견")
+        
+        # 중복 제거 및 정렬
+        csv_files = sorted(list(set(csv_files)))
 
         if not csv_files:
             logger.error("❌ CSV 파일을 찾을 수 없습니다!")
