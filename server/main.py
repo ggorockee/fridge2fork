@@ -46,8 +46,8 @@ app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.PROJECT_VERSION,
     description="냉장고 재료 기반 한식 레시피 추천 API",
-    docs_url="/docs" if settings.DEBUG else None,
-    redoc_url="/redoc" if settings.DEBUG else None,
+    docs_url=f"{settings.API_V1_STR}/docs" if settings.DEBUG else None,
+    redoc_url=f"{settings.API_V1_STR}/redoc" if settings.DEBUG else None,
     lifespan=lifespan
 )
 
