@@ -135,7 +135,7 @@ class RecipeIngredient(Base):
     ingredient_id = Column(Integer, ForeignKey("ingredients.id"), nullable=False)  # 재료 참조
 
     # 수량 정보
-    quantity_text = Column(String(100))                             # 원본 수량 표현
+    quantity_text = Column(Text)                                    # 원본 수량 표현 (TEXT 타입으로 변경)
     quantity_from = Column(Float)                                   # 파싱된 수량 시작값
     quantity_to = Column(Float)                                     # 파싱된 수량 끝값
     unit = Column(String(20))                                       # 단위

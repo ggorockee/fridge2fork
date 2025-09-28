@@ -380,17 +380,8 @@ class CSVDataMigrator:
         if not title:
             return None
 
-        # 중복 체크 (rcp_sno 기준으로 변경)
-        result = await session.execute(
-            select(Recipe).where(Recipe.rcp_sno == rcp_sno)
-        )
-        existing = result.scalar_one_or_none()
-        if existing:
-            self.stats['duplicates_skipped'] += 1
-            return existing  # 기존 레시피 반환
-
-        # 레시피 생성 (실제 DB 컬럼명 사용)
-        recipe = Recipe(
+        # UPSERT 로직 사용 (재시작 안전성을 위해)
+        stmt = insert(Recipe).values(
             rcp_sno=rcp_sno,  # PRIMARY KEY 값 설정
             rcp_ttl=title,
             rcp_img_url=str(row[column_mapping['image_url']]) if 'image_url' in column_mapping and pd.notna(row[column_mapping['image_url']]) else None,
@@ -401,10 +392,31 @@ class CSVDataMigrator:
             ckg_time_nm=str(row[column_mapping.get('time', '')]) if 'time' in column_mapping and pd.notna(row[column_mapping['time']]) else None,
             ckg_knd_acto_nm=str(row[column_mapping.get('category', '')]) if 'category' in column_mapping and pd.notna(row[column_mapping['category']]) else None,
         )
-        session.add(recipe)
-        await session.flush()  # ID 생성을 위해 flush
-        self.stats['recipes_created'] += 1
 
+        # ON CONFLICT DO UPDATE (UPSERT) - 중복 시 업데이트
+        stmt = stmt.on_conflict_do_update(
+            index_elements=['rcp_sno'],
+            set_=dict(
+                rcp_ttl=stmt.excluded.rcp_ttl,
+                rcp_img_url=stmt.excluded.rcp_img_url,
+                ckg_mth_acto_nm=stmt.excluded.ckg_mth_acto_nm,
+                ckg_ipdc=stmt.excluded.ckg_ipdc,
+                ckg_inbun_nm=stmt.excluded.ckg_inbun_nm,
+                ckg_dodf_nm=stmt.excluded.ckg_dodf_nm,
+                ckg_time_nm=stmt.excluded.ckg_time_nm,
+                ckg_knd_acto_nm=stmt.excluded.ckg_knd_acto_nm
+            )
+        )
+
+        result = await session.execute(stmt)
+
+        # 생성된/업데이트된 레시피 객체 조회
+        result = await session.execute(
+            select(Recipe).where(Recipe.rcp_sno == rcp_sno)
+        )
+        recipe = result.scalar_one()
+
+        self.stats['recipes_created'] += 1
         return recipe
 
     async def process_ingredients(self, session: AsyncSession, recipe_id: int, ingredients_text: str):
@@ -474,11 +486,16 @@ class CSVDataMigrator:
                     logger.error(f"Ingredient with ID {ingredient_id} not found, skipping RecipeIngredient")
                     continue
 
-                # 레시피-재료 연결 생성 (실제 DB 스키마에 맞춤)
-                recipe_ingredient = RecipeIngredient(
-                    rcp_sno=recipe_id,  # Recipe의 실제 PK 사용
+                # quantity_text (TEXT 타입으로 변경되어 길이 제한 없음)
+                quantity_text = parsed_ing.original_text if hasattr(parsed_ing, 'original_text') else None
+
+                # UPSERT 로직 사용 (PostgreSQL 전용)
+                from sqlalchemy.dialects.postgresql import insert
+
+                stmt = insert(RecipeIngredient).values(
+                    rcp_sno=recipe_id,
                     ingredient_id=ingredient_id,
-                    quantity_text=parsed_ing.original_text if hasattr(parsed_ing, 'original_text') else None,
+                    quantity_text=quantity_text,
                     quantity_from=parsed_ing.quantity_from,
                     quantity_to=parsed_ing.quantity_to,
                     unit=parsed_ing.unit,
@@ -486,7 +503,21 @@ class CSVDataMigrator:
                     display_order=0,
                     importance=getattr(parsed_ing, 'importance', 'normal')
                 )
-                session.add(recipe_ingredient)
+
+                # ON CONFLICT DO UPDATE (UPSERT)
+                stmt = stmt.on_conflict_do_update(
+                    index_elements=['rcp_sno', 'ingredient_id'],
+                    set_=dict(
+                        quantity_text=stmt.excluded.quantity_text,
+                        quantity_from=stmt.excluded.quantity_from,
+                        quantity_to=stmt.excluded.quantity_to,
+                        unit=stmt.excluded.unit,
+                        is_vague=stmt.excluded.is_vague,
+                        importance=stmt.excluded.importance
+                    )
+                )
+
+                await session.execute(stmt)
                 self.stats['recipe_ingredients_created'] += 1
 
             except Exception as e:
