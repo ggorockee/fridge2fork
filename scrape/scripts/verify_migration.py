@@ -27,6 +27,26 @@ from app.models.recipe import Recipe, Ingredient, IngredientCategory, RecipeIngr
 # 환경변수 로드
 load_dotenv()
 
+def get_database_url():
+    """환경변수에서 DATABASE_URL 가져오기 또는 구성"""
+    database_url = os.getenv("DATABASE_URL")
+    if database_url:
+        return database_url
+
+    # DATABASE_URL이 없으면 개별 환경변수로 구성
+    db = os.getenv("POSTGRES_DB")
+    user = os.getenv("POSTGRES_USER")
+    password = os.getenv("POSTGRES_PASSWORD")
+    host = os.getenv("POSTGRES_HOST") or os.getenv("POSTGRES_SERVER")
+    port = os.getenv("POSTGRES_PORT", "5432")
+
+    if all([db, user, password, host]):
+        database_url = f"postgresql://{user}:{password}@{host}:{port}/{db}"
+        os.environ["DATABASE_URL"] = database_url
+        return database_url
+
+    return None
+
 
 class MigrationVerifier:
     """마이그레이션 검증 클래스"""
@@ -37,9 +57,9 @@ class MigrationVerifier:
 
     async def initialize(self):
         """데이터베이스 연결 초기화"""
-        database_url = os.getenv("DATABASE_URL")
+        database_url = get_database_url()
         if not database_url:
-            raise ValueError("DATABASE_URL environment variable is not set")
+            raise ValueError("DATABASE_URL could not be determined from environment variables")
 
         # asyncpg를 사용하도록 URL 변환
         if database_url.startswith("postgresql://"):

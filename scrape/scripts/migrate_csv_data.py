@@ -185,15 +185,50 @@ class CSVDataMigrator:
                 logger.warning(f"❌ {enc} 인코딩 실패: {str(e)[:100]}...")
                 continue
 
-        # 마지막 시도: 오류 무시하고 읽기
+        # 마지막 시도: Latin-1 (모든 바이트를 허용)
         try:
-            logger.warning("⚠️ 모든 인코딩 실패, 오류 무시하고 읽기 시도...")
-            df = pd.read_csv(file_path, encoding='utf-8', on_bad_lines='skip', errors='ignore')
-            logger.info(f"✅ 오류 무시하고 로드 성공: {len(df):,}개 행")
+            logger.warning("⚠️ 모든 인코딩 실패, Latin-1으로 강제 읽기 시도...")
+            df = pd.read_csv(file_path, encoding='latin-1', on_bad_lines='skip')
+            logger.info(f"✅ Latin-1으로 로드 성공: {len(df):,}개 행")
+            logger.warning("⚠️ 일부 한글 텍스트가 깨질 수 있습니다.")
             return df
         except Exception as e:
             logger.error(f"❌ 최종 읽기 실패: {e}")
-            raise ValueError(f"Failed to read {file_path.name} with any encoding")
+
+            # 정말 마지막 시도: 텍스트 전처리 후 읽기
+            try:
+                logger.warning("⚠️ 텍스트 전처리 후 재시도...")
+                import tempfile
+
+                # 임시 파일로 텍스트 정리
+                with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as temp_file:
+                    with open(file_path, 'rb') as f:
+                        content = f.read()
+                        # 문제가 되는 바이트 제거
+                        content = content.replace(b'\x00', b'')  # NULL 바이트 제거
+                        content = content.replace(b'\x82', b'')  # 문제 바이트 제거
+                        content = content.replace(b'\xc9', b'')
+                        content = content.replace(b'\xbe', b'')
+
+                    # UTF-8로 다시 인코딩 시도
+                    try:
+                        text = content.decode('cp949', errors='ignore')
+                        temp_file.write(text)
+                    except:
+                        text = content.decode('utf-8', errors='ignore')
+                        temp_file.write(text)
+
+                    temp_path = temp_file.name
+
+                # 정리된 파일 읽기
+                df = pd.read_csv(temp_path, encoding='utf-8', on_bad_lines='skip')
+                os.unlink(temp_path)  # 임시 파일 삭제
+                logger.info(f"✅ 전처리 후 로드 성공: {len(df):,}개 행")
+                return df
+
+            except Exception as e2:
+                logger.error(f"❌ 전처리 후에도 실패: {e2}")
+                raise ValueError(f"Failed to read {file_path.name} with any encoding")
 
     async def migrate_file(self, file_path: Path):
         """단일 CSV 파일 마이그레이션"""
@@ -207,7 +242,6 @@ class CSVDataMigrator:
 
         # CSV 파일 읽기
         df = self.read_csv_file(file_path)
-        total_rows = len(df)
 
         # 최대 레코드 수 제한
         if self.max_records:

@@ -10,6 +10,29 @@ from alembic import context
 # Load environment variables
 load_dotenv()
 
+# DATABASE_URL이 없으면 POSTGRES_* 환경변수로 구성
+def get_database_url():
+    """환경변수에서 DATABASE_URL 가져오기 또는 구성"""
+    database_url = os.getenv("DATABASE_URL")
+    if database_url:
+        return database_url
+
+    # DATABASE_URL이 없으면 개별 환경변수로 구성
+    db = os.getenv("POSTGRES_DB")
+    user = os.getenv("POSTGRES_USER")
+    password = os.getenv("POSTGRES_PASSWORD")
+    host = os.getenv("POSTGRES_HOST") or os.getenv("POSTGRES_SERVER")
+    port = os.getenv("POSTGRES_PORT", "5432")
+
+    if all([db, user, password, host]):
+        database_url = f"postgresql://{user}:{password}@{host}:{port}/{db}"
+        # 환경변수에 설정해서 다른 곳에서도 사용 가능하게
+        os.environ["DATABASE_URL"] = database_url
+        print(f"🔗 DATABASE_URL 자동 구성: postgresql://{user}:***@{host}:{port}/{db}")
+        return database_url
+
+    return None
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
@@ -42,9 +65,9 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = os.getenv("DATABASE_URL")
+    url = get_database_url()
     if url is None:
-        raise ValueError("DATABASE_URL environment variable is not set")
+        raise ValueError("DATABASE_URL could not be determined from environment variables")
 
     context.configure(
         url=url,
@@ -65,9 +88,9 @@ def run_migrations_online() -> None:
 
     """
     # Get DATABASE_URL from environment
-    database_url = os.getenv("DATABASE_URL")
+    database_url = get_database_url()
     if database_url is None:
-        raise ValueError("DATABASE_URL environment variable is not set")
+        raise ValueError("DATABASE_URL could not be determined from environment variables")
 
     # Create configuration with database URL
     configuration = config.get_section(config.config_ini_section, {})
