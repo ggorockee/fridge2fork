@@ -318,11 +318,29 @@ class CSVDataMigrator:
 
         for idx, row in chunk.iterrows():
             async with self.async_session() as session:
+                recipe_created = False
+                recipe_obj = None
+
                 try:
-                    # 세션에서 트랜잭션 명시적 시작
+                    # 1단계: 레시피 생성 (별도 트랜잭션)
                     async with session.begin():
-                        await self.process_recipe(session, row, column_mapping)
-                    successful_count += 1
+                        recipe_obj = await self.create_recipe(session, row, column_mapping)
+                        if recipe_obj:
+                            recipe_created = True
+
+                    # 2단계: 재료 처리 (별도 트랜잭션으로 재료 실패가 레시피에 영향 안주도록)
+                    if recipe_created and recipe_obj:
+                        try:
+                            async with session.begin():
+                                if 'ingredients' in column_mapping and pd.notna(row[column_mapping['ingredients']]):
+                                    ingredients_text = str(row[column_mapping['ingredients']])
+                                    await self.process_ingredients(session, recipe_obj.rcp_sno, ingredients_text)
+                        except Exception as ingredient_error:
+                            logger.error(f"Error processing ingredients for recipe {recipe_obj.rcp_sno}: {ingredient_error}")
+                            # 재료 처리 실패해도 레시피는 유지
+
+                    if recipe_created:
+                        successful_count += 1
 
                 except Exception as e:
                     # 에러 정보 더 자세히 로깅
@@ -342,8 +360,8 @@ class CSVDataMigrator:
         if successful_count > 0:
             logger.info(f"✅ 청크 처리 완료: 성공 {successful_count}개, 실패 {error_count}개")
 
-    async def process_recipe(self, session: AsyncSession, row: pd.Series, column_mapping: Dict[str, str]):
-        """단일 레시피 처리"""
+    async def create_recipe(self, session: AsyncSession, row: pd.Series, column_mapping: Dict[str, str]) -> Recipe:
+        """단일 레시피 생성 (재료 처리는 별도)"""
         # 레시피 ID 추출 (필수)
         rcp_sno = None
         if 'rcp_sno' in column_mapping and pd.notna(row[column_mapping['rcp_sno']]):
@@ -351,16 +369,16 @@ class CSVDataMigrator:
                 rcp_sno = int(row[column_mapping['rcp_sno']])
             except (ValueError, TypeError) as e:
                 logger.error(f"Invalid rcp_sno value: {row[column_mapping['rcp_sno']]}, error: {e}")
-                return
+                return None
 
         if not rcp_sno:
             logger.error("rcp_sno is required but not found or invalid")
-            return
+            return None
 
         # 레시피 데이터 추출
         title = str(row[column_mapping['title']]) if pd.notna(row[column_mapping['title']]) else None
         if not title:
-            return
+            return None
 
         # 중복 체크 (rcp_sno 기준으로 변경)
         result = await session.execute(
@@ -369,7 +387,7 @@ class CSVDataMigrator:
         existing = result.scalar_one_or_none()
         if existing:
             self.stats['duplicates_skipped'] += 1
-            return
+            return existing  # 기존 레시피 반환
 
         # 레시피 생성 (실제 DB 컬럼명 사용)
         recipe = Recipe(
@@ -387,19 +405,23 @@ class CSVDataMigrator:
         await session.flush()  # ID 생성을 위해 flush
         self.stats['recipes_created'] += 1
 
-        # 재료 처리
-        if 'ingredients' in column_mapping and pd.notna(row[column_mapping['ingredients']]):
-            ingredients_text = str(row[column_mapping['ingredients']])
-            await self.process_ingredients(session, recipe.rcp_sno, ingredients_text)
+        return recipe
 
     async def process_ingredients(self, session: AsyncSession, recipe_id: int, ingredients_text: str):
-        """재료 처리 - 2단계로 분리하여 외래 키 제약조건 문제 해결"""
+        """재료 처리 - 중복 체크 및 트랜잭션 안전성 강화"""
         parsed_ingredients = parse_ingredients_list(ingredients_text)
         ingredient_data = []
 
-        # 1단계: 모든 재료를 먼저 생성하고 ID 수집
+        # 1단계: 모든 재료를 먼저 생성하고 ID 수집 (중복 제거)
+        seen_ingredients = set()
         for parsed_ing in parsed_ingredients:
             try:
+                # 같은 재료명 중복 제거
+                if parsed_ing.name in seen_ingredients:
+                    logger.debug(f"Skipping duplicate ingredient '{parsed_ing.name}' in same recipe")
+                    continue
+                seen_ingredients.add(parsed_ing.name)
+
                 # 재료 찾기 또는 생성
                 ingredient_id = await self.get_or_create_ingredient(
                     session,
@@ -417,15 +439,32 @@ class CSVDataMigrator:
                 logger.error(f"Error processing ingredient '{parsed_ing.name}': {e}")
 
         # 중간 flush로 모든 재료가 DB에 커밋되도록 함
-        await session.flush()
+        try:
+            await session.flush()
+        except Exception as e:
+            logger.error(f"Error flushing ingredients: {e}")
+            return
 
-        # 2단계: RecipeIngredient 생성
+        # 2단계: RecipeIngredient 생성 (각 재료별로 개별 트랜잭션 세이프 처리)
         for data in ingredient_data:
-            try:
-                ingredient_id = data['ingredient_id']
-                parsed_ing = data['parsed_ing']
+            ingredient_id = data['ingredient_id']
+            parsed_ing = data['parsed_ing']
 
-                # 재료가 실제로 존재하는지 다시 확인
+            try:
+                # 중복 RecipeIngredient 체크
+                result = await session.execute(
+                    select(RecipeIngredient).where(
+                        RecipeIngredient.rcp_sno == recipe_id,
+                        RecipeIngredient.ingredient_id == ingredient_id
+                    )
+                )
+                existing_recipe_ingredient = result.scalar_one_or_none()
+
+                if existing_recipe_ingredient:
+                    logger.debug(f"RecipeIngredient already exists for recipe {recipe_id}, ingredient {ingredient_id}, skipping")
+                    continue
+
+                # 재료가 실제로 존재하는지 확인
                 result = await session.execute(
                     select(Ingredient).where(Ingredient.id == ingredient_id)
                 )
@@ -451,7 +490,8 @@ class CSVDataMigrator:
                 self.stats['recipe_ingredients_created'] += 1
 
             except Exception as e:
-                logger.error(f"Error creating RecipeIngredient for ingredient {ingredient_id}: {e}")
+                logger.error(f"Error creating RecipeIngredient for recipe {recipe_id}, ingredient {ingredient_id}: {e}")
+                # 개별 재료 실패해도 계속 진행
 
     async def get_or_create_ingredient(self, session: AsyncSession, original_name: str, _unused: str) -> int:
         """재료 찾기 또는 생성 (실제 DB 스키마에 맞춤) - 안전성 강화"""
