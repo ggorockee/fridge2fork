@@ -85,6 +85,26 @@ class Recipe(Base):
     # 관계
     recipe_ingredients = relationship("RecipeIngredient", back_populates="recipe", cascade="all, delete-orphan")
 
+    # 인덱스 및 제약조건
+    __table_args__ = (
+        # 검색 성능 최적화 인덱스
+        Index('ix_recipes_title', 'rcp_ttl'),  # 제목 검색
+        Index('ix_recipes_method', 'ckg_mth_acto_nm'),  # 요리방법별 검색
+        Index('ix_recipes_difficulty', 'ckg_dodf_nm'),  # 난이도별 검색
+        Index('ix_recipes_time', 'ckg_time_nm'),  # 조리시간별 검색
+        Index('ix_recipes_category', 'ckg_knd_acto_nm'),  # 요리종류별 검색
+
+        # 인기도 기반 정렬 인덱스
+        Index('ix_recipes_popularity', 'inq_cnt', 'rcmm_cnt', postgresql_using='btree'),
+
+        # 등록일 인덱스
+        Index('ix_recipes_reg_date', 'first_reg_dt'),
+
+        # 생성일 및 수정일 인덱스
+        Index('ix_recipes_created_at', 'created_at'),
+        Index('ix_recipes_updated_at', 'updated_at'),
+    )
+
 
 # IngredientCategory 클래스 - 실제 DB에 테이블이 없어서 주석 처리
 # class IngredientCategory(Base):
@@ -125,6 +145,24 @@ class Ingredient(Base):
     # 관계
     recipe_ingredients = relationship("RecipeIngredient", back_populates="ingredient")
 
+    # 인덱스 및 제약조건
+    __table_args__ = (
+        # 재료명 검색 인덱스 (유니크 제약조건으로 자동 생성됨)
+        Index('ix_ingredients_name', 'name'),
+
+        # 카테고리별 검색 인덱스
+        Index('ix_ingredients_category', 'category'),
+
+        # 공통 재료 필터링 인덱스
+        Index('ix_ingredients_common', 'is_common'),
+
+        # 생성일 인덱스
+        Index('ix_ingredients_created_at', 'created_at'),
+
+        # 카테고리별 공통재료 복합 인덱스
+        Index('ix_ingredients_category_common', 'category', 'is_common'),
+    )
+
 
 class RecipeIngredient(Base):
     """레시피-재료 연결 테이블 - 새 스키마 버전"""
@@ -149,9 +187,19 @@ class RecipeIngredient(Base):
     recipe = relationship("Recipe", back_populates="recipe_ingredients")
     ingredient = relationship("Ingredient", back_populates="recipe_ingredients")
 
-    # 인덱스
+    # 인덱스 및 제약조건
     __table_args__ = (
+        # 기본 인덱스
         Index('ix_recipe_ingredients_rcp_sno', 'rcp_sno'),
         Index('ix_recipe_ingredients_ingredient_id', 'ingredient_id'),
         Index('ix_recipe_ingredients_importance', 'importance'),
+
+        # 복합 인덱스 (재료 기반 검색 최적화)
+        Index('ix_recipe_ingredients_compound', 'ingredient_id', 'rcp_sno', 'importance'),
+
+        # 표시 순서 인덱스
+        Index('ix_recipe_ingredients_display_order', 'rcp_sno', 'display_order'),
+
+        # 유니크 제약조건 (레시피-재료 조합)
+        Index('uk_recipe_ingredient', 'rcp_sno', 'ingredient_id', unique=True),
     )

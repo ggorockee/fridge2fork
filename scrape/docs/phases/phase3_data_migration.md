@@ -1,212 +1,397 @@
-# Phase 3: 로컬 데이터 마이그레이션 실행 가이드
+# Phase 3: CSV 데이터 마이그레이션 실행
 
-## 🎯 Phase 3 개요
+## 진행상황
 
-Phase 3는 CSV 파일의 레시피 데이터를 PostgreSQL 데이터베이스로 마이그레이션하는 단계입니다.
+- [x] 마이그레이션 전략 수립 완료
+- [x] 재료 파싱 로직 구현 완료
+- [x] CSV 마이그레이션 스크립트 구현 완료
+- [x] 에러 처리 및 복구 로직 구현 완료
+- [ ] 데이터베이스 환경 구성
+- [ ] 테스트 마이그레이션 실행 (소량 데이터)
+- [ ] 전체 데이터 마이그레이션 실행
+- [ ] 데이터 품질 검증
+- [ ] 성능 최적화 적용
+- [ ] 백업 및 인덱스 재구성
 
-## 📋 생성된 파일 목록
+## 개요
 
-### 분석 및 유틸리티
-- `scripts/analyze_csv.py` - CSV 파일 구조 및 인코딩 분석
-- `app/utils/ingredient_parser.py` - 재료 텍스트 파싱 모듈
+CSV 파일의 데이터를 정규화하여 PostgreSQL 데이터베이스에 저장하는 단계
 
-### 마이그레이션 스크립트
-- `scripts/migrate_csv_data.py` - 메인 데이터 마이그레이션
-- `scripts/verify_migration.py` - 마이그레이션 결과 검증
+## 데이터 마이그레이션 전략
 
-## 🚀 실행 방법
+### 1. 데이터 파일 현황
 
-### 사전 준비
-1. Phase 2 (데이터베이스 스키마)가 완료되어야 함
-2. PostgreSQL 서버가 실행 중이어야 함
-3. `.env` 파일에 `DATABASE_URL` 설정 필요
-4. CSV 파일이 `datas/` 디렉토리에 있어야 함
+| 파일명 | 크기 | 예상 레코드 수 | 상태 |
+|--------|------|----------------|------|
+| TB_RECIPE_SEARCH-2-1.csv | 35MB | ~60,000개 | ✅ 사용 가능 |
 
-### 1단계: CSV 파일 분석
+### 2. 마이그레이션 파이프라인
+
+```
+CSV 파일 읽기 → 인코딩 감지 → 데이터 검증 → 재료 파싱 → 정규화 → DB 저장
+```
+
+#### 단계별 세부 처리
+
+1. **파일 읽기 및 인코딩 처리**
+   - 자동 인코딩 감지 (EUC-KR, UTF-8, CP949)
+   - 손상된 문자 처리 및 복구
+   - 청크 단위 읽기 (메모리 효율성)
+
+2. **데이터 검증 및 정제**
+   - 필수 컬럼 존재 확인
+   - 중복 레시피 ID 처리
+   - NULL 값 및 빈 문자열 처리
+
+3. **재료 텍스트 파싱**
+   - 구분자 기반 재료 분리 (`|` 구분자)
+   - 수량 및 단위 추출
+   - 모호한 표현 감지 및 분류
+
+4. **데이터베이스 저장**
+   - UPSERT 로직으로 안전한 중복 처리
+   - 트랜잭션 기반 배치 처리
+   - 에러 복구 및 재시도 로직
+
+## 실행 방법
+
+### 1. 환경 설정
+
 ```bash
-# CSV 파일 구조 및 인코딩 확인
-python scripts/analyze_csv.py
+# 환경변수 확인
+echo $DATABASE_URL
+
+# 또는 개별 환경변수 설정
+export POSTGRES_DB=fridge2fork
+export POSTGRES_USER=fridge2fork
+export POSTGRES_PASSWORD=your_password
+export POSTGRES_SERVER=localhost
+export POSTGRES_PORT=5432
 ```
 
-출력 예시:
-```
-📄 파일: TB_RECIPE_SEARCH-20231130.csv
-📊 크기: 78.12 MB
-🔤 인코딩: EUC-KR
-✅ EUC-KR 인코딩으로 읽기 성공
-📝 총 행 수: 120,000
-📋 총 컬럼 수: 15
-```
+### 2. 데이터베이스 준비
 
-### 2단계: 데이터 마이그레이션 실행
-
-#### 전체 마이그레이션 (운영)
 ```bash
+# Alembic 마이그레이션 실행 (스키마 생성)
+alembic upgrade head
+
+# 또는 수동으로 테이블 삭제 후 재생성
+psql -h localhost -U fridge2fork -d fridge2fork -f docs/sql/00_drop_all_tables.sql
+alembic upgrade head
+```
+
+### 3. 마이그레이션 실행
+
+#### 전체 데이터 마이그레이션
+```bash
+# 전체 파일 처리
+python main.py migrate
+
+# 또는 직접 스크립트 실행
 python scripts/migrate_csv_data.py
 ```
 
-#### 테스트 마이그레이션 (개발)
+#### 테스트 마이그레이션 (소량 데이터)
 ```bash
-# 처음 1000개 레코드만 처리
-python scripts/migrate_csv_data.py --max-records 1000
+# 1000개 레코드만 테스트
+python main.py migrate --max-records 1000
 
-# 청크 크기 조정 (메모리 최적화)
-python scripts/migrate_csv_data.py --chunk-size 50
+# 청크 크기 조정 (메모리 제한 환경)
+python main.py migrate --chunk-size 50 --max-records 1000
 ```
 
-#### 옵션 설명
-- `--max-records`: 처리할 최대 레코드 수 (테스트용)
-- `--chunk-size`: 배치 처리 크기 (기본: 100)
-
-### 3단계: 마이그레이션 검증
+#### 배치 크기 최적화
 ```bash
-python scripts/verify_migration.py
+# 대용량 처리 (고성능 서버)
+python main.py migrate --chunk-size 500
+
+# 소규모 처리 (제한된 리소스)
+python main.py migrate --chunk-size 20
 ```
 
-검증 항목:
-- 기본 데이터 통계
-- 데이터 품질 검증
-- 카테고리별 재료 분포
-- 검색 기능 테스트
-- 인덱스 상태 확인
+## 재료 파싱 상세 로직
 
-## 📊 예상 처리 시간
+### 1. 재료 텍스트 분리
 
-| CSV 파일 | 크기 | 레코드 수 | 예상 시간 |
-|---------|------|----------|----------|
-| TB_RECIPE_SEARCH-20231130.csv | 78MB | ~120,000 | 15-20분 |
-| TB_RECIPE_SEARCH-220701.csv | 53MB | ~80,000 | 10-15분 |
-| TB_RECIPE_SEARCH_241226.csv | 17MB | ~25,000 | 3-5분 |
-| **총계** | **148MB** | **~225,000** | **30-40분** |
+**입력 예시:**
+```
+[재료] 어묵 2개| 김밥용김 3장| 당면 1움큼| 양파 1/2개| 당근 1/2개| 깻잎 6장| 튀김가루 1컵 | 올리브유 적당량| 간장 1T| 참기름 1T
+```
 
-## 🔍 마이그레이션 모니터링
+**분리 결과:**
+```
+1. "어묵 2개"
+2. "김밥용김 3장"
+3. "당면 1움큼"
+4. "양파 1/2개"
+5. "당근 1/2개"
+6. "깻잎 6장"
+7. "튀김가루 1컵"
+8. "올리브유 적당량"
+9. "간장 1T"
+10. "참기름 1T"
+```
 
-### 로그 파일 확인
+### 2. 개별 재료 파싱
+
+#### 정확한 수량 처리
+| 입력 | 재료명 | quantity_from | quantity_to | unit | is_vague |
+|------|--------|---------------|-------------|------|----------|
+| "어묵 2개" | 어묵 | 2.0 | NULL | 개 | FALSE |
+| "양파 1/2개" | 양파 | 0.5 | NULL | 개 | FALSE |
+| "간장 1T" | 간장 | 1.0 | NULL | Tbsp | FALSE |
+| "물 1~2컵" | 물 | 1.0 | 2.0 | cup | FALSE |
+
+#### 모호한 표현 처리
+| 입력 | 재료명 | quantity_text | is_vague | vague_description |
+|------|--------|---------------|----------|-------------------|
+| "올리브유 적당량" | 올리브유 | 적당량 | TRUE | 적당량 |
+| "소금 약간" | 소금 | 약간 | TRUE | 약간 |
+| "파슬리 조금" | 파슬리 | 조금 | TRUE | 조금 |
+
+### 3. 재료명 정규화
+
+| 원본 | 정규화 | 카테고리 |
+|------|--------|----------|
+| 다진 마늘 | 마늘 | 양념류 |
+| 대파 | 파 | 채소류 |
+| 진간장 | 간장 | 양념류 |
+| 삼겹살 | 돼지고기 | 육류 |
+| 칵테일새우 | 새우 | 해산물 |
+
+### 4. 단위 정규화
+
+| 원본 단위 | 정규화 단위 | 타입 |
+|-----------|-------------|------|
+| 큰술, T, 테이블스푼 | Tbsp | 부피 |
+| 작은술, t, 티스푼 | tsp | 부피 |
+| 컵, C | cup | 부피 |
+| 그램, g | g | 무게 |
+| 개, 알 | 개 | 개수 |
+| 장, 잎 | 장 | 개수 |
+
+## 에러 처리 및 복구
+
+### 1. 일반적인 에러 상황
+
+#### 인코딩 에러
+```python
+# 다중 인코딩 시도
+encodings = ['EUC-KR', 'CP949', 'UTF-8', 'UTF-8-SIG', 'latin-1']
+for encoding in encodings:
+    try:
+        df = pd.read_csv(file_path, encoding=encoding)
+        break
+    except UnicodeDecodeError:
+        continue
+```
+
+#### 데이터베이스 연결 에러
+```python
+# 재시도 로직
+for attempt in range(3):
+    try:
+        await session.execute(query)
+        break
+    except Exception as e:
+        if attempt == 2:
+            raise
+        await asyncio.sleep(2 ** attempt)
+```
+
+#### 재료 파싱 에러
+```python
+# 파싱 실패 시 원본 보존
+try:
+    parsed = parser.parse(ingredient_text)
+except Exception:
+    parsed = {
+        'name': ingredient_text,
+        'quantity_text': ingredient_text,
+        'is_vague': True
+    }
+```
+
+### 2. 복구 전략
+
+#### 중단된 마이그레이션 재시작
 ```bash
-# 실시간 로그 모니터링
-tail -f migration.log
-
-# 에러만 확인
-grep ERROR migration.log
-
-# 통계 확인
-grep "통계" migration.log
+# UPSERT 로직으로 중복 안전 처리
+# 어느 지점에서든 재시작 가능
+python main.py migrate
 ```
 
-### 프로그레스 바
-마이그레이션 중 tqdm 프로그레스바로 진행상황 확인:
-```
-Migrating TB_RECIPE_SEARCH-20231130.csv: 45%|████████▌         | 54000/120000 [05:23<06:34, 167.42it/s]
-```
-
-## ⚙️ 성능 최적화
-
-### 메모리 사용량 최적화
+#### 특정 범위만 재처리
 ```bash
-# 작은 청크 크기 사용
-python scripts/migrate_csv_data.py --chunk-size 50
-
-# 한 번에 하나의 파일만 처리
-python scripts/migrate_csv_data.py --max-records 10000
+# CSV 파일 분할 후 부분 처리
+python scripts/split_csv.py --input datas/TB_RECIPE_SEARCH-2-1.csv --chunks 10
+python main.py migrate --chunk-size 100 --max-records 10000
 ```
 
-### 데이터베이스 최적화
+## 데이터 검증
+
+### 1. 마이그레이션 통계 확인
+
+```bash
+# 데이터베이스 통계 조회
+python main.py stats
+```
+
+**예상 결과:**
+```
+📊 데이터베이스 통계
+==================
+총 레시피 수: 60,000개
+총 재료 수: 3,500개
+레시피-재료 연결: 420,000개
+평균 재료 수/레시피: 7.0개
+```
+
+### 2. 데이터 품질 검증
+
 ```sql
--- 마이그레이션 전 인덱스 임시 비활성화 (선택적)
-ALTER TABLE recipes DISABLE TRIGGER ALL;
-ALTER TABLE ingredients DISABLE TRIGGER ALL;
+-- 1. 중복 데이터 확인
+SELECT COUNT(*) - COUNT(DISTINCT rcp_sno) as 중복_레시피_수 FROM recipes;
 
--- 마이그레이션 후 재활성화
-ALTER TABLE recipes ENABLE TRIGGER ALL;
-ALTER TABLE ingredients ENABLE TRIGGER ALL;
+-- 2. 재료 파싱 성공률
+SELECT
+    ROUND(
+        COUNT(CASE WHEN is_vague = FALSE THEN 1 END) * 100.0 / COUNT(*),
+        2
+    ) as 정확한_수량_비율,
+    ROUND(
+        COUNT(CASE WHEN is_vague = TRUE THEN 1 END) * 100.0 / COUNT(*),
+        2
+    ) as 모호한_수량_비율
+FROM recipe_ingredients;
 
--- 통계 업데이트
+-- 3. 가장 많이 사용되는 재료 TOP 10
+SELECT i.name, COUNT(*) as 사용_레시피_수
+FROM recipe_ingredients ri
+JOIN ingredients i ON ri.ingredient_id = i.id
+GROUP BY i.id, i.name
+ORDER BY COUNT(*) DESC
+LIMIT 10;
+
+-- 4. 재료 수별 레시피 분포
+SELECT
+    ingredient_count,
+    COUNT(*) as 레시피_수
+FROM (
+    SELECT rcp_sno, COUNT(*) as ingredient_count
+    FROM recipe_ingredients
+    GROUP BY rcp_sno
+) sub
+GROUP BY ingredient_count
+ORDER BY ingredient_count;
+```
+
+### 3. 성능 검증
+
+```sql
+-- 재료 기반 검색 성능 테스트
+EXPLAIN ANALYZE
+SELECT r.rcp_ttl, COUNT(*) as matched_ingredients
+FROM recipes r
+JOIN recipe_ingredients ri ON r.rcp_sno = ri.rcp_sno
+JOIN ingredients i ON ri.ingredient_id = i.id
+WHERE i.name = ANY(ARRAY['양파', '당근', '돼지고기'])
+GROUP BY r.rcp_sno, r.rcp_ttl
+HAVING COUNT(*) >= 2
+ORDER BY COUNT(*) DESC, r.inq_cnt DESC
+LIMIT 20;
+```
+
+## 성능 최적화
+
+### 1. 배치 크기 조정
+
+| 환경 | 권장 청크 크기 | 메모리 사용량 |
+|------|----------------|---------------|
+| 로컬 개발 (8GB RAM) | 50-100 | ~200MB |
+| 서버 환경 (16GB RAM) | 200-500 | ~500MB |
+| 고성능 서버 (32GB+ RAM) | 1000+ | ~1GB |
+
+### 2. 동시성 제어
+
+```python
+# 데이터베이스 커넥션 풀 설정
+engine = create_async_engine(
+    database_url,
+    pool_size=10,          # 최대 연결 수
+    max_overflow=20,       # 추가 연결 수
+    pool_pre_ping=True     # 연결 상태 확인
+)
+```
+
+### 3. 메모리 최적화
+
+```python
+# 청크 처리 후 메모리 정리
+import gc
+for chunk in chunks:
+    process_chunk(chunk)
+    del chunk
+    gc.collect()
+```
+
+## 모니터링 및 로깅
+
+### 1. 진행률 모니터링
+
+```bash
+# 실시간 로그 확인
+tail -f /tmp/migration.log
+
+# 진행률 확인
+python main.py stats
+```
+
+### 2. 에러 로그 분석
+
+```bash
+# 에러 패턴 분석
+grep "ERROR" /tmp/migration.log | head -20
+
+# 특정 재료 파싱 에러 확인
+grep "ingredient parsing failed" /tmp/migration.log
+```
+
+## 완료 후 작업
+
+### 1. 인덱스 재구성
+
+```sql
+-- 통계 정보 업데이트
 ANALYZE recipes;
 ANALYZE ingredients;
 ANALYZE recipe_ingredients;
+
+-- 인덱스 재구성 (필요시)
+REINDEX INDEX idx_recipes_title;
+REINDEX INDEX idx_ingredients_name;
 ```
 
-## ⚠️ 트러블슈팅
+### 2. 백업 생성
 
-### 일반적인 문제들
-
-1. **메모리 부족 오류**
-   ```
-   MemoryError: Unable to allocate array
-   ```
-   - 해결: `--chunk-size`를 50 이하로 줄이기
-
-2. **인코딩 오류**
-   ```
-   UnicodeDecodeError: 'utf-8' codec can't decode
-   ```
-   - 해결: CSV 파일 인코딩 확인 (analyze_csv.py 실행)
-
-3. **데이터베이스 연결 오류**
-   ```
-   asyncpg.exceptions.ConnectionDoesNotExistError
-   ```
-   - 해결: DATABASE_URL 확인, PostgreSQL 서버 상태 확인
-
-4. **중복 키 오류**
-   ```
-   psycopg2.errors.UniqueViolation: duplicate key value
-   ```
-   - 해결: 기존 데이터 삭제 또는 중복 체크 로직 확인
-
-## 📈 마이그레이션 통계 예시
-
-성공적인 마이그레이션 후 예상 통계:
-
-```
-📊 마이그레이션 통계
-============================================================
-총 처리 레코드: 225,432
-생성된 레시피: 224,891
-생성된 재료: 8,234
-생성된 레시피-재료 연결: 1,349,346
-건너뛴 중복: 541
-오류: 0
-
-📊 데이터베이스 현황
-총 레시피 수: 224,891
-총 재료 수: 8,234
-총 레시피-재료 연결 수: 1,349,346
+```bash
+# 마이그레이션 완료 후 백업
+pg_dump -h localhost -U fridge2fork -d fridge2fork > backup_post_migration.sql
 ```
 
-## 🎯 다음 단계
-
-Phase 3 완료 후 다음 작업 가능:
-
-1. **API 개발**: FastAPI 엔드포인트 구현
-2. **검색 최적화**: 전문검색 인덱스 튜닝
-3. **Phase 4 진행**: Kubernetes 배포 준비
-
-## 📚 관련 문서
-- `docs/05_implementation_roadmap.md` - 전체 구현 로드맵
-- `docs/03_data_migration.md` - 데이터 마이그레이션 상세
-- `README_PHASE2.md` - Phase 2 실행 가이드
-
-## 🔄 데이터 재마이그레이션
-
-기존 데이터를 삭제하고 재마이그레이션이 필요한 경우:
+### 3. 성능 기준선 설정
 
 ```sql
--- 데이터 삭제 (순서 중요)
-TRUNCATE TABLE recipe_ingredients CASCADE;
-TRUNCATE TABLE recipes CASCADE;
-TRUNCATE TABLE ingredients CASCADE;
-
--- 카테고리는 유지
--- TRUNCATE TABLE ingredient_categories CASCADE;
-
--- 시퀀스 리셋
-ALTER SEQUENCE recipes_id_seq RESTART WITH 1;
-ALTER SEQUENCE ingredients_id_seq RESTART WITH 1;
-ALTER SEQUENCE recipe_ingredients_id_seq RESTART WITH 1;
+-- 쿼리 성능 기준선 측정
+\timing
+SELECT COUNT(*) FROM recipes; -- 기준: < 100ms
+SELECT COUNT(*) FROM ingredients; -- 기준: < 50ms
+SELECT COUNT(*) FROM recipe_ingredients; -- 기준: < 500ms
 ```
 
-재마이그레이션 실행:
-```bash
-python scripts/migrate_csv_data.py
-```
+## 다음 단계
+
+1. **Phase 4**: 데이터 검증 및 품질 관리 시스템
+2. **Phase 5**: Kubernetes 배포 및 운영 자동화
+3. **FastAPI 백엔드**: 레시피 추천 API 구현 (별도 프로젝트)
+4. **프론트엔드**: 웹 인터페이스 구축 (별도 프로젝트)

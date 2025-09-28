@@ -188,7 +188,7 @@ verify_migration() {
 
 # 메인 함수
 main() {
-    log_info "🚀 Fridge2Fork 데이터 마이그레이션 시작"
+    log_info "🚀 Fridge2Fork 애플리케이션 시작"
     log_info "시작 시간: $(date)"
 
     # 환경 확인
@@ -206,9 +206,41 @@ main() {
             insert_basic_data
 
             if [ "$MIGRATION_MODE" != "schema-only" ]; then
-                run_csv_migration
+                # main.py를 사용한 CSV 마이그레이션
+                log_info "main.py를 통한 CSV 마이그레이션 실행"
+                export MODE=migrate
+                python main.py
                 verify_migration
             fi
+            ;;
+
+        app)
+            # 유지보수 모드 (main.py 실행)
+            log_info "유지보수 모드 실행"
+            run_alembic_migrations  # 스키마 확인
+            export MODE=maintenance
+            python main.py
+            ;;
+
+        verify)
+            # 데이터 검증 모드
+            log_info "데이터 무결성 검증 모드"
+            export MODE=verify
+            python main.py
+            ;;
+
+        stats)
+            # 통계 모드
+            log_info "데이터베이스 통계 모드"
+            export MODE=stats
+            python main.py
+            ;;
+
+        health)
+            # 헬스 체크 모드
+            log_info "헬스 체크 모드"
+            export MODE=health
+            python main.py
             ;;
 
         alembic)
@@ -220,8 +252,8 @@ main() {
         data)
             # 데이터 마이그레이션만
             log_info "데이터 마이그레이션만 실행"
-            run_csv_migration
-            verify_migration
+            export MODE=migrate
+            python main.py
             ;;
 
         verify)
@@ -249,7 +281,7 @@ main() {
             ;;
     esac
 
-    log_info "🎉 마이그레이션 완료!"
+    log_info "🎉 작업 완료!"
     log_info "종료 시간: $(date)"
 }
 
