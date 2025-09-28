@@ -110,7 +110,18 @@ run_alembic_migrations() {
 
 # 기본 데이터 삽입
 insert_basic_data() {
+    # SKIP_BASIC_DATA 환경변수로 기본 데이터 삽입 건너뛰기 가능
+    if [ "$SKIP_BASIC_DATA" = "true" ]; then
+        log_info "ℹ️ 기본 데이터 삽입 건너뛰기 (SKIP_BASIC_DATA=true)"
+        return 0
+    fi
+
     log_info "==================== 기본 데이터 삽입 시작 ===================="
+
+    if [ ! -f "scripts/insert_basic_data.py" ]; then
+        log_warning "⚠️ scripts/insert_basic_data.py 파일이 없습니다. 기본 데이터 삽입 건너뛰기"
+        return 0
+    fi
 
     python scripts/insert_basic_data.py
 

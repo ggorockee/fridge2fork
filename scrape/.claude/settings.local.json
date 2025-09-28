@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__sequential-thinking__sequentialthinking",
+      "Bash(iconv:*)",
+      "Read(//Users/woohyeon/woohalabs/fridge2fork/**)",
+      "Read(//Users/woohyeon/.claude/**)",
+      "Bash(pip install:*)",
+      "Bash(conda install:*)",
+      "Bash(conda:*)",
+      "Bash(echo $CONDA_DEFAULT_ENV)",
+      "Bash(echo $VIRTUAL_ENV)",
+      "Bash(zsh:*)",
+      "Read(//opt/miniconda3/envs/**)",
+      "Bash(/opt/miniconda3/envs/fridge2fork/bin/python --version)",
+      "Bash(/opt/miniconda3/envs/fridge2fork/bin/pip --version)",
+      "Bash(/opt/miniconda3/envs/fridge2fork/bin/pip install -r requirements-api.txt)",
+      "Bash(/opt/miniconda3/envs/fridge2fork/bin/conda install numpy pandas -y)",
+      "Bash(/opt/miniconda3/bin/conda install -n fridge2fork numpy pandas -y)",
+      "Bash(/opt/miniconda3/envs/fridge2fork/bin/pip install pydantic==2.5.0 pydantic-settings==2.1.0 httpx==0.25.2 aiofiles==23.2.1 pytest==7.4.3 pytest-asyncio==0.21.1 pytest-cov==4.1.0)",
+      "Bash(/opt/miniconda3/envs/fridge2fork/bin/pip install black==23.11.0 isort==5.12.0 flake8==6.1.0 mypy==1.7.1)",
+      "Bash(/opt/miniconda3/envs/fridge2fork/bin/pip install rich==13.7.0 tqdm==4.66.1)",
+      "Bash(/opt/miniconda3/envs/fridge2fork/bin/pip install konlpy hanja)",
+      "Bash(/opt/miniconda3/envs/fridge2fork/bin/python:*)",
+      "Bash(tree:*)",
+      "Bash(chmod:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: 레시피 데이터 마이그레이션 시스템 구축 완료\n\nPhase 2-4 전체 구현으로 CSV 데이터를 PostgreSQL로 마이그레이션하는 \n통합 시스템 구축\n\n주요 변경사항:\n- SQLAlchemy 모델 및 Alembic 마이그레이션 설정\n- 한국어 재료 파싱 시스템 구현 (수량, 단위, 정규화)\n- CSV 데이터 분석 및 마이그레이션 스크립트 작성\n- 통합 Docker 이미지 (크롤링/마이그레이션 모드 지원)\n- PostgreSQL 전문검색 인덱스 및 성능 최적화\n- 포괄적인 문서화 및 단계별 실행 가이드\n- 불필요한 파일 정리 및 프로젝트 구조 개선\n\n기술 스택:\n- SQLAlchemy ORM, Alembic Migration\n- PostgreSQL GIN 인덱스 기반 한국어 검색\n- asyncio/asyncpg 비동기 처리\n- Docker 멀티 모드 지원\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: CSV 마이그레이션 및 배포 시스템 구축\n\n- CSV 데이터 마이그레이션 스크립트 로깅 개선 및 사용자 경험 향상\n- Helm chart 배포를 위한 포괄적인 문서 작성\n  * CSV 마이그레이션 가이드 (33만개 레코드 처리 최적화)\n  * Helm 배포 가이드 (Kubernetes 환경 구성)\n  * 빠른 배포 가이드 (원클릭 배포 지원)\n- .gitignore에 Helm chart 폴더 제외 추가\n- 플로팅 버튼 위치 미세 조정으로 UI 개선\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfix: 환경변수 및 CSV 인코딩 문제 해결\n\n- DATABASE_URL 미설정 시 POSTGRES_* 환경변수로 자동 구성 기능 추가\n- migrations/env.py에 get_database_url() 함수 구현\n- scripts/verify_migration.py에 동일한 로직 적용\n- CSV 파일 인코딩 문제를 위한 다단계 fallback 로직 개선\n- Latin-1 인코딩 및 텍스트 전처리 기능 추가\n- 사용하지 않는 import 및 변수 제거 (코드 품질 개선)\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "sequential-thinking",
+    "context7"
+  ],
+  "outputStyle": "korean-developer"
+}

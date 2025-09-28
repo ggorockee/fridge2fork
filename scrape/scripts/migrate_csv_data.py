@@ -281,34 +281,37 @@ class CSVDataMigrator:
         """데이터프레임에서 필요한 컬럼 감지"""
         column_mapping = {}
 
-        # 레시피명 컬럼 찾기
-        for col in df.columns:
-            if 'RCP_NM' in col or '레시피' in col and '명' in col:
-                column_mapping['title'] = col
-                break
+        logger.info(f"📋 사용 가능한 컬럼들: {', '.join(df.columns)}")
 
-        # 재료 컬럼 찾기
-        for col in df.columns:
-            if 'RCP_PARTS_DTLS' in col or '재료' in col:
-                column_mapping['ingredients'] = col
-                break
+        # 실제 CSV 컬럼명에 맞게 매핑
+        column_patterns = {
+            'title': ['RCP_TTL', 'RCP_NM', '레시피', '제목'],
+            'ingredients': ['CKG_MTRL_CN', 'RCP_PARTS_DTLS', '재료', '식재료'],
+            'cooking_method': ['CKG_MTH_ACTO_NM', 'RCP_WAY2', '요리방법', '조리방법'],
+            'category': ['CKG_KND_ACTO_NM', '요리종류'],
+            'difficulty': ['CKG_DODF_NM', '난이도'],
+            'time': ['CKG_TIME_NM', '조리시간'],
+            'servings': ['CKG_INBUN_NM', '인분'],
+            'image_url': ['ATT_FILE_NO_MAIN', 'IMG', '이미지']
+        }
 
-        # 요리방법 컬럼 찾기
-        for col in df.columns:
-            if 'RCP_WAY2' in col or '요리방법' in col or '조리방법' in col:
-                column_mapping['cooking_method'] = col
-                break
+        # 각 필드별로 컬럼 찾기
+        for field, patterns in column_patterns.items():
+            for pattern in patterns:
+                for col in df.columns:
+                    if pattern in col:
+                        column_mapping[field] = col
+                        logger.info(f"✅ {field} 매핑: {col}")
+                        break
+                if field in column_mapping:
+                    break
 
-        # 이미지 URL 컬럼 찾기
-        for col in df.columns:
-            if 'ATT_FILE' in col or 'IMG' in col or '이미지' in col:
-                column_mapping['image_url'] = col
-                break
-
-        # 필수 컬럼 확인
+        # 필수 컬럼 확인 (title만 필수)
         if 'title' not in column_mapping:
+            logger.error(f"❌ 필수 컬럼 'title'을 찾을 수 없습니다. 사용 가능한 컬럼: {list(df.columns)}")
             return None
 
+        logger.info(f"🗺️ 최종 매핑: {column_mapping}")
         return column_mapping
 
     async def process_chunk(self, chunk: pd.DataFrame, column_mapping: Dict[str, str]):
