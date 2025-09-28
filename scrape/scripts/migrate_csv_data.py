@@ -278,6 +278,7 @@ class CSVDataMigrator:
 
         # 실제 CSV 컬럼명에 맞게 매핑
         column_patterns = {
+            'rcp_sno': ['RCP_SNO', '레시피일련번호'],  # PRIMARY KEY 추가
             'title': ['RCP_TTL', 'RCP_NM', '레시피', '제목'],
             'ingredients': ['CKG_MTRL_CN', 'RCP_PARTS_DTLS', '재료', '식재료'],
             'cooking_method': ['CKG_MTH_ACTO_NM', 'RCP_WAY2', '요리방법', '조리방법'],
@@ -285,7 +286,7 @@ class CSVDataMigrator:
             'difficulty': ['CKG_DODF_NM', '난이도'],
             'time': ['CKG_TIME_NM', '조리시간'],
             'servings': ['CKG_INBUN_NM', '인분'],
-            'image_url': ['ATT_FILE_NO_MAIN', 'IMG', '이미지']
+            'image_url': ['ATT_FILE_NO_MAIN', 'IMG', '이미지', 'RCP_IMG_URL']
         }
 
         # 각 필드별로 컬럼 찾기
@@ -299,7 +300,10 @@ class CSVDataMigrator:
                 if field in column_mapping:
                     break
 
-        # 필수 컬럼 확인 (title만 필수)
+        # 필수 컬럼 확인 (rcp_sno와 title 필수)
+        if 'rcp_sno' not in column_mapping:
+            logger.error(f"❌ 필수 컬럼 'rcp_sno'를 찾을 수 없습니다. 사용 가능한 컬럼: {list(df.columns)}")
+            return None
         if 'title' not in column_mapping:
             logger.error(f"❌ 필수 컬럼 'title'을 찾을 수 없습니다. 사용 가능한 컬럼: {list(df.columns)}")
             return None
@@ -340,14 +344,27 @@ class CSVDataMigrator:
 
     async def process_recipe(self, session: AsyncSession, row: pd.Series, column_mapping: Dict[str, str]):
         """단일 레시피 처리"""
+        # 레시피 ID 추출 (필수)
+        rcp_sno = None
+        if 'rcp_sno' in column_mapping and pd.notna(row[column_mapping['rcp_sno']]):
+            try:
+                rcp_sno = int(row[column_mapping['rcp_sno']])
+            except (ValueError, TypeError) as e:
+                logger.error(f"Invalid rcp_sno value: {row[column_mapping['rcp_sno']]}, error: {e}")
+                return
+
+        if not rcp_sno:
+            logger.error("rcp_sno is required but not found or invalid")
+            return
+
         # 레시피 데이터 추출
         title = str(row[column_mapping['title']]) if pd.notna(row[column_mapping['title']]) else None
         if not title:
             return
 
-        # 중복 체크 (제목 기준)
+        # 중복 체크 (rcp_sno 기준으로 변경)
         result = await session.execute(
-            select(Recipe).where(Recipe.rcp_ttl == title)
+            select(Recipe).where(Recipe.rcp_sno == rcp_sno)
         )
         existing = result.scalar_one_or_none()
         if existing:
@@ -356,6 +373,7 @@ class CSVDataMigrator:
 
         # 레시피 생성 (실제 DB 컬럼명 사용)
         recipe = Recipe(
+            rcp_sno=rcp_sno,  # PRIMARY KEY 값 설정
             rcp_ttl=title,
             rcp_img_url=str(row[column_mapping['image_url']]) if 'image_url' in column_mapping and pd.notna(row[column_mapping['image_url']]) else None,
             ckg_mth_acto_nm=str(row[column_mapping['cooking_method']]) if 'cooking_method' in column_mapping and pd.notna(row[column_mapping['cooking_method']]) else None,
