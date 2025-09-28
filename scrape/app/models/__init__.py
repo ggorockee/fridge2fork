@@ -1,11 +1,10 @@
 """
 Database models
 """
-from .recipe import Recipe, IngredientCategory, Ingredient, RecipeIngredient
+from .recipe import Recipe, Ingredient, RecipeIngredient
 
 __all__ = [
     "Recipe",
-    "IngredientCategory",
     "Ingredient",
     "RecipeIngredient",
 ]

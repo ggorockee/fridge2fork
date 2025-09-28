@@ -1,7 +1,3 @@
-# Generated files
-*.json
-*.jsonl
-
 # Environment variables
 .env
 .venv
@@ -47,6 +43,7 @@ wheels/
 # Logs
 *.log
 logs/
+/tmp/
 
 # Testing
 .coverage
@@ -54,17 +51,17 @@ htmlcov/
 .pytest_cache/
 .tox/
 
-# Data files (except samples)
-# datas/*.csv
-# !datas/sample_*.csv
+# Data files - CSV 파일들은 용량이 크므로 제외
+datas/*.csv
+!datas/sample_*.csv
 
-datas/TB_RECIPE_SEARCH_241226.csv
-datas/무료 레시피 데이터_데이터명세서.csv
-datas/TB_RECIPE_SEARCH-20231130.csv
+# Generated output files
+*.json
+*.jsonl
 
 # Migrations (generated)
 migrations/versions/*.py
 !migrations/versions/__init__.py
 
-# Helm chart (not to be uploaded to git)
-scrape/
+# Temporary directories
+temp_*/

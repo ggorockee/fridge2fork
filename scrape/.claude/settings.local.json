@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(git commit -m \"$(cat <<''EOF''\nfix: Kubernetes 환경 CSV 마이그레이션 안정성 개선\n\n- entrypoint.sh: SKIP_BASIC_DATA 환경변수 지원 추가로 기본 데이터 삽입 제어 가능\n- entrypoint.sh: insert_basic_data.py 파일 존재 여부 검증 로직 추가\n- migrate_csv_data.py: CSV 컬럼 매핑 로직 개선으로 다양한 컬럼명 지원\n- migrate_csv_data.py: CKG_MTRL_CN, RCP_TTL 등 실제 CSV 컬럼명 매핑 추가\n- migrate_csv_data.py: 컬럼 매핑 과정의 상세한 로깅 추가\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []
