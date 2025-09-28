@@ -55,8 +55,8 @@ htmlcov/
 datas/TB_RECIPE_SEARCH-1.csv
 datas/TB_RECIPE_SEARCH-2.csv
 datas/TB_RECIPE_SEARCH-2-1.csv
-# datas/TB_RECIPE_SEARCH-2-2.csv
-datas/TB_RECIPE_SEARCH-3.csv
+datas/TB_RECIPE_SEARCH-2-2.csv
+# datas/TB_RECIPE_SEARCH-3.csv
 datas/RecipeSpecipic.csv
 !datas/sample_*.csv
 
