@@ -108,31 +108,6 @@ run_alembic_migrations() {
     fi
 }
 
-# 기본 데이터 삽입
-insert_basic_data() {
-    # SKIP_BASIC_DATA 환경변수로 기본 데이터 삽입 건너뛰기 가능
-    if [ "$SKIP_BASIC_DATA" = "true" ]; then
-        log_info "ℹ️ 기본 데이터 삽입 건너뛰기 (SKIP_BASIC_DATA=true)"
-        return 0
-    fi
-
-    log_info "==================== 기본 데이터 삽입 시작 ===================="
-
-    if [ ! -f "scripts/insert_basic_data.py" ]; then
-        log_warning "⚠️ scripts/insert_basic_data.py 파일이 없습니다. 기본 데이터 삽입 건너뛰기"
-        return 0
-    fi
-
-    python scripts/insert_basic_data.py
-
-    if [ $? -eq 0 ]; then
-        log_info "✅ 기본 데이터 삽입 성공!"
-    else
-        log_error "❌ 기본 데이터 삽입 실패!"
-        exit 1
-    fi
-}
-
 # CSV 데이터 마이그레이션
 run_csv_migration() {
     log_info "==================== CSV 데이터 마이그레이션 시작 ===================="
@@ -203,7 +178,6 @@ main() {
             # 전체 마이그레이션 프로세스
             log_info "전체 마이그레이션 모드"
             run_alembic_migrations
-            insert_basic_data
 
             if [ "$MIGRATION_MODE" != "schema-only" ]; then
                 # main.py를 사용한 CSV 마이그레이션

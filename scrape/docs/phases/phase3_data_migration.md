@@ -3,11 +3,12 @@
 ## 진행상황
 
 - [x] 마이그레이션 전략 수립 완료
-- [x] 재료 파싱 로직 구현 완료
-- [x] CSV 마이그레이션 스크립트 구현 완료
+- [x] 재료 파싱 로직 구현 완료 (`app/utils/ingredient_parser.py`)
+- [x] CSV 마이그레이션 스크립트 구현 완료 (`scripts/migrate_csv_data.py`)
 - [x] 에러 처리 및 복구 로직 구현 완료
-- [ ] 데이터베이스 환경 구성
-- [ ] 테스트 마이그레이션 실행 (소량 데이터)
+- [x] 메인 애플리케이션 구현 완료 (`main.py`)
+- [x] 데이터베이스 환경 구성 준비 완료
+- [ ] K8s 환경에서 테스트 마이그레이션 실행
 - [ ] 전체 데이터 마이그레이션 실행
 - [ ] 데이터 품질 검증
 - [ ] 성능 최적화 적용
@@ -71,42 +72,73 @@ export POSTGRES_PORT=5432
 
 ### 2. 데이터베이스 준비
 
+#### K8s 환경에서 Phase 2 마이그레이션 실행
 ```bash
-# Alembic 마이그레이션 실행 (스키마 생성)
-alembic upgrade head
+# Phase 2 마이그레이션 (스키마 생성)
+python scripts/run_phase2_migration.py --force
 
-# 또는 수동으로 테이블 삭제 후 재생성
-psql -h localhost -U fridge2fork -d fridge2fork -f docs/sql/00_drop_all_tables.sql
+# 또는 직접 Alembic 실행
+alembic upgrade head
+```
+
+#### 수동 테이블 초기화 (필요시)
+```bash
+# 테이블 삭제 후 재생성 (주의: 데이터 손실)
+python -c "
+import asyncio
+from scripts.migrate_csv_data import CSVDataMigrator
+async def reset():
+    m = CSVDataMigrator()
+    await m.initialize()
+    async with m.async_session() as session:
+        await session.execute('DROP SCHEMA public CASCADE; CREATE SCHEMA public;')
+        await session.commit()
+    await m.cleanup()
+asyncio.run(reset())
+"
 alembic upgrade head
 ```
 
 ### 3. 마이그레이션 실행
 
-#### 전체 데이터 마이그레이션
+#### K8s 환경에서 실행 (권장)
+```bash
+# 환경변수 설정 후 실행
+MODE=migrate python main.py
+
+# 테스트 마이그레이션 (1000개 레코드)
+MODE=migrate MAX_RECORDS=1000 python main.py
+
+# 소형 배치 처리 (메모리 제한 환경)
+MODE=migrate CHUNK_SIZE=50 MAX_RECORDS=1000 python main.py
+
+# 대용량 처리 (고성능 서버)
+MODE=migrate CHUNK_SIZE=500 python main.py
+```
+
+#### 직접 스크립트 실행
 ```bash
 # 전체 파일 처리
-python main.py migrate
-
-# 또는 직접 스크립트 실행
 python scripts/migrate_csv_data.py
+
+# 테스트 마이그레이션 (소량 데이터)
+python scripts/migrate_csv_data.py --max-records 1000 --chunk-size 50
+
+# 배치 크기 최적화
+python scripts/migrate_csv_data.py --chunk-size 500  # 고성능 서버
+python scripts/migrate_csv_data.py --chunk-size 20   # 제한된 리소스
 ```
 
-#### 테스트 마이그레이션 (소량 데이터)
+#### 마이그레이션 상태 확인
 ```bash
-# 1000개 레코드만 테스트
-python main.py migrate --max-records 1000
+# 실시간 통계 확인
+MODE=stats python main.py
 
-# 청크 크기 조정 (메모리 제한 환경)
-python main.py migrate --chunk-size 50 --max-records 1000
-```
+# 데이터 무결성 검증
+MODE=verify python main.py
 
-#### 배치 크기 최적화
-```bash
-# 대용량 처리 (고성능 서버)
-python main.py migrate --chunk-size 500
-
-# 소규모 처리 (제한된 리소스)
-python main.py migrate --chunk-size 20
+# 헬스 체크
+MODE=health python main.py
 ```
 
 ## 재료 파싱 상세 로직
