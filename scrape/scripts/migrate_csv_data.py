@@ -393,9 +393,11 @@ class CSVDataMigrator:
             await self.process_ingredients(session, recipe.rcp_sno, ingredients_text)
 
     async def process_ingredients(self, session: AsyncSession, recipe_id: int, ingredients_text: str):
-        """재료 처리"""
+        """재료 처리 - 2단계로 분리하여 외래 키 제약조건 문제 해결"""
         parsed_ingredients = parse_ingredients_list(ingredients_text)
+        ingredient_data = []
 
+        # 1단계: 모든 재료를 먼저 생성하고 ID 수집
         for parsed_ing in parsed_ingredients:
             try:
                 # 재료 찾기 또는 생성
@@ -404,6 +406,34 @@ class CSVDataMigrator:
                     parsed_ing.name,  # normalized_name 제거
                     parsed_ing.name
                 )
+
+                # 재료 데이터 저장 (나중에 RecipeIngredient 생성용)
+                ingredient_data.append({
+                    'ingredient_id': ingredient_id,
+                    'parsed_ing': parsed_ing
+                })
+
+            except Exception as e:
+                logger.error(f"Error processing ingredient '{parsed_ing.name}': {e}")
+
+        # 중간 flush로 모든 재료가 DB에 커밋되도록 함
+        await session.flush()
+
+        # 2단계: RecipeIngredient 생성
+        for data in ingredient_data:
+            try:
+                ingredient_id = data['ingredient_id']
+                parsed_ing = data['parsed_ing']
+
+                # 재료가 실제로 존재하는지 다시 확인
+                result = await session.execute(
+                    select(Ingredient).where(Ingredient.id == ingredient_id)
+                )
+                ingredient_exists = result.scalar_one_or_none()
+
+                if not ingredient_exists:
+                    logger.error(f"Ingredient with ID {ingredient_id} not found, skipping RecipeIngredient")
+                    continue
 
                 # 레시피-재료 연결 생성 (실제 DB 스키마에 맞춤)
                 recipe_ingredient = RecipeIngredient(
@@ -421,15 +451,25 @@ class CSVDataMigrator:
                 self.stats['recipe_ingredients_created'] += 1
 
             except Exception as e:
-                logger.error(f"Error processing ingredient '{parsed_ing.name}': {e}")
+                logger.error(f"Error creating RecipeIngredient for ingredient {ingredient_id}: {e}")
 
     async def get_or_create_ingredient(self, session: AsyncSession, original_name: str, _unused: str) -> int:
-        """재료 찾기 또는 생성 (실제 DB 스키마에 맞춤)"""
-        # 캐시에서 확인 (name 기준으로 변경)
+        """재료 찾기 또는 생성 (실제 DB 스키마에 맞춤) - 안전성 강화"""
+        # 1. 캐시에서 확인
         if original_name in self.ingredient_cache:
-            return self.ingredient_cache[original_name]
+            ingredient_id = self.ingredient_cache[original_name]
+            # 캐시된 ID가 실제로 존재하는지 검증
+            result = await session.execute(
+                select(Ingredient).where(Ingredient.id == ingredient_id)
+            )
+            if result.scalar_one_or_none():
+                return ingredient_id
+            else:
+                # 캐시에서 제거 (잘못된 데이터)
+                del self.ingredient_cache[original_name]
+                logger.warning(f"Removed invalid cached ingredient_id {ingredient_id} for '{original_name}'")
 
-        # 데이터베이스에서 확인 (name 컬럼 사용)
+        # 2. 데이터베이스에서 확인 (name 컬럼 사용)
         result = await session.execute(
             select(Ingredient).where(Ingredient.name == original_name)
         )
@@ -437,21 +477,42 @@ class CSVDataMigrator:
 
         if ingredient:
             self.ingredient_cache[original_name] = ingredient.id
+            logger.debug(f"Found existing ingredient '{original_name}' with ID {ingredient.id}")
             return ingredient.id
 
-        # 새 재료 생성 (실제 DB 스키마에 맞춤)
-        ingredient = Ingredient(
-            name=original_name,
-            original_name=original_name,
-            is_common=False
-        )
-        session.add(ingredient)
-        await session.flush()
+        # 3. 새 재료 생성 (실제 DB 스키마에 맞춤)
+        try:
+            ingredient = Ingredient(
+                name=original_name,
+                original_name=original_name,
+                is_common=False
+            )
+            session.add(ingredient)
+            await session.flush()  # ID 생성을 위해 flush
 
-        self.ingredient_cache[original_name] = ingredient.id
-        self.stats['ingredients_created'] += 1
+            # 생성된 ID 검증
+            if not ingredient.id:
+                raise ValueError(f"Failed to generate ID for ingredient '{original_name}'")
 
-        return ingredient.id
+            self.ingredient_cache[original_name] = ingredient.id
+            self.stats['ingredients_created'] += 1
+            logger.debug(f"Created new ingredient '{original_name}' with ID {ingredient.id}")
+
+            return ingredient.id
+
+        except Exception as e:
+            logger.error(f"Failed to create ingredient '{original_name}': {e}")
+            # 다시 한번 데이터베이스에서 확인 (동시 생성 가능성)
+            result = await session.execute(
+                select(Ingredient).where(Ingredient.name == original_name)
+            )
+            ingredient = result.scalar_one_or_none()
+            if ingredient:
+                self.ingredient_cache[original_name] = ingredient.id
+                logger.info(f"Found concurrently created ingredient '{original_name}' with ID {ingredient.id}")
+                return ingredient.id
+
+            raise
 
     async def print_statistics(self):
         """마이그레이션 통계 출력"""
