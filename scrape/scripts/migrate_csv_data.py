@@ -315,59 +315,70 @@ class CSVDataMigrator:
         return column_mapping
 
     async def process_chunk(self, chunk: pd.DataFrame, column_mapping: Dict[str, str]):
-        """데이터 청크 처리"""
-        async with self.async_session() as session:
-            try:
-                for _, row in chunk.iterrows():
-                    await self.process_recipe(session, row, column_mapping)
+        """데이터 청크 처리 - 개별 레시피마다 별도 트랜잭션 사용"""
+        successful_count = 0
+        error_count = 0
 
-                await session.commit()
-                self.stats['total_processed'] += len(chunk)
+        for idx, row in chunk.iterrows():
+            async with self.async_session() as session:
+                try:
+                    # 세션에서 트랜잭션 명시적 시작
+                    async with session.begin():
+                        await self.process_recipe(session, row, column_mapping)
+                    successful_count += 1
 
-            except Exception as e:
-                logger.error(f"Error processing chunk: {e}")
-                await session.rollback()
-                self.stats['errors'] += len(chunk)
+                except Exception as e:
+                    # 에러 정보 더 자세히 로깅
+                    recipe_info = ""
+                    try:
+                        if 'title' in column_mapping and pd.notna(row[column_mapping['title']]):
+                            recipe_info = f" (Recipe: {str(row[column_mapping['title']])[:50]})"
+                    except:
+                        pass
+
+                    logger.error(f"Error processing recipe at index {idx}{recipe_info}: {e}")
+                    error_count += 1
+
+        self.stats['total_processed'] += successful_count
+        self.stats['errors'] += error_count
+
+        if successful_count > 0:
+            logger.info(f"✅ 청크 처리 완료: 성공 {successful_count}개, 실패 {error_count}개")
 
     async def process_recipe(self, session: AsyncSession, row: pd.Series, column_mapping: Dict[str, str]):
         """단일 레시피 처리"""
-        try:
-            # 레시피 데이터 추출
-            title = str(row[column_mapping['title']]) if pd.notna(row[column_mapping['title']]) else None
-            if not title:
-                return
+        # 레시피 데이터 추출
+        title = str(row[column_mapping['title']]) if pd.notna(row[column_mapping['title']]) else None
+        if not title:
+            return
 
-            # URL 생성 (실제 URL이 없으므로 임시로 생성)
-            recipe_url = f"recipe_{self.stats['total_processed'] + 1}"
+        # URL 생성 (실제 URL이 없으므로 임시로 생성)
+        recipe_url = f"recipe_{self.stats['total_processed'] + self.stats['errors'] + 1}"
 
-            # 중복 체크
-            result = await session.execute(
-                select(Recipe).where(Recipe.url == recipe_url)
-            )
-            existing = result.scalar_one_or_none()
-            if existing:
-                self.stats['duplicates_skipped'] += 1
-                return
+        # 중복 체크
+        result = await session.execute(
+            select(Recipe).where(Recipe.url == recipe_url)
+        )
+        existing = result.scalar_one_or_none()
+        if existing:
+            self.stats['duplicates_skipped'] += 1
+            return
 
-            # 레시피 생성
-            recipe = Recipe(
-                url=recipe_url,
-                title=title,
-                image_url=str(row[column_mapping['image_url']]) if 'image_url' in column_mapping and pd.notna(row[column_mapping['image_url']]) else None,
-                cooking_method=str(row[column_mapping['cooking_method']]) if 'cooking_method' in column_mapping and pd.notna(row[column_mapping['cooking_method']]) else None,
-            )
-            session.add(recipe)
-            await session.flush()  # ID 생성을 위해 flush
-            self.stats['recipes_created'] += 1
+        # 레시피 생성
+        recipe = Recipe(
+            url=recipe_url,
+            title=title,
+            image_url=str(row[column_mapping['image_url']]) if 'image_url' in column_mapping and pd.notna(row[column_mapping['image_url']]) else None,
+            cooking_method=str(row[column_mapping['cooking_method']]) if 'cooking_method' in column_mapping and pd.notna(row[column_mapping['cooking_method']]) else None,
+        )
+        session.add(recipe)
+        await session.flush()  # ID 생성을 위해 flush
+        self.stats['recipes_created'] += 1
 
-            # 재료 처리
-            if 'ingredients' in column_mapping and pd.notna(row[column_mapping['ingredients']]):
-                ingredients_text = str(row[column_mapping['ingredients']])
-                await self.process_ingredients(session, recipe.id, ingredients_text)
-
-        except Exception as e:
-            logger.error(f"Error processing recipe: {e}")
-            self.stats['errors'] += 1
+        # 재료 처리
+        if 'ingredients' in column_mapping and pd.notna(row[column_mapping['ingredients']]):
+            ingredients_text = str(row[column_mapping['ingredients']])
+            await self.process_ingredients(session, recipe.id, ingredients_text)
 
     async def process_ingredients(self, session: AsyncSession, recipe_id: int, ingredients_text: str):
         """재료 처리"""
