@@ -76,7 +76,7 @@ class MigrationVerifier:
 
         async with self.async_session() as session:
             # 레시피 수
-            result = await session.execute(select(func.count(Recipe.id)))
+            result = await session.execute(select(func.count(Recipe.rcp_sno)))
             recipe_count = result.scalar()
             print(f"총 레시피 수: {recipe_count:,}")
 
@@ -85,8 +85,8 @@ class MigrationVerifier:
             ingredient_count = result.scalar()
             print(f"총 재료 수: {ingredient_count:,}")
 
-            # 카테고리 수
-            result = await session.execute(select(func.count(IngredientCategory.id)))
+            # 카테고리 수 (현재 별도 테이블 없음)
+            result = await session.execute(select(func.count(func.distinct(Ingredient.category))).where(Ingredient.category.is_not(None)))
             category_count = result.scalar()
             print(f"총 카테고리 수: {category_count:,}")
 
@@ -109,18 +109,18 @@ class MigrationVerifier:
         async with self.async_session() as session:
             # 제목이 없는 레시피
             result = await session.execute(
-                select(func.count(Recipe.id)).where(
-                    (Recipe.title == None) | (Recipe.title == '')
+                select(func.count(Recipe.rcp_sno)).where(
+                    (Recipe.rcp_ttl == None) | (Recipe.rcp_ttl == '')
                 )
             )
             empty_titles = result.scalar()
             print(f"❌ 제목이 없는 레시피: {empty_titles:,}")
 
             # 재료가 없는 레시피
-            subquery = select(RecipeIngredient.recipe_id).distinct()
+            subquery = select(RecipeIngredient.rcp_sno).distinct()
             result = await session.execute(
-                select(func.count(Recipe.id)).where(
-                    ~Recipe.id.in_(subquery)
+                select(func.count(Recipe.rcp_sno)).where(
+                    ~Recipe.rcp_sno.in_(subquery)
                 )
             )
             no_ingredients = result.scalar()
@@ -128,9 +128,9 @@ class MigrationVerifier:
 
             # 중복 레시피 (제목 기준)
             result = await session.execute(
-                select(Recipe.title, func.count(Recipe.id).label('cnt'))
-                .group_by(Recipe.title)
-                .having(func.count(Recipe.id) > 1)
+                select(Recipe.rcp_ttl, func.count(Recipe.rcp_sno).label('cnt'))
+                .group_by(Recipe.rcp_ttl)
+                .having(func.count(Recipe.rcp_sno) > 1)
             )
             duplicates = result.all()
             print(f"⚠️  중복 레시피 (제목 기준): {len(duplicates):,} 종류")
@@ -138,7 +138,7 @@ class MigrationVerifier:
             # 카테고리가 없는 재료
             result = await session.execute(
                 select(func.count(Ingredient.id)).where(
-                    Ingredient.category_id == None
+                    Ingredient.category == None
                 )
             )
             no_category = result.scalar()
@@ -153,12 +153,12 @@ class MigrationVerifier:
         async with self.async_session() as session:
             result = await session.execute(
                 select(
-                    IngredientCategory.name,
+                    Ingredient.category,
                     func.count(Ingredient.id).label('count')
                 )
-                .join(Ingredient, IngredientCategory.id == Ingredient.category_id, isouter=True)
-                .group_by(IngredientCategory.id, IngredientCategory.name)
-                .order_by(IngredientCategory.sort_order)
+                .where(Ingredient.category.is_not(None))
+                .group_by(Ingredient.category)
+                .order_by(Ingredient.category)
             )
             categories = result.all()
 
@@ -168,7 +168,7 @@ class MigrationVerifier:
             # 카테고리 없는 재료
             result = await session.execute(
                 select(func.count(Ingredient.id)).where(
-                    Ingredient.category_id == None
+                    Ingredient.category == None
                 )
             )
             no_cat_count = result.scalar()
@@ -188,8 +188,8 @@ class MigrationVerifier:
             for keyword in test_keywords:
                 # 제목 검색
                 result = await session.execute(
-                    select(func.count(Recipe.id)).where(
-                        Recipe.title.contains(keyword)
+                    select(func.count(Recipe.rcp_sno)).where(
+                        Recipe.rcp_ttl.contains(keyword)
                     )
                 )
                 count = result.scalar()
@@ -201,8 +201,7 @@ class MigrationVerifier:
             for ing_name in test_ingredients:
                 result = await session.execute(
                     select(func.count(Ingredient.id)).where(
-                        Ingredient.name.contains(ing_name) |
-                        Ingredient.normalized_name.contains(ing_name)
+                        Ingredient.name.contains(ing_name)
                     )
                 )
                 count = result.scalar()
@@ -222,15 +221,15 @@ class MigrationVerifier:
             recipes = result.scalars().all()
 
             for recipe in recipes:
-                print(f"\n🍳 레시피: {recipe.title}")
-                print(f"   URL: {recipe.url}")
-                print(f"   조리방법: {recipe.cooking_method}")
+                print(f"\n🍳 레시피: {recipe.rcp_ttl}")
+                print(f"   레시피번호: {recipe.rcp_sno}")
+                print(f"   조리방법: {recipe.ckg_mth_acto_nm}")
 
                 # 레시피의 재료
                 result = await session.execute(
                     select(RecipeIngredient, Ingredient)
                     .join(Ingredient)
-                    .where(RecipeIngredient.recipe_id == recipe.id)
+                    .where(RecipeIngredient.rcp_sno == recipe.rcp_sno)
                     .order_by(RecipeIngredient.display_order)
                     .limit(5)
                 )
@@ -246,8 +245,8 @@ class MigrationVerifier:
                                 quantity_str += f"~{ri.quantity_to}"
                             if ri.unit:
                                 quantity_str += f" {ri.unit}"
-                        elif ri.vague_description:
-                            quantity_str = ri.vague_description
+                        elif ri.is_vague:
+                            quantity_str = "적당량"
 
                         print(f"     - {ing.name}: {quantity_str}")
 
@@ -265,14 +264,11 @@ class MigrationVerifier:
             has_trgm = result.scalar()
             print(f"pg_trgm 확장: {'✅ 설치됨' if has_trgm else '❌ 설치 안 됨'}")
 
-            # 주요 인덱스 확인
+            # 주요 인덱스 확인 (실제 존재하는 인덱스만)
             indexes_to_check = [
-                'ix_recipes_url',
-                'ix_recipes_title',
-                'ix_ingredients_name',
-                'ix_ingredients_normalized_name',
-                'ix_recipe_ingredients_recipe_id',
-                'ix_recipe_ingredients_ingredient_id'
+                'ix_recipe_ingredients_rcp_sno',
+                'ix_recipe_ingredients_ingredient_id',
+                'ix_recipe_ingredients_importance'
             ]
 
             for index_name in indexes_to_check:
