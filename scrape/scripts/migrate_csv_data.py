@@ -164,21 +164,36 @@ class CSVDataMigrator:
         """CSV 파일 읽기"""
         logger.info("🔍 파일 인코딩 감지 중...")
         encoding = self.detect_encoding(file_path)
-        encodings_to_try = [encoding] if encoding else []
-        encodings_to_try.extend(['EUC-KR', 'UTF-8', 'CP949'])
-
+        
+        # 한국어 CSV 파일에 일반적인 인코딩들
+        encodings_to_try = ['EUC-KR', 'CP949', 'UTF-8', 'UTF-8-SIG']
+        if encoding and encoding not in encodings_to_try:
+            encodings_to_try.insert(0, encoding)
+        
         logger.info(f"📂 CSV 파일 읽기 시작: {file_path.name}")
+        logger.info(f"🔤 시도할 인코딩: {', '.join(encodings_to_try)}")
+        
         for enc in encodings_to_try:
             try:
-                df = pd.read_csv(file_path, encoding=enc)
+                logger.info(f"🔄 {enc} 인코딩으로 시도 중...")
+                df = pd.read_csv(file_path, encoding=enc, on_bad_lines='skip')
                 logger.info(f"✅ CSV 파일 로드 성공: {enc} 인코딩 사용")
                 logger.info(f"📊 데이터 크기: {len(df):,}개 행, {len(df.columns)}개 열")
                 logger.info(f"📋 컬럼 목록: {', '.join(df.columns[:5])}{'...' if len(df.columns) > 5 else ''}")
                 return df
-            except:
+            except Exception as e:
+                logger.warning(f"❌ {enc} 인코딩 실패: {str(e)[:100]}...")
                 continue
 
-        raise ValueError(f"Failed to read {file_path.name} with any encoding")
+        # 마지막 시도: 오류 무시하고 읽기
+        try:
+            logger.warning("⚠️ 모든 인코딩 실패, 오류 무시하고 읽기 시도...")
+            df = pd.read_csv(file_path, encoding='utf-8', on_bad_lines='skip', errors='ignore')
+            logger.info(f"✅ 오류 무시하고 로드 성공: {len(df):,}개 행")
+            return df
+        except Exception as e:
+            logger.error(f"❌ 최종 읽기 실패: {e}")
+            raise ValueError(f"Failed to read {file_path.name} with any encoding")
 
     async def migrate_file(self, file_path: Path):
         """단일 CSV 파일 마이그레이션"""
