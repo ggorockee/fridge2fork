@@ -65,8 +65,9 @@ datas/RecipeSpecipic.csv
 *.jsonl
 
 # Migrations (generated)
-migrations/versions/*.py
-!migrations/versions/__init__.py
+# migrations/versions/0*.py
+# !migrations/versions/__init__.py
 
 # Temporary directories
 temp_*/
+localdb/
