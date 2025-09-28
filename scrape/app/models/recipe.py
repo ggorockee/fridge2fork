@@ -1,7 +1,7 @@
 """
-Recipe related database models
+Recipe related database models - 새 스키마 버전
 """
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Float, ForeignKey, Index
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Float, ForeignKey, Index, BigInteger, CHAR
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -9,26 +9,53 @@ from app.db.base_class import Base
 
 
 class Recipe(Base):
-    """레시피 기본 정보"""
+    """레시피 기본 정보 - CSV 스키마와 일치"""
     __tablename__ = "recipes"
 
-    recipe_id = Column(Integer, primary_key=True, index=True)
-    url = Column(String(255), unique=True, nullable=False, index=True)
-    title = Column(String(255), nullable=False)
-    description = Column(Text)
-    image_url = Column(String(255))
+    rcp_sno = Column(BigInteger, primary_key=True)                    # 레시피일련번호 (원본 PK)
+    rcp_ttl = Column(String(200), nullable=False)                    # 레시피제목
+    ckg_nm = Column(String(40))                                      # 요리명
+    rgtr_id = Column(String(32))                                     # 등록자ID
+    rgtr_nm = Column(String(64))                                     # 등록자명
+    inq_cnt = Column(Integer, default=0)                             # 조회수
+    rcmm_cnt = Column(Integer, default=0)                            # 추천수
+    srap_cnt = Column(Integer, default=0)                            # 스크랩수
+    ckg_mth_acto_nm = Column(String(200))                            # 요리방법별명
+    ckg_sta_acto_nm = Column(String(200))                            # 요리상황별명
+    ckg_mtrl_acto_nm = Column(String(200))                           # 요리재료별명
+    ckg_knd_acto_nm = Column(String(200))                            # 요리종류별명
+    ckg_ipdc = Column(Text)                                          # 요리소개
+    ckg_mtrl_cn = Column(Text)                                       # 요리재료내용
+    ckg_inbun_nm = Column(String(200))                               # 요리인분명
+    ckg_dodf_nm = Column(String(200))                                # 요리난이도명
+    ckg_time_nm = Column(String(200))                                # 요리시간명
+    first_reg_dt = Column(CHAR(14))                                  # 최초등록일시
+    rcp_img_url = Column(Text)                                       # 레시피이미지URL
 
     # 메타데이터
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    # 실제 DB에 없는 컬럼들 제거
-    # author = Column(String(100))
-    # view_count = Column(Integer, default=0)
-    # cooking_method = Column(String(50))
-    # cooking_time = Column(String(50))
-    # difficulty = Column(String(20))
-    # servings = Column(String(30))
-    # updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    # 호환성을 위한 프로퍼티들 (기존 코드와의 호환)
+    @property
+    def id(self):
+        return self.rcp_sno
+
+    @property
+    def title(self):
+        return self.rcp_ttl
+
+    @property
+    def description(self):
+        return self.ckg_ipdc
+
+    @property
+    def image_url(self):
+        return self.rcp_img_url
+
+    @property
+    def url(self):
+        return f"recipe_{self.rcp_sno}"
 
     # 관계
     recipe_ingredients = relationship("RecipeIngredient", back_populates="recipe", cascade="all, delete-orphan")
@@ -49,47 +76,44 @@ class Recipe(Base):
 
 
 class Ingredient(Base):
-    """재료 정보"""
+    """재료 정보 - 새 스키마 버전"""
     __tablename__ = "ingredients"
 
-    ingredient_id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(100), nullable=False, index=True)
-    is_vague = Column(Boolean, default=False, index=True)
-    vague_description = Column(String(20))
+    id = Column(Integer, primary_key=True)                           # SERIAL PRIMARY KEY
+    name = Column(String(100), nullable=False, unique=True)         # 재료명 (정규화됨)
+    original_name = Column(String(100))                             # 원본 재료명
+    category = Column(String(50))                                   # 재료 카테고리
+    is_common = Column(Boolean, default=False)                      # 공통 재료 여부
 
-    # 실제 DB에 없는 컬럼들 제거
-    # normalized_name = Column(String(100), nullable=False, index=True)
-    # category_id = Column(Integer, ForeignKey("ingredient_categories.id"), nullable=True)
-    # is_ambiguous = Column(Boolean, default=False)
-    # created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    # 관계 수정
-    # category = relationship("IngredientCategory", back_populates="ingredients")
+    # 호환성을 위한 프로퍼티
+    @property
+    def ingredient_id(self):
+        return self.id
+
+    # 관계
     recipe_ingredients = relationship("RecipeIngredient", back_populates="ingredient")
 
 
 class RecipeIngredient(Base):
-    """레시피-재료 연결 테이블"""
+    """레시피-재료 연결 테이블 - 새 스키마 버전"""
     __tablename__ = "recipe_ingredients"
 
-    # 복합 PK 사용 (실제 DB와 일치)
-    recipe_id = Column(Integer, ForeignKey("recipes.recipe_id"), primary_key=True)
-    ingredient_id = Column(Integer, ForeignKey("ingredients.ingredient_id"), primary_key=True)
+    id = Column(Integer, primary_key=True)                           # SERIAL PRIMARY KEY
+    rcp_sno = Column(BigInteger, ForeignKey("recipes.rcp_sno"), nullable=False)  # 레시피 참조
+    ingredient_id = Column(Integer, ForeignKey("ingredients.id"), nullable=False)  # 재료 참조
 
-    # 수량 정보 (numeric(10,2)에 맞춤)
-    quantity_from = Column(Float)
-    quantity_to = Column(Float)
-    unit = Column(String(50))
+    # 수량 정보
+    quantity_text = Column(String(100))                             # 원본 수량 표현
+    quantity_from = Column(Float)                                   # 파싱된 수량 시작값
+    quantity_to = Column(Float)                                     # 파싱된 수량 끝값
+    unit = Column(String(20))                                       # 단위
+    is_vague = Column(Boolean, default=False)                       # 모호한 수량인지
 
-    # 중요도 (실제 DB에 있는 컬럼)
-    importance = Column(String(20), default="essential")
-
-    # 실제 DB에 없는 컬럼들 제거
-    # id = Column(Integer, primary_key=True, index=True)
-    # original_text = Column(String(200))
-    # is_vague = Column(Boolean, default=False)
-    # vague_description = Column(String(50))
-    # display_order = Column(Integer, default=0)
+    # 메타정보
+    display_order = Column(Integer, default=0)                      # 표시 순서
+    importance = Column(String(20), default='normal')               # 중요도
 
     # 관계
     recipe = relationship("Recipe", back_populates="recipe_ingredients")
@@ -97,7 +121,7 @@ class RecipeIngredient(Base):
 
     # 인덱스
     __table_args__ = (
-        Index('ix_recipe_ingredients_recipe_id', 'recipe_id'),
+        Index('ix_recipe_ingredients_rcp_sno', 'rcp_sno'),
         Index('ix_recipe_ingredients_ingredient_id', 'ingredient_id'),
         Index('ix_recipe_ingredients_importance', 'importance'),
     )
