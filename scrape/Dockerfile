@@ -22,12 +22,20 @@ RUN pip install --upgrade pip && \
 # 애플리케이션 코드 복사
 COPY app/ ./app/
 COPY scripts/ ./scripts/
+
+# migrations 디렉토리와 파일들 복사 (견고하게)
+RUN mkdir -p ./migrations/versions
 COPY migrations/ ./migrations/
+# 빈 디렉토리 문제 방지를 위해 명시적으로 __init__.py 생성
+RUN touch ./migrations/__init__.py && \
+    touch ./migrations/versions/__init__.py
+
 # datas 디렉토리 생성 및 CSV 파일 복사 (1개씩 처리)
 RUN mkdir -p ./datas
 COPY datas/ ./datas/
 COPY alembic.ini ./alembic.ini
 COPY crawler.py ./crawler.py
+COPY main.py ./main.py
 COPY entrypoint.sh ./entrypoint.sh
 COPY run_migration.py ./run_migration.py
 
