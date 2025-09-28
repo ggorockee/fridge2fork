@@ -22,7 +22,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select, func, text
 
-from app.models.recipe import Recipe, Ingredient, IngredientCategory, RecipeIngredient
+from app.models.recipe import Recipe, Ingredient, RecipeIngredient
 
 # 환경변수 로드
 load_dotenv()

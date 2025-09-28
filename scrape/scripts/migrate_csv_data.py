@@ -32,7 +32,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select, text
 from sqlalchemy.dialects.postgresql import insert
 
-from app.models.recipe import Recipe, Ingredient, IngredientCategory, RecipeIngredient
+from app.models.recipe import Recipe, Ingredient, RecipeIngredient
 from app.utils.ingredient_parser import IngredientParser, parse_ingredients_list
 
 # 환경변수 로드
@@ -133,21 +133,14 @@ class CSVDataMigrator:
     async def load_caches(self):
         """카테고리와 재료 캐시 로드"""
         async with self.async_session() as session:
-            # 카테고리 캐시 로드
-            try:
-                result = await session.execute(select(IngredientCategory))
-                categories = result.scalars().all()
-                self.category_cache = {cat.name: cat.id for cat in categories}
-                logger.info(f"Loaded {len(self.category_cache)} categories to cache")
-            except Exception as e:
-                logger.warning(f"카테고리 캐시 로딩 실패: {e}")
-                self.category_cache = {}
+            # 카테고리 기능 제거 (실제 DB에 테이블 없음)
+            self.category_cache = {}
 
-            # 재료 캐시 로드
+            # 재료 캐시 로드 (컬럼명 수정)
             try:
                 result = await session.execute(select(Ingredient))
                 ingredients = result.scalars().all()
-                self.ingredient_cache = {ing.normalized_name: ing.id for ing in ingredients}
+                self.ingredient_cache = {ing.name: ing.ingredient_id for ing in ingredients}
                 logger.info(f"Loaded {len(self.ingredient_cache)} ingredients to cache")
             except Exception as e:
                 logger.warning(f"재료 캐시 로딩 실패: {e}")
@@ -378,33 +371,31 @@ class CSVDataMigrator:
         # 재료 처리
         if 'ingredients' in column_mapping and pd.notna(row[column_mapping['ingredients']]):
             ingredients_text = str(row[column_mapping['ingredients']])
-            await self.process_ingredients(session, recipe.id, ingredients_text)
+            await self.process_ingredients(session, recipe.recipe_id, ingredients_text)
 
     async def process_ingredients(self, session: AsyncSession, recipe_id: int, ingredients_text: str):
         """재료 처리"""
         parsed_ingredients = parse_ingredients_list(ingredients_text)
 
-        for idx, parsed_ing in enumerate(parsed_ingredients):
+        for parsed_ing in parsed_ingredients:
             try:
                 # 재료 찾기 또는 생성
                 ingredient_id = await self.get_or_create_ingredient(
                     session,
-                    parsed_ing.normalized_name,
+                    parsed_ing.name,  # normalized_name 제거
                     parsed_ing.name
                 )
 
-                # 레시피-재료 연결 생성
+                # 레시피-재료 연결 생성 (실제 DB 스키마에 맞춤)
                 recipe_ingredient = RecipeIngredient(
                     recipe_id=recipe_id,
                     ingredient_id=ingredient_id,
                     quantity_from=parsed_ing.quantity_from,
                     quantity_to=parsed_ing.quantity_to,
                     unit=parsed_ing.unit,
-                    original_text=parsed_ing.original_text[:200] if parsed_ing.original_text else None,
-                    is_vague=parsed_ing.is_vague,
-                    vague_description=parsed_ing.vague_description[:50] if parsed_ing.vague_description else None,
-                    importance=parsed_ing.importance,
-                    display_order=idx
+                    importance=parsed_ing.importance
+                    # 실제 DB에 없는 컬럼들 제거:
+                    # original_text, is_vague, vague_description, display_order
                 )
                 session.add(recipe_ingredient)
                 self.stats['recipe_ingredients_created'] += 1
@@ -412,39 +403,35 @@ class CSVDataMigrator:
             except Exception as e:
                 logger.error(f"Error processing ingredient '{parsed_ing.name}': {e}")
 
-    async def get_or_create_ingredient(self, session: AsyncSession, normalized_name: str, original_name: str) -> int:
-        """재료 찾기 또는 생성"""
-        # 캐시에서 확인
-        if normalized_name in self.ingredient_cache:
-            return self.ingredient_cache[normalized_name]
+    async def get_or_create_ingredient(self, session: AsyncSession, original_name: str, _unused: str) -> int:
+        """재료 찾기 또는 생성 (실제 DB 스키마에 맞춤)"""
+        # 캐시에서 확인 (name 기준으로 변경)
+        if original_name in self.ingredient_cache:
+            return self.ingredient_cache[original_name]
 
-        # 데이터베이스에서 확인
+        # 데이터베이스에서 확인 (name 컬럼 사용)
         result = await session.execute(
-            select(Ingredient).where(Ingredient.normalized_name == normalized_name)
+            select(Ingredient).where(Ingredient.name == original_name)
         )
         ingredient = result.scalar_one_or_none()
 
         if ingredient:
-            self.ingredient_cache[normalized_name] = ingredient.id
-            return ingredient.id
+            self.ingredient_cache[original_name] = ingredient.ingredient_id
+            return ingredient.ingredient_id
 
-        # 새 재료 생성
-        category_name = self.parser.categorize_ingredient(normalized_name)
-        category_id = self.category_cache.get(category_name)
-
+        # 새 재료 생성 (실제 DB 스키마에 맞춤)
         ingredient = Ingredient(
             name=original_name,
-            normalized_name=normalized_name,
-            category_id=category_id,
-            is_ambiguous=False
+            is_vague=False,
+            vague_description=None
         )
         session.add(ingredient)
         await session.flush()
 
-        self.ingredient_cache[normalized_name] = ingredient.id
+        self.ingredient_cache[original_name] = ingredient.ingredient_id
         self.stats['ingredients_created'] += 1
 
-        return ingredient.id
+        return ingredient.ingredient_id
 
     async def print_statistics(self):
         """마이그레이션 통계 출력"""
