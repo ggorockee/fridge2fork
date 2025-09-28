@@ -58,6 +58,10 @@ htmlcov/
 # datas/*.csv
 # !datas/sample_*.csv
 
+datas/TB_RECIPE_SEARCH_241226.csv
+datas/무료 레시피 데이터_데이터명세서.csv
+datas/TB_RECIPE_SEARCH-20231130.csv
+
 # Migrations (generated)
 migrations/versions/*.py
 !migrations/versions/__init__.py

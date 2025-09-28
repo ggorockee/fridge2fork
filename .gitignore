@@ -263,3 +263,4 @@ mobile/.flutter-plugins-dependencies
 **/.env.common
 mobile/.dart_tool
 mobile/.cursor
+scrape/.claude/settings.local.json
