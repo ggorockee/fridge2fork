@@ -25,7 +25,7 @@ log_debug() {
     echo -e "${BLUE}[DEBUG]${NC} $1"
 }
 
-# 환경변수 설정
+# 환경변수 설정 (주의: 비밀번호 포함, 로그 출력 금지)
 export DATABASE_URL="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
 
 log_info "🔄 데이터베이스 연결 대기 중..."

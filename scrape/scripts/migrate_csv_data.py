@@ -72,7 +72,11 @@ class CSVDataMigrator:
         print(f"POSTGRES_PASSWORD: {'SET' if os.getenv('POSTGRES_PASSWORD') else 'NOT SET'}")
         print(f"POSTGRES_SERVER: {os.getenv('POSTGRES_SERVER', 'NOT SET')}")
         print(f"POSTGRES_PORT: {os.getenv('POSTGRES_PORT', 'NOT SET')}")
-        print(f"DATABASE_URL: {os.getenv('DATABASE_URL', 'NOT SET')}")
+        database_url = os.getenv('DATABASE_URL')
+        if database_url:
+            print("DATABASE_URL: SET (안전하게 마스킹됨)")
+        else:
+            print("DATABASE_URL: NOT SET")
         
         # DATABASE_URL이 없으면 환경변수로 구성 시도
         if not os.getenv('DATABASE_URL'):

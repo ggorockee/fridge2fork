@@ -8,7 +8,11 @@ echo "POSTGRES_USER: ${POSTGRES_USER:-'NOT SET'}"
 echo "POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:+SET}"
 echo "POSTGRES_SERVER: ${POSTGRES_SERVER:-'NOT SET'}"
 echo "POSTGRES_PORT: ${POSTGRES_PORT:-'NOT SET'}"
-echo "DATABASE_URL: ${DATABASE_URL:-'NOT SET'}"
+if [ -n "$DATABASE_URL" ]; then
+    echo "DATABASE_URL: SET (안전하게 마스킹됨)"
+else
+    echo "DATABASE_URL: NOT SET"
+fi
 
 # Kubernetes Secret에서 주입된 환경변수로 DATABASE_URL 구성
 if [ -n "$POSTGRES_DB" ] && [ -n "$POSTGRES_USER" ] && [ -n "$POSTGRES_PASSWORD" ] && [ -n "$POSTGRES_SERVER" ] && [ -n "$POSTGRES_PORT" ]; then
@@ -48,7 +52,11 @@ check_environment() {
         exit 1
     fi
 
-    log_info "DATABASE_URL 확인: ${DATABASE_URL%%@*}@***"
+    # DATABASE_URL에서 안전하게 호스트 정보만 추출하여 표시
+    DB_HOST_SAFE=$(echo "$DATABASE_URL" | sed -n 's/.*@\([^:]*\):.*/\1/p')
+    DB_PORT_SAFE=$(echo "$DATABASE_URL" | sed -n 's/.*:\([0-9]*\)\/.*/\1/p')
+    DB_NAME_SAFE=$(echo "$DATABASE_URL" | sed -n 's/.*\/\([^?]*\).*/\1/p')
+    log_info "DATABASE_URL 확인: postgresql://***:***@${DB_HOST_SAFE}:${DB_PORT_SAFE}/${DB_NAME_SAFE}"
     log_info "MIGRATION_MODE: ${MIGRATION_MODE:-full}"
     log_info "CHUNK_SIZE: ${CHUNK_SIZE:-100}"
     log_info "MAX_RECORDS: ${MAX_RECORDS:-0}"
