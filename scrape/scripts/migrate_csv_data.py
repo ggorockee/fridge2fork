@@ -140,7 +140,7 @@ class CSVDataMigrator:
             try:
                 result = await session.execute(select(Ingredient))
                 ingredients = result.scalars().all()
-                self.ingredient_cache = {ing.name: ing.ingredient_id for ing in ingredients}
+                self.ingredient_cache = {ing.name: ing.id for ing in ingredients}
                 logger.info(f"Loaded {len(self.ingredient_cache)} ingredients to cache")
             except Exception as e:
                 logger.warning(f"재료 캐시 로딩 실패: {e}")
@@ -345,24 +345,25 @@ class CSVDataMigrator:
         if not title:
             return
 
-        # URL 생성 (실제 URL이 없으므로 임시로 생성)
-        recipe_url = f"recipe_{self.stats['total_processed'] + self.stats['errors'] + 1}"
-
-        # 중복 체크
+        # 중복 체크 (제목 기준)
         result = await session.execute(
-            select(Recipe).where(Recipe.url == recipe_url)
+            select(Recipe).where(Recipe.rcp_ttl == title)
         )
         existing = result.scalar_one_or_none()
         if existing:
             self.stats['duplicates_skipped'] += 1
             return
 
-        # 레시피 생성
+        # 레시피 생성 (실제 DB 컬럼명 사용)
         recipe = Recipe(
-            url=recipe_url,
-            title=title,
-            image_url=str(row[column_mapping['image_url']]) if 'image_url' in column_mapping and pd.notna(row[column_mapping['image_url']]) else None,
-            cooking_method=str(row[column_mapping['cooking_method']]) if 'cooking_method' in column_mapping and pd.notna(row[column_mapping['cooking_method']]) else None,
+            rcp_ttl=title,
+            rcp_img_url=str(row[column_mapping['image_url']]) if 'image_url' in column_mapping and pd.notna(row[column_mapping['image_url']]) else None,
+            ckg_mth_acto_nm=str(row[column_mapping['cooking_method']]) if 'cooking_method' in column_mapping and pd.notna(row[column_mapping['cooking_method']]) else None,
+            ckg_ipdc=str(row[column_mapping.get('description', '')]) if 'description' in column_mapping and pd.notna(row[column_mapping['description']]) else None,
+            ckg_inbun_nm=str(row[column_mapping.get('servings', '')]) if 'servings' in column_mapping and pd.notna(row[column_mapping['servings']]) else None,
+            ckg_dodf_nm=str(row[column_mapping.get('difficulty', '')]) if 'difficulty' in column_mapping and pd.notna(row[column_mapping['difficulty']]) else None,
+            ckg_time_nm=str(row[column_mapping.get('time', '')]) if 'time' in column_mapping and pd.notna(row[column_mapping['time']]) else None,
+            ckg_knd_acto_nm=str(row[column_mapping.get('category', '')]) if 'category' in column_mapping and pd.notna(row[column_mapping['category']]) else None,
         )
         session.add(recipe)
         await session.flush()  # ID 생성을 위해 flush
@@ -371,7 +372,7 @@ class CSVDataMigrator:
         # 재료 처리
         if 'ingredients' in column_mapping and pd.notna(row[column_mapping['ingredients']]):
             ingredients_text = str(row[column_mapping['ingredients']])
-            await self.process_ingredients(session, recipe.recipe_id, ingredients_text)
+            await self.process_ingredients(session, recipe.rcp_sno, ingredients_text)
 
     async def process_ingredients(self, session: AsyncSession, recipe_id: int, ingredients_text: str):
         """재료 처리"""
@@ -388,14 +389,15 @@ class CSVDataMigrator:
 
                 # 레시피-재료 연결 생성 (실제 DB 스키마에 맞춤)
                 recipe_ingredient = RecipeIngredient(
-                    recipe_id=recipe_id,
+                    rcp_sno=recipe_id,  # Recipe의 실제 PK 사용
                     ingredient_id=ingredient_id,
+                    quantity_text=parsed_ing.original_text if hasattr(parsed_ing, 'original_text') else None,
                     quantity_from=parsed_ing.quantity_from,
                     quantity_to=parsed_ing.quantity_to,
                     unit=parsed_ing.unit,
-                    importance=parsed_ing.importance
-                    # 실제 DB에 없는 컬럼들 제거:
-                    # original_text, is_vague, vague_description, display_order
+                    is_vague=getattr(parsed_ing, 'is_vague', False),
+                    display_order=0,
+                    importance=getattr(parsed_ing, 'importance', 'normal')
                 )
                 session.add(recipe_ingredient)
                 self.stats['recipe_ingredients_created'] += 1
@@ -416,22 +418,22 @@ class CSVDataMigrator:
         ingredient = result.scalar_one_or_none()
 
         if ingredient:
-            self.ingredient_cache[original_name] = ingredient.ingredient_id
-            return ingredient.ingredient_id
+            self.ingredient_cache[original_name] = ingredient.id
+            return ingredient.id
 
         # 새 재료 생성 (실제 DB 스키마에 맞춤)
         ingredient = Ingredient(
             name=original_name,
-            is_vague=False,
-            vague_description=None
+            original_name=original_name,
+            is_common=False
         )
         session.add(ingredient)
         await session.flush()
 
-        self.ingredient_cache[original_name] = ingredient.ingredient_id
+        self.ingredient_cache[original_name] = ingredient.id
         self.stats['ingredients_created'] += 1
 
-        return ingredient.ingredient_id
+        return ingredient.id
 
     async def print_statistics(self):
         """마이그레이션 통계 출력"""

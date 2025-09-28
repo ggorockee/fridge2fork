@@ -41,21 +41,46 @@ class Recipe(Base):
     def id(self):
         return self.rcp_sno
 
+    @id.setter
+    def id(self, value):
+        # id는 계산된 프로퍼티이므로 설정을 무시합니다
+        pass
+
     @property
     def title(self):
         return self.rcp_ttl
+
+    @title.setter
+    def title(self, value):
+        # title는 계산된 프로퍼티이므로 설정을 무시합니다
+        pass
 
     @property
     def description(self):
         return self.ckg_ipdc
 
+    @description.setter
+    def description(self, value):
+        # description은 계산된 프로퍼티이므로 설정을 무시합니다
+        pass
+
     @property
     def image_url(self):
         return self.rcp_img_url
 
+    @image_url.setter
+    def image_url(self, value):
+        # image_url은 계산된 프로퍼티이므로 설정을 무시합니다
+        pass
+
     @property
     def url(self):
         return f"recipe_{self.rcp_sno}"
+
+    @url.setter
+    def url(self, value):
+        # url은 계산된 프로퍼티이므로 설정을 무시합니다
+        pass
 
     # 관계
     recipe_ingredients = relationship("RecipeIngredient", back_populates="recipe", cascade="all, delete-orphan")
@@ -91,6 +116,11 @@ class Ingredient(Base):
     @property
     def ingredient_id(self):
         return self.id
+
+    @ingredient_id.setter
+    def ingredient_id(self, value):
+        # ingredient_id는 계산된 프로퍼티이므로 설정을 무시합니다
+        pass
 
     # 관계
     recipe_ingredients = relationship("RecipeIngredient", back_populates="ingredient")
