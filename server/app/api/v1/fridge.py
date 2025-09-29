@@ -1,12 +1,12 @@
 """
 냉장고 관리 API 엔드포인트 (세션 기반)
 """
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Body
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_, or_, text
-from sqlalchemy.orm import selectinload
 from typing import Optional, List, Dict, Any
-import random
+
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, func, and_
+from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.core.session import SessionManager
@@ -30,7 +30,7 @@ async def get_ingredients(
     try:
         # 기본 쿼리
         query = select(Ingredient)
-        count_query = select(func.count(Ingredient.ingredient_id))
+        count_query = select(func.count(Ingredient.id))
         
         # 검색 필터
         if search:
@@ -56,10 +56,10 @@ async def get_ingredients(
         ingredient_list = []
         for ingredient in ingredients:
             ingredient_dict = {
-                "ingredient_id": ingredient.ingredient_id,
+                "id": ingredient.id,
                 "name": ingredient.name,
-                "is_vague": ingredient.is_vague,
-                "vague_description": ingredient.vague_description
+                "category": ingredient.category,
+                "is_common": ingredient.is_common
             }
             ingredient_list.append(ingredient_dict)
         
@@ -104,7 +104,7 @@ async def get_recipes_by_ingredients(
             )
         
         # 재료 ID 조회
-        ingredient_query = select(Ingredient.ingredient_id).where(
+        ingredient_query = select(Ingredient.id).where(
             Ingredient.name.in_(ingredient_names)
         )
         ingredient_result = await db.execute(ingredient_query)

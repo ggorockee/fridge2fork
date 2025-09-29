@@ -3,8 +3,9 @@
 """
 import os
 from typing import List, Optional
-from pydantic_settings import BaseSettings
+
 from dotenv import load_dotenv
+from pydantic_settings import BaseSettings
 
 # .env 파일 로드
 load_dotenv()
@@ -41,7 +42,7 @@ class Settings(BaseSettings):
     DB_PASSWORD: str = ""
     
     # JWT 설정
-    JWT_SECRET_KEY: str = "your-super-secret-jwt-key-change-this-in-production"
+    JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "dev-only-secret-key-change-in-production")
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 30
     JWT_REFRESH_EXPIRE_MINUTES: int = 10080  # 7일
@@ -93,7 +94,7 @@ class TestSettings(BaseSettings):
     DB_PASSWORD: str = "test_password"
     
     # JWT 설정
-    JWT_SECRET_KEY: str = "test_secret_key_for_testing_only"
+    JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "test_secret_key_for_testing_only")
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 30
     JWT_REFRESH_EXPIRE_MINUTES: int = 10080  # 7일
