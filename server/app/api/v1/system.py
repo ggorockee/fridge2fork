@@ -97,10 +97,10 @@ async def get_system_stats(db: AsyncSession = Depends(get_db)):
         from app.models.recipe import Recipe, Ingredient, RecipeIngredient
         
         # 기본 통계
-        recipe_count_result = await db.execute(select(func.count(Recipe.recipe_id)))
+        recipe_count_result = await db.execute(select(func.count(Recipe.rcp_sno)))
         recipe_count = recipe_count_result.scalar()
-        
-        ingredient_count_result = await db.execute(select(func.count(Ingredient.ingredient_id)))
+
+        ingredient_count_result = await db.execute(select(func.count(Ingredient.id)))
         ingredient_count = ingredient_count_result.scalar()
         
         return {

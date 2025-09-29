@@ -128,8 +128,8 @@ async def get_recipes_by_ingredients(
         recipe_query = select(Recipe).options(
             selectinload(Recipe.ingredients).selectinload(RecipeIngredient.ingredient)
         ).where(
-            Recipe.recipe_id.in_(
-                select(RecipeIngredient.recipe_id).where(
+            Recipe.rcp_sno.in_(
+                select(RecipeIngredient.rcp_sno).where(
                     RecipeIngredient.ingredient_id.in_(available_ingredient_ids)
                 )
             )
@@ -160,11 +160,11 @@ async def get_recipes_by_ingredients(
                     matched_ingredients.append(ingredient_info)
             
             recipe_dict = {
-                "recipe_id": recipe.recipe_id,
-                "url": recipe.url,
-                "title": recipe.title,
-                "description": recipe.description,
-                "image_url": recipe.image_url,
+                "recipe_id": recipe.rcp_sno,
+                "url": None,  # Recipe 모델에 url 필드 없음
+                "title": recipe.rcp_ttl,
+                "description": recipe.ckg_ipdc,
+                "image_url": recipe.rcp_img_url,
                 "created_at": recipe.created_at,
                 "matched_ingredients": matched_ingredients,
                 "total_ingredients": len(recipe.ingredients),
