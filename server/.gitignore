@@ -7,3 +7,8 @@ __pycache__/
 .Python
 *.so
 .pytest_cache/
+
+# 사용자 요청 및 작업 파일
+my_request.txt
+WORK.md
+.claude/
