@@ -8,10 +8,11 @@ from pydantic import BaseModel, Field, ConfigDict
 
 
 class IngredientBase(BaseModel):
-    """🥕 식재료 기본 스키마"""
+    """🥕 식재료 기본 스키마 - 실제 DB 스키마와 일치"""
     name: str = Field(..., min_length=1, max_length=100, description="식재료 이름")
-    is_vague: bool = Field(False, description="모호한 식재료 여부")
-    vague_description: Optional[str] = Field(None, max_length=20, description="모호한 식재료 설명")
+    original_name: Optional[str] = Field(None, max_length=100, description="원본 재료명")
+    category: Optional[str] = Field(None, max_length=50, description="재료 카테고리")
+    is_common: bool = Field(False, description="공통 재료 여부")
 
 
 class IngredientCreate(IngredientBase):
@@ -22,13 +23,15 @@ class IngredientCreate(IngredientBase):
 class IngredientUpdate(BaseModel):
     """🥕 식재료 수정 스키마"""
     name: Optional[str] = Field(None, min_length=1, max_length=100)
-    is_vague: Optional[bool] = None
-    vague_description: Optional[str] = Field(None, max_length=20)
+    original_name: Optional[str] = Field(None, max_length=100)
+    category: Optional[str] = Field(None, max_length=50)
+    is_common: Optional[bool] = None
 
 
 class IngredientResponse(IngredientBase):
     """🥕 식재료 응답 스키마"""
     id: int
+    created_at: Optional[datetime] = Field(None, description="생성 시간")
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -312,11 +315,17 @@ class RecipeDeleteResponse(BaseModel):
 # ===== 식재료 관련 스키마 확장 =====
 
 class IngredientWithRecipeCount(IngredientResponse):
-    """🥕 레시피 개수가 포함된 식재료 스키마"""
+    """🥕 레시피 개수가 포함된 식재료 스키마 - 정규화 API용"""
     recipe_count: int = Field(..., description="사용된 레시피 개수")
+
+    # 호환성을 위한 필드들 (정규화 API에서 사용)
     normalization_status: Optional[str] = Field(None, description="정규화 상태")
     suggested_normalized_name: Optional[str] = Field(None, description="제안된 정규화 이름")
     confidence_score: Optional[float] = Field(None, description="신뢰도 점수")
+
+    # 기존 필드는 실제 스키마에 맞게 무시하거나 기본값 처리
+    is_vague: Optional[bool] = Field(False, description="모호한 식재료 여부 (호환성)")
+    vague_description: Optional[str] = Field(None, description="모호한 식재료 설명 (호환성)")
 
 
 class IngredientListResponse(BaseModel):

@@ -11,18 +11,23 @@ from apps.database import Base
 
 
 class Ingredient(Base):
-    """🥕 식재료 모델"""
+    """🥕 식재료 모델 - 실제 DB 스키마와 일치"""
     __tablename__ = "ingredients"
-    
+
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     name = Column(String(100), nullable=False, unique=True, comment="정규화된 재료 이름 (고유값)")
-    is_vague = Column(Boolean, default=False, comment="모호한 식재료 여부")
-    vague_description = Column(String(20), comment="모호한 식재료 설명")
+    original_name = Column(String(100), comment="원본 재료명")
+    category = Column(String(50), comment="재료 카테고리")
+    is_common = Column(Boolean, default=False, comment="공통 재료 여부")
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="생성 시간")
     
-    # 인덱스 설정
+    # 인덱스 설정 - 실제 DB와 일치
     __table_args__ = (
-        Index("idx_ingredients_is_vague", "is_vague"),
-        Index("idx_ingredients_name", "name"),
+        Index("ix_ingredients_name", "name"),
+        Index("ix_ingredients_category", "category"),
+        Index("ix_ingredients_common", "is_common"),
+        Index("ix_ingredients_created_at", "created_at"),
+        Index("ix_ingredients_category_common", "category", "is_common"),
         {"comment": "식재료 정보를 저장하는 테이블"}
     )
     
@@ -30,7 +35,7 @@ class Ingredient(Base):
     recipe_ingredients = relationship("RecipeIngredient", back_populates="ingredient", cascade="all, delete-orphan")
     
     def __repr__(self):
-        return f"<Ingredient(id={self.id}, name='{self.name}', vague={self.is_vague})>"
+        return f"<Ingredient(id={self.id}, name='{self.name}')>"
 
 
 class Recipe(Base):
@@ -72,21 +77,32 @@ class Recipe(Base):
 
 
 class RecipeIngredient(Base):
-    """🔗 레시피-식재료 연결 모델"""
+    """🔗 레시피-식재료 연결 모델 - 실제 DB 스키마와 일치"""
     __tablename__ = "recipe_ingredients"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True, comment="자동 증가 ID")
+    rcp_sno = Column(Integer, ForeignKey("recipes.rcp_sno", ondelete="CASCADE"), nullable=False, comment="레시피 참조")
+    ingredient_id = Column(Integer, ForeignKey("ingredients.id", ondelete="CASCADE"), nullable=False, comment="재료 참조")
+
+    # 수량 정보 - 실제 스키마와 일치
+    quantity_text = Column(Text, comment="원본 수량 표현")
+    quantity_from = Column(Float, comment="파싱된 수량 시작값")
+    quantity_to = Column(Float, comment="파싱된 수량 끝값")
+    unit = Column(String(20), comment="단위")
+    is_vague = Column(Boolean, default=False, comment="모호한 수량인지")
+
+    # 메타정보
+    display_order = Column(Integer, default=0, comment="표시 순서")
+    importance = Column(String(20), default="normal", comment="중요도")
     
-    rcp_sno = Column(Integer, ForeignKey("recipes.rcp_sno", ondelete="CASCADE"), nullable=False, primary_key=True)
-    ingredient_id = Column(Integer, ForeignKey("ingredients.id", ondelete="CASCADE"), nullable=False, primary_key=True)
-    quantity_from = Column(Numeric(10, 2), comment="수량 (시작 범위 또는 단일 값)")
-    quantity_to = Column(Numeric(10, 2), comment="수량 (종료 범위, 범위가 아닐 경우 NULL)")
-    unit = Column(String(50), comment="수량 단위 (예: g, 개, 큰술)")
-    importance = Column(String(20), default="essential", comment="재료 중요도 (essential, optional 등)")
-    
-    # 인덱스 설정
+    # 인덱스 설정 - 실제 DB와 일치
     __table_args__ = (
-        Index("idx_recipe_ingredients_importance", "importance"),
-        Index("idx_recipe_ingredients_ingredient_id", "ingredient_id"),
-        Index("idx_recipe_ingredients_rcp_sno", "rcp_sno"),
+        Index("ix_recipe_ingredients_rcp_sno", "rcp_sno"),
+        Index("ix_recipe_ingredients_ingredient_id", "ingredient_id"),
+        Index("ix_recipe_ingredients_importance", "importance"),
+        Index("ix_recipe_ingredients_compound", "ingredient_id", "rcp_sno", "importance"),
+        Index("ix_recipe_ingredients_display_order", "rcp_sno", "display_order"),
+        Index("uk_recipe_ingredient", "rcp_sno", "ingredient_id", unique=True),
         {"comment": "레시피와 식재료의 연결 정보를 저장하는 테이블"}
     )
     
@@ -95,4 +111,4 @@ class RecipeIngredient(Base):
     ingredient = relationship("Ingredient", back_populates="recipe_ingredients")
     
     def __repr__(self):
-        return f"<RecipeIngredient(rcp_sno={self.rcp_sno}, ingredient_id={self.ingredient_id}, quantity={self.quantity_from}-{self.quantity_to}, unit='{self.unit}')>"
+        return f"<RecipeIngredient(id={self.id}, rcp_sno={self.rcp_sno}, ingredient_id={self.ingredient_id}, quantity_text='{self.quantity_text}')>"

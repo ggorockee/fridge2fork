@@ -129,14 +129,19 @@ async def get_pending_normalization(
     for ingredient, recipe_count in pending_ingredients:
         suggestion = suggest_normalization(ingredient.name)
         ingredients.append(IngredientWithRecipeCount(
-            ingredient_id=ingredient.id,
+            id=ingredient.id,
             name=ingredient.name,
-            is_vague=getattr(ingredient, 'is_vague', False),
-            vague_description=getattr(ingredient, 'vague_description', None),
+            original_name=getattr(ingredient, 'original_name', None),
+            category=getattr(ingredient, 'category', None),
+            is_common=getattr(ingredient, 'is_common', False),
+            created_at=getattr(ingredient, 'created_at', None),
             recipe_count=recipe_count,
             normalization_status="pending",
             suggested_normalized_name=suggestion["suggested_name"],
-            confidence_score=suggestion["confidence_score"]
+            confidence_score=suggestion["confidence_score"],
+            # 호환성 필드들
+            is_vague=False,
+            vague_description=None
         ))
     
     logger.info(f"✅ {len(ingredients)}개의 정규화 대기 식재료 조회 완료 (총 {total}개)")
