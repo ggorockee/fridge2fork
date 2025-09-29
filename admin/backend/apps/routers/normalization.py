@@ -129,10 +129,10 @@ async def get_pending_normalization(
     for ingredient, recipe_count in pending_ingredients:
         suggestion = suggest_normalization(ingredient.name)
         ingredients.append(IngredientWithRecipeCount(
-            ingredient_id=ingredient.ingredient_id,
+            ingredient_id=ingredient.id,
             name=ingredient.name,
-            is_vague=ingredient.is_vague,
-            vague_description=ingredient.vague_description,
+            is_vague=getattr(ingredient, 'is_vague', False),
+            vague_description=getattr(ingredient, 'vague_description', None),
             recipe_count=recipe_count,
             normalization_status="pending",
             suggested_normalized_name=suggestion["suggested_name"],
@@ -174,17 +174,17 @@ async def get_normalization_suggestions(
             
             similar_list = [
                 {
-                    "ingredient_id": sim.ingredient_id,
+                    "ingredient_id": sim.id,
                     "name": sim.name,
                     "recipe_count": db.query(RecipeIngredient).filter(
-                        RecipeIngredient.id == sim.ingredient_id
+                        RecipeIngredient.ingredient_id == sim.id
                     ).count()
                 }
                 for sim in similar_ingredients
             ]
             
             suggestions = [NormalizationSuggestion(
-                ingredient_id=ingredient.ingredient_id,
+                ingredient_id=ingredient.id,
                 original_name=ingredient.name,
                 suggested_name=suggestion["suggested_name"],
                 confidence_score=suggestion["confidence_score"],
@@ -203,7 +203,7 @@ async def get_normalization_suggestions(
             suggestion = suggest_normalization(ingredient.name)
             if suggestion["confidence_score"] >= confidence_threshold:
                 suggestions.append(NormalizationSuggestion(
-                    ingredient_id=ingredient.ingredient_id,
+                    ingredient_id=ingredient.id,
                     original_name=ingredient.name,
                     suggested_name=suggestion["suggested_name"],
                     confidence_score=suggestion["confidence_score"],
@@ -249,11 +249,11 @@ async def apply_normalization(
         
         # 레시피-식재료 연결을 병합 대상으로 변경
         affected_recipes = db.query(RecipeIngredient).filter(
-            RecipeIngredient.id == request.ingredient_id
+            RecipeIngredient.ingredient_id == request.ingredient_id
         ).count()
-        
+
         db.query(RecipeIngredient).filter(
-            RecipeIngredient.id == request.ingredient_id
+            RecipeIngredient.ingredient_id == request.ingredient_id
         ).update({"ingredient_id": request.merge_with_ingredient_id})
         
         # 원본 식재료 삭제
@@ -286,11 +286,13 @@ async def apply_normalization(
         
         # 이름 업데이트
         ingredient.name = request.normalized_name
-        ingredient.is_vague = request.is_vague
-        ingredient.vague_description = request.vague_description
+        if hasattr(ingredient, 'is_vague'):
+            ingredient.is_vague = getattr(request, 'is_vague', False)
+        if hasattr(ingredient, 'vague_description'):
+            ingredient.vague_description = getattr(request, 'vague_description', None)
         
         affected_recipes = db.query(RecipeIngredient).filter(
-            RecipeIngredient.id == request.ingredient_id
+            RecipeIngredient.ingredient_id == request.ingredient_id
         ).count()
         
         db.commit()
