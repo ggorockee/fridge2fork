@@ -138,11 +138,11 @@ async def create_recipe(
     """🍳 새로운 레시피를 생성합니다."""
     logger.info(f"➕ 레시피 생성 시작 - {recipe.rcp_ttl}")
     
-    # 중복 URL 확인
-    existing = db.query(Recipe).filter(Recipe.url == f"#recipe-{recipe.rcp_sno}").first()
+    # 중복 제목 확인 (URL 대신 제목으로 중복 확인)
+    existing = db.query(Recipe).filter(Recipe.rcp_ttl == recipe.rcp_ttl).first()
     if existing:
-        logger.warning(f"❌ 중복된 레시피 URL: {f"#recipe-{recipe.rcp_sno}"}")
-        raise HTTPException(status_code=400, detail="이미 존재하는 레시피 URL입니다")
+        logger.warning(f"❌ 중복된 레시피 제목: {recipe.rcp_ttl}")
+        raise HTTPException(status_code=400, detail="이미 존재하는 레시피 제목입니다")
     
     # 새 레시피 생성
     db_recipe = Recipe(**recipe.model_dump())
@@ -174,12 +174,12 @@ async def update_recipe(
         logger.warning(f"❌ 수정할 레시피를 찾을 수 없음 - ID: {recipe_id}")
         raise HTTPException(status_code=404, detail="레시피를 찾을 수 없습니다")
     
-    # URL 중복 확인 (URL이 변경되는 경우)
-    if recipe_update.url and recipe_update.url != db_f"#recipe-{recipe.rcp_sno}":
-        existing = db.query(Recipe).filter(Recipe.url == recipe_update.url).first()
+    # 제목 중복 확인 (제목이 변경되는 경우)
+    if hasattr(recipe_update, 'rcp_ttl') and recipe_update.rcp_ttl and recipe_update.rcp_ttl != db_recipe.rcp_ttl:
+        existing = db.query(Recipe).filter(Recipe.rcp_ttl == recipe_update.rcp_ttl).first()
         if existing:
-            logger.warning(f"❌ 중복된 레시피 URL: {recipe_update.url}")
-            raise HTTPException(status_code=400, detail="이미 존재하는 레시피 URL입니다")
+            logger.warning(f"❌ 중복된 레시피 제목: {recipe_update.rcp_ttl}")
+            raise HTTPException(status_code=400, detail="이미 존재하는 레시피 제목입니다")
     
     # 업데이트 적용
     update_data = recipe_update.model_dump(exclude_unset=True)
