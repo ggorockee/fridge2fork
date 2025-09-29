@@ -9,6 +9,7 @@ import '../providers/ingredients_provider.dart';
 import '../providers/api/recipe_api_provider.dart';
 import '../providers/api/ingredient_api_provider.dart';
 import '../providers/api/api_connection_provider.dart';
+import '../providers/api/random_recipe_provider.dart';
 import '../models/api/api_recipe.dart';
 import '../models/api/api_ingredient.dart';
 import '../services/interstitial_ad_manager.dart';
@@ -43,8 +44,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       // API 클라이언트 초기화 완료 후 기본 데이터 로드
       final isApiClientInitialized = ref.read(apiClientInitializedProvider);
       if (isApiClientInitialized) {
-        if (kDebugMode) debugPrint('🏠 [Home Screen] Loading default recommended recipes...');
-        ref.read(recipeApiProvider.notifier).loadPopularRecipes(size: 6);
+        if (kDebugMode) debugPrint('🏠 [Home Screen] Loading random recipe recommendations...');
+        ref.read(randomRecipeProvider.notifier).loadRandomRecipes(count: 10);
 
         if (kDebugMode) debugPrint('🏠 [Home Screen] Loading ingredients for selection...');
         ref.read(ingredientApiProvider.notifier).loadIngredients(
@@ -62,8 +63,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Future<void> _onRefresh() async {
     if (kDebugMode) debugPrint('🔄 [Home Screen] Pull to refresh triggered');
 
-    // 인기 레시피 새로고침
-    await ref.read(recipeApiProvider.notifier).refresh();
+    // 랜덤 레시피 새로고침 (새로운 추천 목록 로드)
+    await ref.read(randomRecipeProvider.notifier).refresh();
 
     // 식재료 목록도 새로고침 (옵션)
     await ref.read(ingredientApiProvider.notifier).refresh();
@@ -282,7 +283,11 @@ class _RecipeRecommendationSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedIngredients = ref.watch(selectedIngredientsProvider);
-    final recipesState = ref.watch(recipeApiProvider);
+    // Phase 2: 선택된 재료가 있으면 맞춤 레시피, 없으면 랜덤 레시피 추천
+    final randomRecipeState = ref.watch(randomRecipeProvider);
+    final recipesState = selectedIngredients.isNotEmpty
+        ? ref.watch(recipeApiProvider)
+        : null;
     final isApiOnline = ref.watch(isApiOnlineProvider);
     final isApiClientInitialized = ref.watch(apiClientInitializedProvider);
 
@@ -332,194 +337,227 @@ class _RecipeRecommendationSection extends ConsumerWidget {
           // 가로 스크롤 레시피 카드들
           SizedBox(
             height: 160, // 카드 높이와 동일하게 고정
-            child: recipesState.when(
-              data: (recipes) {
-                if (recipes.isEmpty) {
-                  // 식재료가 있는데 레시피가 없는 경우와 식재료가 없는 경우 구분
-                  if (selectedIngredients.isNotEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.search_off,
-                            size: 48,
-                            color: AppTheme.textSecondary,
-                          ),
-                          const SizedBox(height: AppTheme.spacingS),
-                          Text(
-                            '조건에 맞는 레시피가 없습니다',
-                            style: AppTheme.bodySmall.copyWith(
-                              color: AppTheme.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  } else {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.restaurant_menu,
-                            size: 48,
-                            color: AppTheme.textSecondary,
-                          ),
-                          const SizedBox(height: AppTheme.spacingS),
-                          Text(
-                            '레시피를 불러오고 있습니다...',
-                            style: AppTheme.bodySmall.copyWith(
-                              color: AppTheme.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-                }
-
-                return ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: recipes.length,
-                  itemBuilder: (context, index) {
-                    final recipe = recipes[index];
-
-                    return _RecipeCard(
-                      recipe: recipe,
-                      isLast: index == recipes.length - 1,
-                      onTap: () async {
-                        // URL로 이동 (url_launcher 패키지 사용)
-                        final url = recipe.url;
-                        if (url != null && url.isNotEmpty) {
-                          try {
-                            final uri = Uri.parse(url);
-                            if (await canLaunchUrl(uri)) {
-                              await launchUrl(uri, mode: LaunchMode.externalApplication);
-                            } else {
-                              SnackBarHelper.showSnackBar(
-                                context,
-                                '링크를 열 수 없습니다.',
-                                backgroundColor: Colors.red,
-                              );
-                            }
-                          } catch (e) {
-                            SnackBarHelper.showSnackBar(
-                              context,
-                              '링크를 열 수 없습니다: $e',
-                              backgroundColor: Colors.red,
-                            );
-                          }
-                        } else {
-                          SnackBarHelper.showSnackBar(
-                            context,
-                            '레시피 링크가 없습니다.',
-                            backgroundColor: Colors.orange,
-                          );
-                        }
-                      },
-                    );
-                  },
-                );
-              },
-              loading: () {
-                // API 클라이언트 초기화 상태에 따른 로딩 메시지
-                if (!isApiClientInitialized) {
-                  return const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        CircularProgressIndicator(
-                          color: AppTheme.primaryOrange,
-                        ),
-                        SizedBox(height: AppTheme.spacingS),
-                        Text(
-                          '맛있는 레시피를 준비하고 있어요!',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppTheme.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                } else if (selectedIngredients.isNotEmpty) {
-                  return const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        CircularProgressIndicator(
-                          color: AppTheme.primaryOrange,
-                        ),
-                        SizedBox(height: AppTheme.spacingS),
-                        Text(
-                          '당신만을 위한 레시피를 찾고 있어요!',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppTheme.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                } else {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.restaurant_menu,
-                          size: 48,
-                          color: AppTheme.textSecondary,
-                        ),
-                        const SizedBox(height: AppTheme.spacingS),
-                        Text(
-                          '식재료를 추가하면 레시피를 추천해드립니다',
-                          style: AppTheme.bodySmall.copyWith(
-                            color: AppTheme.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-              },
-              error: (error, stack) => Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      isApiOnline ? Icons.error_outline : Icons.wifi_off,
-                      size: 48,
-                      color: AppTheme.textSecondary,
-                    ),
-                    const SizedBox(height: AppTheme.spacingS),
-                    Text(
-                      isApiOnline
-                        ? '레시피를 불러올 수 없습니다'
-                        : '네트워크 연결을 확인해주세요',
-                      style: AppTheme.bodySmall.copyWith(
-                        color: AppTheme.textSecondary,
-                      ),
-                    ),
-                    if (!isApiOnline) ...[
-                      const SizedBox(height: AppTheme.spacingS),
-                      Text(
-                        '오프라인 모드로 제한된 레시피를 제공합니다',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: AppTheme.textSecondary.withValues(alpha: 0.7),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
+            child: selectedIngredients.isEmpty
+                // 식재료가 없는 경우: 랜덤 레시피 추천 표시
+                ? _buildRandomRecipeList(context, randomRecipeState, isApiOnline, isApiClientInitialized)
+                // 식재료가 있는 경우: 맞춤 레시피 표시
+                : _buildCustomRecipeList(context, recipesState!, selectedIngredients, isApiOnline, isApiClientInitialized),
           ),
         ],
       ),
     );
+  }
+
+  /// 랜덤 레시피 목록 위젯 빌드
+  Widget _buildRandomRecipeList(
+    BuildContext context,
+    RandomRecipeState randomRecipeState,
+    bool isApiOnline,
+    bool isApiClientInitialized,
+  ) {
+    if (randomRecipeState.isLoading) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(
+              color: AppTheme.primaryOrange,
+            ),
+            SizedBox(height: AppTheme.spacingS),
+            Text(
+              '인기 레시피를 불러오고 있어요!',
+              style: TextStyle(
+                fontSize: 12,
+                color: AppTheme.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (randomRecipeState.hasError) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isApiOnline ? Icons.error_outline : Icons.wifi_off,
+              size: 48,
+              color: AppTheme.textSecondary,
+            ),
+            const SizedBox(height: AppTheme.spacingS),
+            Text(
+              randomRecipeState.error ?? '레시피를 불러올 수 없습니다',
+              style: AppTheme.bodySmall.copyWith(
+                color: AppTheme.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (randomRecipeState.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.restaurant_menu,
+              size: 48,
+              color: AppTheme.textSecondary,
+            ),
+            SizedBox(height: AppTheme.spacingS),
+            Text(
+              '레시피를 준비하고 있습니다',
+              style: TextStyle(
+                fontSize: 12,
+                color: AppTheme.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      scrollDirection: Axis.horizontal,
+      itemCount: randomRecipeState.recipes.length,
+      itemBuilder: (context, index) {
+        final recipe = randomRecipeState.recipes[index];
+        return _RecipeCard(
+          recipe: recipe,
+          isLast: index == randomRecipeState.recipes.length - 1,
+          onTap: () => _handleRecipeTap(context, recipe),
+        );
+      },
+    );
+  }
+
+  /// 맞춤 레시피 목록 위젯 빌드
+  Widget _buildCustomRecipeList(
+    BuildContext context,
+    AsyncValue<List<ApiRecipe>> recipesState,
+    List<String> selectedIngredients,
+    bool isApiOnline,
+    bool isApiClientInitialized,
+  ) {
+    return recipesState.when(
+      data: (recipes) {
+        if (recipes.isEmpty) {
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.search_off,
+                  size: 48,
+                  color: AppTheme.textSecondary,
+                ),
+                SizedBox(height: AppTheme.spacingS),
+                Text(
+                  '조건에 맞는 레시피가 없습니다',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return ListView.builder(
+          scrollDirection: Axis.horizontal,
+          itemCount: recipes.length,
+          itemBuilder: (context, index) {
+            final recipe = recipes[index];
+            return _RecipeCard(
+              recipe: recipe,
+              isLast: index == recipes.length - 1,
+              onTap: () => _handleRecipeTap(context, recipe),
+            );
+          },
+        );
+      },
+      loading: () => const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(
+              color: AppTheme.primaryOrange,
+            ),
+            SizedBox(height: AppTheme.spacingS),
+            Text(
+              '당신만을 위한 레시피를 찾고 있어요!',
+              style: TextStyle(
+                fontSize: 12,
+                color: AppTheme.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+      error: (error, stack) => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isApiOnline ? Icons.error_outline : Icons.wifi_off,
+              size: 48,
+              color: AppTheme.textSecondary,
+            ),
+            const SizedBox(height: AppTheme.spacingS),
+            Text(
+              isApiOnline
+                  ? '레시피를 불러올 수 없습니다'
+                  : '네트워크 연결을 확인해주세요',
+              style: AppTheme.bodySmall.copyWith(
+                color: AppTheme.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 레시피 탭 이벤트 처리
+  void _handleRecipeTap(BuildContext context, ApiRecipe recipe) async {
+    final url = recipe.url;
+    if (url != null && url.isNotEmpty) {
+      try {
+        final uri = Uri.parse(url);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } else {
+          if (context.mounted) {
+            SnackBarHelper.showSnackBar(
+              context,
+              '링크를 열 수 없습니다.',
+              backgroundColor: Colors.red,
+            );
+          }
+        }
+      } catch (e) {
+        if (context.mounted) {
+          SnackBarHelper.showSnackBar(
+            context,
+            '링크를 열 수 없습니다: $e',
+            backgroundColor: Colors.red,
+          );
+        }
+      }
+    } else {
+      if (context.mounted) {
+        SnackBarHelper.showSnackBar(
+          context,
+          '레시피 링크가 없습니다.',
+          backgroundColor: Colors.orange,
+        );
+      }
+    }
   }
 }
 

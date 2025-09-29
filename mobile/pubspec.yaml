@@ -57,7 +57,10 @@ dependencies:
   
   # 환경 변수 관리
   flutter_dotenv: ^5.1.0
-  
+
+  # UUID 생성
+  uuid: ^4.5.1
+
   # URL 실행
   url_launcher: ^6.2.2
   

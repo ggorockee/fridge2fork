@@ -10,14 +10,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Running the App
 ```bash
-# 개발환경에서 실행 (기본)
-flutter run
+# 개발환경에서 실행
+flutter run --flavor dev
 
-# 디버그 모드에서 실행
-flutter run --debug
-
-# 릴리즈 모드에서 실행
-flutter run --release
+# 운영환경에서 실행
+flutter run --flavor prod
 
 # 핫 리로드 중 상태 초기화
 flutter run --hot
@@ -25,17 +22,17 @@ flutter run --hot
 
 ### Building
 ```bash
-# APK 빌드 (디버그)
-flutter build apk --debug
+# 개발환경 APK 빌드
+flutter build apk --flavor dev
 
-# APK 빌드 (릴리즈)
-flutter build apk --release
+# 운영환경 APK 빌드
+flutter build apk --flavor prod
 
-# iOS 빌드 (디버그)
-flutter build ios --debug
+# iOS 빌드 (개발)
+flutter build ios --flavor dev
 
-# iOS 빌드 (릴리즈)
-flutter build ios --release
+# iOS 빌드 (운영)
+flutter build ios --flavor prod
 ```
 
 ### Testing and Quality
@@ -70,15 +67,11 @@ flutter clean && flutter pub get
 
 ### State Management
 - **Primary**: Flutter Riverpod을 사용한 상태 관리
-- **Core Providers**:
-  - `app_state_provider.dart`: 전역 앱 상태 관리
-  - `ingredients_provider.dart`: 로컬 식재료 관리
-  - `recipe_provider.dart`: 로컬 레시피 데이터 관리
+- **Providers**:
+  - `ingredients_provider.dart`: 식재료 관리
+  - `recipe_provider.dart`: 레시피 데이터 관리
   - `api_ingredients_provider.dart`: API 기반 식재료 상태
-- **API Providers** (`providers/api/`):
   - `api_connection_provider.dart`: API 연결 상태
-  - `ingredient_api_provider.dart`: 식재료 API 호출
-  - `recipe_api_provider.dart`: 레시피 API 호출
 
 ### App Structure
 ```
@@ -93,48 +86,22 @@ lib/
 │   ├── my_fridge_screen.dart   # 식재료 관리 화면
 │   ├── add_ingredient_screen.dart # 식재료 추가 모달
 │   ├── recipe_screen.dart      # 레시피 검색/목록
-│   ├── recipe_list_screen.dart # 레시피 목록 화면
-│   ├── recipe_detail_screen.dart # 레시피 상세 정보
-│   └── feedback_screen.dart    # 피드백 화면
+│   └── recipe_detail_screen.dart # 레시피 상세 정보
 ├── providers/                  # Riverpod 상태 관리
-│   ├── app_state_provider.dart
 │   ├── ingredients_provider.dart
-│   ├── api_ingredients_provider.dart
 │   ├── recipe_provider.dart
 │   └── api/                   # API 관련 프로바이더
 ├── services/                   # 비즈니스 로직 및 외부 서비스
 │   ├── api/                   # API 서비스 레이어
-│   │   ├── api_client.dart   # HTTP 클라이언트
-│   │   ├── ingredient_api_service.dart
-│   │   ├── recipe_api_service.dart
-│   │   └── system_api_service.dart
 │   ├── analytics_service.dart # Firebase Analytics
 │   ├── ad_service.dart        # AdMob 광고 관리
-│   ├── interstitial_ad_manager.dart # 전면 광고 관리
 │   ├── cache_service.dart     # 로컬 캐시
-│   ├── offline_service.dart   # 오프라인 모드 지원
-│   ├── sample_data.dart       # 샘플 데이터
-│   └── recipe_data.dart       # 레시피 데이터
+│   └── offline_service.dart   # 오프라인 모드 지원
 ├── models/                    # 데이터 모델
 │   ├── product.dart           # 로컬 제품 모델
 │   ├── recipe.dart           # 로컬 레시피 모델
 │   └── api/                  # API 응답 모델
-│       ├── api_response.dart  # API 응답 래퍼
-│       ├── api_ingredient.dart
-│       └── api_recipe.dart
 ├── widgets/                   # 재사용 가능한 UI 컴포넌트
-│   ├── custom_button.dart
-│   ├── custom_text_field.dart
-│   ├── quantity_selector.dart
-│   ├── category_tabs.dart
-│   ├── custom_toggle_switch.dart
-│   ├── custom_app_bar.dart
-│   ├── status_bar.dart
-│   ├── product_card.dart
-│   ├── ad_banner_widget.dart
-│   └── widgets.dart           # 위젯 exports
-├── utils/
-│   └── app_assets.dart       # 앱 애셋 경로 관리
 └── theme/
     └── app_theme.dart        # Material Design 테마
 ```
@@ -147,28 +114,39 @@ lib/
 - **Endpoints**: Centralized in `ApiEndpoints` class
 - **Offline Support**: Local caching with fallback to sample data
 
+#### API 비동기 처리 우선 정책 (Async-First Policy)
+
+이 프로젝트는 **비동기 처리 우선** 정책을 채택하여 최적의 사용자 경험을 제공합니다:
+
+**핵심 원칙:**
+1. **Non-blocking UI**: 모든 API 호출은 비동기로 처리하여 UI 블로킹 방지
+2. **Progressive Loading**: 데이터 로딩 중에도 사용자가 앱을 계속 사용할 수 있도록 함
+3. **Error Resilience**: 네트워크 오류 시 자동으로 오프라인 모드로 전환
+4. **Caching Strategy**: 성공적인 API 응답은 로컬에 캐시하여 재사용
+
+**구현 전략:**
+- **Flutter/Dart**: `async/await` 패턴과 `Future<T>` 타입 적극 활용
+- **Riverpod**: `AsyncValue<T>`를 통한 비동기 상태 관리
+- **FastAPI Backend**: Python async/await 지원으로 서버측 비동기 처리
+- **Error Handling**: `ApiResponse<T>` 래퍼로 성공/실패 상태 명시적 처리
+
+**성능 최적화:**
+- API 호출은 필요시에만 수행 (lazy loading)
+- 중복 요청 방지를 위한 request deduplication
+- 백그라운드에서 데이터 프리페칭
+- 이미지 및 콘텐츠의 점진적 로딩
+
 ### Environment Configuration
-- **Environment Files**:
-  - `.env.common` - 공통 설정 (모든 환경에서 로드)
-  - `.env.dev` - 개발환경 전용 설정
-  - `.env.prod` - 운영환경 전용 설정
-- **Configuration Management**:
-  - `AppConfig` 클래스로 환경 변수 관리
-  - `kReleaseMode`로 환경 자동 감지 (dev/prod)
-  - Firebase 네이티브 설정 파일 사용
+- **Common**: `.env.common` - 공통 설정
+- **Development**: `.env.dev` - 개발환경 전용
+- **Production**: `.env.prod` - 운영환경 전용
+- **Configuration Class**: `AppConfig` 클래스로 환경 변수 관리
 
 ### Firebase Integration
 - **Analytics**: 사용자 행동 추적 및 이벤트 로깅
 - **Crashlytics**: 앱 크래시 모니터링
 - **Performance**: 앱 성능 모니터링
-- **AdMob**: 배너 및 전면 광고 통합 (`ad_service.dart`, `interstitial_ad_manager.dart`)
-
-### Key Architecture Patterns
-- **Layer Separation**: Clear separation between UI (screens), business logic (providers), and data (services/models)
-- **Error Handling**: `ApiResponse<T>` wrapper pattern for consistent API error handling
-- **Offline-First**: Local caching with `CacheService` and fallback to sample data via `OfflineService`
-- **Ad Integration**: Centralized ad management with preloading and strategic placement
-- **Environment Management**: Multi-environment support with `.env` files and `AppConfig` class
+- **AdMob**: 배너 및 전면 광고 통합
 
 ## Key Features & Components
 
@@ -196,6 +174,12 @@ lib/
 - 모든 API 호출은 `ApiClient` 클래스 사용
 - Riverpod Provider는 별도 파일로 분리
 - 한국어 주석으로 비즈니스 로직 설명
+
+### Async/Await Best Practices
+- 모든 API 호출에 `async/await` 패턴 사용
+- UI 업데이트는 `AsyncValue.when()` 메서드 활용
+- 에러 처리를 위한 try-catch 블록 필수
+- 로딩 상태 UI 제공으로 사용자 경험 향상
 
 ### Testing Strategy
 - 단위 테스트: `test/` 디렉토리
@@ -253,20 +237,3 @@ lib/
 - Flutter SDK 3.9.2 이상 필요
 - Android Studio / Xcode 최신 버전 권장
 - Firebase CLI 설치 및 프로젝트 연결 필요
-
-## Project Dependencies
-
-### Key Packages
-- `flutter_riverpod: ^2.4.9` - 상태 관리
-- `http: ^1.1.0` - HTTP 클라이언트
-- `shared_preferences: ^2.5.3` - 로컬 저장소
-- `cached_network_image: ^3.3.0` - 이미지 캐싱
-- `connectivity_plus: ^6.0.5` - 네트워크 상태 확인
-- `flutter_dotenv: ^5.1.0` - 환경 변수 관리
-- `firebase_core: ^3.8.0` - Firebase 코어
-- `google_mobile_ads: ^5.3.0` - AdMob 광고
-
-### UI/UX Packages
-- `showcaseview: ^4.0.1` - 앱 투어 및 기능 소개
-- `another_flushbar: ^1.12.32` - 사용자 알림
-- `url_launcher: ^6.2.2` - 외부 링크 실행

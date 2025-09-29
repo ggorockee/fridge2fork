@@ -14,6 +14,7 @@ import 'services/ad_service.dart';
 import 'services/interstitial_ad_manager.dart';
 import 'services/cache_service.dart';
 import 'services/offline_service.dart';
+import 'services/session_service.dart';
 
 void main() async {
   // Flutter 엔진과 위젯 바인딩 초기화
@@ -45,7 +46,10 @@ void main() async {
   
   // 오프라인 서비스 초기화
   await OfflineService.initialize();
-  
+
+  // 세션 서비스 초기화 (API 호출을 위한 세션 관리)
+  await SessionService.initialize();
+
   // SharedPreferences 인스턴스 로드
   final prefs = await SharedPreferences.getInstance();
   
