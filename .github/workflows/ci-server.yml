@@ -64,7 +64,6 @@ jobs:
     name: Update Infrastructure Repository
     runs-on: ubuntu-latest
     needs: build-and-push
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'  # Update infra on push or manual trigger, not on PR
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -80,4 +79,4 @@ jobs:
 
       - name: Update infra repository
         run: |
-          python .github/workflows/scripts/update_infra_values.py sha-${{ needs.build-and-push.outputs.sha }} ${{ secrets.INFRA_GITHUB_TOKEN }} server ${{ needs.build-and-push.outputs.environment }}
+          python .github/workflows/scripts/update_infra_values.py sha-${{ needs.build-and-push.outputs.sha }} ${{ secrets.INFRA_GITHUB_TOKEN }} server
