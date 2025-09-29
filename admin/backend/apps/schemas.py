@@ -28,17 +28,31 @@ class IngredientUpdate(BaseModel):
 
 class IngredientResponse(IngredientBase):
     """🥕 식재료 응답 스키마"""
-    ingredient_id: int
-    
+    id: int
+
     model_config = ConfigDict(from_attributes=True)
 
 
 class RecipeBase(BaseModel):
-    """🍳 레시피 기본 스키마"""
-    url: str = Field(..., max_length=255, description="레시피 원본 URL")
-    title: str = Field(..., min_length=1, max_length=255, description="레시피 제목")
-    description: Optional[str] = Field(None, description="레시피 설명")
-    image_url: Optional[str] = Field(None, max_length=255, description="레시피 이미지 URL")
+    """🍳 레시피 기본 스키마 (스크래핑 DB 스키마 기반)"""
+    rcp_ttl: str = Field(..., min_length=1, max_length=200, description="레시피 제목")
+    ckg_nm: Optional[str] = Field(None, max_length=40, description="요리명")
+    rgtr_id: Optional[str] = Field(None, max_length=32, description="등록자 ID")
+    rgtr_nm: Optional[str] = Field(None, max_length=64, description="등록자명")
+    inq_cnt: Optional[int] = Field(0, description="조회 수")
+    rcmm_cnt: Optional[int] = Field(0, description="추천 수")
+    srap_cnt: Optional[int] = Field(0, description="스크랩 수")
+    ckg_mth_acto_nm: Optional[str] = Field(None, max_length=200, description="조리 방법")
+    ckg_sta_acto_nm: Optional[str] = Field(None, max_length=200, description="조리 상태")
+    ckg_mtrl_acto_nm: Optional[str] = Field(None, max_length=200, description="재료")
+    ckg_knd_acto_nm: Optional[str] = Field(None, max_length=200, description="요리 종류")
+    ckg_ipdc: Optional[str] = Field(None, description="조리 과정")
+    ckg_mtrl_cn: Optional[str] = Field(None, description="재료 내용")
+    ckg_inbun_nm: Optional[str] = Field(None, max_length=200, description="인분")
+    ckg_dodf_nm: Optional[str] = Field(None, max_length=200, description="난이도")
+    ckg_time_nm: Optional[str] = Field(None, max_length=200, description="조리 시간")
+    first_reg_dt: Optional[str] = Field(None, max_length=14, description="최초 등록일")
+    rcp_img_url: Optional[str] = Field(None, description="레시피 이미지 URL")
 
 
 class RecipeCreate(RecipeBase):
@@ -48,17 +62,21 @@ class RecipeCreate(RecipeBase):
 
 class RecipeUpdate(BaseModel):
     """🍳 레시피 수정 스키마"""
-    url: Optional[str] = Field(None, max_length=255)
-    title: Optional[str] = Field(None, min_length=1, max_length=255)
-    description: Optional[str] = None
-    image_url: Optional[str] = Field(None, max_length=255)
+    rcp_ttl: Optional[str] = Field(None, min_length=1, max_length=200)
+    ckg_nm: Optional[str] = Field(None, max_length=40)
+    ckg_mth_acto_nm: Optional[str] = Field(None, max_length=200)
+    ckg_knd_acto_nm: Optional[str] = Field(None, max_length=200)
+    ckg_dodf_nm: Optional[str] = Field(None, max_length=200)
+    ckg_time_nm: Optional[str] = Field(None, max_length=200)
+    rcp_img_url: Optional[str] = None
 
 
 class RecipeResponse(RecipeBase):
     """🍳 레시피 응답 스키마"""
-    recipe_id: int
-    created_at: datetime
-    
+    rcp_sno: int
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -86,9 +104,9 @@ class RecipeIngredientUpdate(BaseModel):
 
 class RecipeIngredientResponse(RecipeIngredientBase):
     """🔗 레시피-식재료 연결 응답 스키마"""
-    recipe_id: int
+    rcp_sno: int
     ingredient: Optional[IngredientResponse] = None
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -275,7 +293,12 @@ class RecipeListResponse(BaseModel):
 
 class RecipeDetailResponse(RecipeResponse):
     """🍳 레시피 상세 응답 스키마"""
-    ingredients: List[RecipeIngredientInfo] = Field(..., description="식재료 목록")
+    recipe_id: Optional[int] = Field(None, description="레시피 ID (rcp_sno)")
+    url: Optional[str] = Field(None, description="레시피 URL")
+    title: Optional[str] = Field(None, description="레시피 제목 (rcp_ttl)")
+    description: Optional[str] = Field(None, description="레시피 설명")
+    image_url: Optional[str] = Field(None, description="레시피 이미지 URL")
+    ingredients: List[RecipeIngredientInfo] = Field(default=[], description="식재료 목록")
     instructions: List[Dict[str, Any]] = Field(default=[], description="조리법 단계")
 
 
@@ -308,7 +331,7 @@ class RecipeInfo(BaseModel):
     """🍳 식재료 상세에서 사용하는 레시피 정보 스키마"""
     recipe_id: int = Field(..., description="레시피 ID")
     title: str = Field(..., description="레시피 제목")
-    url: str = Field(..., description="레시피 URL")
+    url: Optional[str] = Field(None, description="레시피 URL")
 
 
 class IngredientDetailResponse(IngredientResponse):

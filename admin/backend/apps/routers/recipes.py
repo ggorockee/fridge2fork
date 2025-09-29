@@ -44,8 +44,8 @@ async def get_recipes(
     if search:
         query = query.filter(
             or_(
-                Recipe.title.ilike(f"%{search}%"),
-                Recipe.description.ilike(f"%{search}%")
+                Recipe.rcp_ttl.ilike(f"%{search}%"),
+                Recipe.ckg_ipdc.ilike(f"%{search}%") if Recipe.ckg_ipdc else False
             )
         )
         logger.info(f"🔎 검색어 '{search}'로 필터링")
@@ -99,29 +99,54 @@ async def get_recipe(
     
     # 식재료 정보 조회
     ingredients_query = db.query(RecipeIngredient, Ingredient).join(
-        Ingredient, RecipeIngredient.id == Ingredient.id
+        Ingredient, RecipeIngredient.ingredient_id == Ingredient.id
     ).filter(RecipeIngredient.rcp_sno == recipe_id)
-    
+
     ingredients = []
     for ri, ingredient in ingredients_query.all():
         ingredients.append(RecipeIngredientInfo(
-            ingredient_id=ingredient.ingredient_id,
+            ingredient_id=ingredient.id,
             name=ingredient.name,
             is_vague=ingredient.is_vague,
             vague_description=ingredient.vague_description
         ))
     
     logger.info(f"✅ 레시피 조회 완료 - {recipe.rcp_ttl}")
-    return RecipeDetailResponse(
-        recipe_id=recipe.rcp_sno,
-        url=f"#recipe-{recipe.rcp_sno}",
-        title=recipe.rcp_ttl,
-        description=recipe.description,
-        image_url=recipe.rcp_img_url,
-        created_at=recipe.created_at,
-        ingredients=ingredients,
-        instructions=[]  # 조리법은 현재 스키마에 없음
-    )
+    # RecipeResponse의 필드들을 먼저 설정
+    response_dict = {
+        # RecipeBase 필드들
+        "rcp_ttl": recipe.rcp_ttl,
+        "ckg_nm": recipe.ckg_nm,
+        "rgtr_id": recipe.rgtr_id,
+        "rgtr_nm": recipe.rgtr_nm,
+        "inq_cnt": recipe.inq_cnt,
+        "rcmm_cnt": recipe.rcmm_cnt,
+        "srap_cnt": recipe.srap_cnt,
+        "ckg_mth_acto_nm": recipe.ckg_mth_acto_nm,
+        "ckg_sta_acto_nm": recipe.ckg_sta_acto_nm,
+        "ckg_mtrl_acto_nm": recipe.ckg_mtrl_acto_nm,
+        "ckg_knd_acto_nm": recipe.ckg_knd_acto_nm,
+        "ckg_ipdc": recipe.ckg_ipdc,
+        "ckg_mtrl_cn": recipe.ckg_mtrl_cn,
+        "ckg_inbun_nm": recipe.ckg_inbun_nm,
+        "ckg_dodf_nm": recipe.ckg_dodf_nm,
+        "ckg_time_nm": recipe.ckg_time_nm,
+        "first_reg_dt": recipe.first_reg_dt,
+        "rcp_img_url": recipe.rcp_img_url,
+        # RecipeResponse 필드들
+        "rcp_sno": recipe.rcp_sno,
+        "created_at": recipe.created_at,
+        "updated_at": recipe.updated_at,
+        # RecipeDetailResponse 필드들
+        "recipe_id": recipe.rcp_sno,
+        "url": f"#recipe-{recipe.rcp_sno}",
+        "title": recipe.rcp_ttl,
+        "description": recipe.ckg_ipdc,  # 조리과정을 설명으로 사용
+        "image_url": recipe.rcp_img_url,
+        "ingredients": ingredients,
+        "instructions": []  # 조리법은 현재 스키마에 없음
+    }
+    return RecipeDetailResponse(**response_dict)
 
 
 @router.post(
