@@ -1,14 +1,20 @@
 """
-냉장고 관련 API 엔드포인트 (실제 PostgreSQL 스키마 기반)
+냉장고 관리 API 엔드포인트 (세션 기반)
 """
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Body
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_, text
 from sqlalchemy.orm import selectinload
 from typing import Optional, List, Dict, Any
+import random
 
 from app.core.database import get_db
-from app.models.recipe import Recipe, Ingredient, RecipeIngredient
+from app.core.session import SessionManager
+from app.models.recipe import Recipe, Ingredient, RecipeIngredient, UserFridgeSession, UserFridgeIngredient
+from app.schemas.fridge import (
+    AddIngredientsRequest, AddIngredientsResponse,
+    FridgeIngredientsResponse, RemoveIngredientsRequest, RemoveIngredientsResponse
+)
 
 router = APIRouter()
 
@@ -193,4 +199,191 @@ async def get_recipes_by_ingredients(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"재료 기반 레시피 조회 중 오류가 발생했습니다: {str(e)}"
+        )
+
+
+# ============ Phase 2: 세션 기반 냉장고 관리 ============
+
+@router.post("/ingredients", response_model=AddIngredientsResponse)
+async def add_ingredients(
+    request: AddIngredientsRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """냉장고에 재료 추가 (세션 기반)"""
+    try:
+        # 재료명 리스트 추출
+        ingredient_names = []
+        if isinstance(request.ingredients, list):
+            for ingredient in request.ingredients:
+                if isinstance(ingredient, dict) and "name" in ingredient:
+                    ingredient_names.append(ingredient["name"])
+                elif isinstance(ingredient, str):
+                    ingredient_names.append(ingredient)
+
+        if not ingredient_names:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="추가할 재료를 입력해주세요."
+            )
+
+        # 세션 조회 또는 생성
+        session_id = await SessionManager.get_or_create_session(db, request.session_id)
+
+        # 재료 추가
+        added_count, found_names = await SessionManager.add_ingredients(
+            db, session_id, ingredient_names
+        )
+
+        return AddIngredientsResponse(
+            message=f"{added_count}개의 새로운 재료가 추가되었습니다.",
+            added_count=added_count,
+            session_id=session_id
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"재료 추가 중 오류가 발생했습니다: {str(e)}"
+        )
+
+
+@router.get("/my-ingredients", response_model=FridgeIngredientsResponse)
+async def get_my_ingredients(
+    session_id: str = Query(..., description="세션 ID"),
+    db: AsyncSession = Depends(get_db)
+):
+    """내 냉장고 재료 목록 조회"""
+    try:
+        # 세션 유효성 확인
+        session_query = select(UserFridgeSession).where(
+            UserFridgeSession.session_id == session_id
+        )
+        session_result = await db.execute(session_query)
+        session = session_result.scalar_one_or_none()
+
+        if not session:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="세션을 찾을 수 없습니다."
+            )
+
+        # 재료 목록 조회
+        ingredients = await SessionManager.get_session_ingredients(db, session_id)
+
+        # 카테고리별 분류
+        categories = {}
+        fridge_ingredients = []
+
+        for ingredient in ingredients:
+            category = ingredient["category"] or "기타"
+            categories[category] = categories.get(category, 0) + 1
+
+            fridge_ingredients.append({
+                "name": ingredient["name"],
+                "category": category,
+                "added_at": ingredient["added_at"]
+            })
+
+        return FridgeIngredientsResponse(
+            ingredients=fridge_ingredients,
+            categories=categories,
+            session_id=session_id
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"냉장고 재료 조회 중 오류가 발생했습니다: {str(e)}"
+        )
+
+
+@router.delete("/ingredients", response_model=RemoveIngredientsResponse)
+async def remove_ingredients(
+    request: RemoveIngredientsRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """냉장고에서 재료 제거"""
+    try:
+        # 세션 유효성 확인
+        session_query = select(UserFridgeSession).where(
+            UserFridgeSession.session_id == request.session_id
+        )
+        session_result = await db.execute(session_query)
+        session = session_result.scalar_one_or_none()
+
+        if not session:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="세션을 찾을 수 없습니다."
+            )
+
+        # 재료 제거
+        removed_count = await SessionManager.remove_ingredients(
+            db, request.session_id, request.ingredients
+        )
+
+        if request.ingredients:
+            message = f"{len(request.ingredients)}개 재료 중 {removed_count}개가 제거되었습니다."
+        else:
+            message = f"모든 재료({removed_count}개)가 제거되었습니다."
+
+        return RemoveIngredientsResponse(
+            message=message,
+            removed_count=removed_count
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"재료 제거 중 오류가 발생했습니다: {str(e)}"
+        )
+
+
+@router.get("/categories", response_model=Dict[str, Any])
+async def get_ingredient_categories(
+    db: AsyncSession = Depends(get_db)
+):
+    """재료 카테고리 목록 조회 (DB 기반)"""
+    try:
+        # 카테고리별 재료 개수 조회
+        query = select(
+            Ingredient.category,
+            func.count(Ingredient.id).label('count')
+        ).group_by(Ingredient.category).order_by(Ingredient.category)
+
+        result = await db.execute(query)
+        categories = result.fetchall()
+
+        # 카테고리별 재료명 조회
+        category_ingredients = {}
+        for category, count in categories:
+            category_name = category or "기타"
+
+            ingredient_query = select(Ingredient.name).where(
+                Ingredient.category == category
+            ).order_by(Ingredient.name).limit(100)
+
+            ingredient_result = await db.execute(ingredient_query)
+            ingredients = [row[0] for row in ingredient_result.fetchall()]
+
+            category_ingredients[category_name] = {
+                "count": count,
+                "ingredients": ingredients
+            }
+
+        return {
+            "categories": category_ingredients,
+            "total_categories": len(categories)
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"카테고리 조회 중 오류가 발생했습니다: {str(e)}"
         )

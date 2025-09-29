@@ -4,24 +4,33 @@
 import os
 from typing import List, Optional
 from pydantic_settings import BaseSettings
+from dotenv import load_dotenv
+
+# .env 파일 로드
+load_dotenv()
 
 
 class Settings(BaseSettings):
     """애플리케이션 설정"""
-    
+
     # 기본 설정
     PROJECT_NAME: str = "Fridge2Fork API"
     PROJECT_VERSION: str = "1.0.0"
     API_V1_STR: str = "/fridge2fork/v1"
     DEBUG: bool = True
     ENVIRONMENT: str = "dev"
-    
-    # 데이터베이스 설정 (Kubernetes 시크릿에서 환경변수로 주입됨)
-    POSTGRES_DB: str = ""
-    POSTGRES_PASSWORD: str = ""
-    POSTGRES_PORT: int = 5432
-    POSTGRES_SERVER: str = ""
-    POSTGRES_USER: str = ""
+
+    # 데이터베이스 설정 (os.getenv로 직접 로드)
+    POSTGRES_DB: str = os.getenv("POSTGRES_DB", "")
+    POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD", "")
+    POSTGRES_PORT: int = int(os.getenv("POSTGRES_PORT", "5432"))
+    POSTGRES_SERVER: str = os.getenv("POSTGRES_SERVER", "")
+    POSTGRES_USER: str = os.getenv("POSTGRES_USER", "")
+
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8"
+    }
     
     # 호환성을 위한 별칭 (기존 코드와의 호환성)
     DATABASE_URL: str = ""
@@ -57,11 +66,12 @@ class Settings(BaseSettings):
     # 로깅 설정
     LOG_LEVEL: str = "INFO"
     
-    class Config:
-        env_file = ".env.common"
-        env_file_encoding = "utf-8"
-        case_sensitive = True
-        extra = "ignore"  # 추가 환경변수 무시
+    model_config = {
+        "env_file": ".env.common",
+        "env_file_encoding": "utf-8",
+        "case_sensitive": True,
+        "extra": "ignore"
+    }
 
 
 class TestSettings(BaseSettings):
@@ -104,9 +114,10 @@ class TestSettings(BaseSettings):
     # 로깅 설정
     LOG_LEVEL: str = "WARNING"
     
-    class Config:
-        case_sensitive = True
-        extra = "ignore"  # 추가 환경변수 무시
+    model_config = {
+        "case_sensitive": True,
+        "extra": "ignore"
+    }
 
 
 def get_settings():

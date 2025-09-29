@@ -13,19 +13,32 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-# PostgreSQL 연결
-# DATABASE_URL이 설정되지 않은 경우 기본값 사용
-database_url = settings.DATABASE_URL
-if not database_url:
+# PostgreSQL 연결 구성
+def get_database_url():
+    # 개별 환경변수가 설정된 경우 우선 사용
+    if settings.POSTGRES_SERVER and settings.POSTGRES_DB:
+        database_url = (
+            f"postgresql+asyncpg://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}"
+            f"@{settings.POSTGRES_SERVER}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}"
+        )
+        logger.info(f"🐘 환경변수에서 PostgreSQL 연결 구성: {settings.POSTGRES_SERVER}:{settings.POSTGRES_PORT}")
+        return database_url
+
+    # DATABASE_URL 환경변수 확인
+    if settings.DATABASE_URL:
+        database_url = settings.DATABASE_URL
+        # PostgreSQL URL을 asyncpg로 변환
+        if database_url.startswith("postgresql://"):
+            database_url = database_url.replace("postgresql://", "postgresql+asyncpg://")
+            logger.info("🐘 DATABASE_URL에서 PostgreSQL 연결 감지. asyncpg 드라이버로 변환")
+        return database_url
+
     # 개발 환경에서 기본값 사용
-    database_url = "sqlite+aiosqlite:///./dev.db"
-    logger.info("📝 DATABASE_URL이 설정되지 않음. SQLite 사용: sqlite+aiosqlite:///./dev.db")
-else:
-    # PostgreSQL URL을 asyncpg로 변환
-    if database_url.startswith("postgresql://"):
-        database_url = database_url.replace("postgresql://", "postgresql+asyncpg://")
-        logger.info("🐘 PostgreSQL 데이터베이스 URL 감지. asyncpg 드라이버로 변환")
-    logger.info(f"🔗 데이터베이스 연결 URL: {database_url[:50]}...")
+    logger.warning("⚠️ PostgreSQL 환경변수가 설정되지 않음. SQLite 사용")
+    return "sqlite+aiosqlite:///./dev.db"
+
+database_url = get_database_url()
+logger.info(f"🔗 데이터베이스 연결 URL: {database_url[:50]}...")
 
 engine = create_async_engine(
     database_url,

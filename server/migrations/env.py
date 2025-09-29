@@ -1,24 +1,12 @@
-"""
-Alembic 환경 설정
-"""
-from logging.config import fileConfig
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-from alembic import context
 import os
 import sys
+from logging.config import fileConfig
+from pathlib import Path
 
-# 프로젝트 루트를 Python 경로에 추가
-sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+from sqlalchemy import engine_from_config
+from sqlalchemy import pool
 
-from app.core.config import settings
-from app.core.database import Base
-
-# 모든 모델 임포트 (Alembic이 인식할 수 있도록)
-from app.models.user import User, RefreshToken
-from app.models.recipe import Recipe, UserFavorite, CookingHistory
-from app.models.feedback import Feedback
-from app.models.system import PlatformVersion, SystemStatus
+from alembic import context
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -31,6 +19,16 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
+# from myapp import mymodel
+# target_metadata = mymodel.Base.metadata
+
+# 현재 파일의 부모 디렉터리를 sys.path에 추가
+current_path = Path(__file__).parent
+sys.path.append(str(current_path.parent))
+
+from app.core.database import Base
+from app.models import recipe  # 모델 import
+
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
@@ -40,16 +38,14 @@ target_metadata = Base.metadata
 
 
 def get_url():
-    """환경별 데이터베이스 URL 가져오기"""
-    if settings.DATABASE_URL:
-        # asyncpg를 동기식으로 변환
-        url = settings.DATABASE_URL
-        if url.startswith("postgresql+asyncpg://"):
-            return url.replace("postgresql+asyncpg://", "postgresql://")
-        return url
-    else:
-        # 환경변수가 설정되지 않은 경우 기본 SQLite URL 반환 (동기식)
-        return "sqlite:///./dev.db"
+    """환경 변수에서 데이터베이스 URL 생성"""
+    user = os.getenv("POSTGRES_USER", "f2f")
+    password = os.getenv("POSTGRES_PASSWORD", "test1234")
+    server = os.getenv("POSTGRES_SERVER", "localhost")
+    port = os.getenv("POSTGRES_PORT", "5434")
+    db = os.getenv("POSTGRES_DB", "f2f")
+
+    return f"postgresql://{user}:{password}@{server}:{port}/{db}"
 
 
 def run_migrations_offline() -> None:
@@ -85,7 +81,7 @@ def run_migrations_online() -> None:
     """
     configuration = config.get_section(config.config_ini_section)
     configuration["sqlalchemy.url"] = get_url()
-    
+
     connectable = engine_from_config(
         configuration,
         prefix="sqlalchemy.",
