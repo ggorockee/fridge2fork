@@ -488,47 +488,59 @@ async def get_recipe(
 
 @router.get("/stats/summary", response_model=Dict[str, Any])
 async def get_recipe_stats(db: AsyncSession = Depends(get_db)):
-    """레시피 통계 정보"""
+    """레시피 통계 정보 (병렬 쿼리 최적화)"""
     try:
-        # 전체 레시피 수
-        recipe_count_result = await db.execute(select(func.count(Recipe.rcp_sno)))
-        recipe_count = recipe_count_result.scalar()
+        import asyncio
 
-        # 전체 재료 수
-        ingredient_count_result = await db.execute(select(func.count(Ingredient.id)))
-        ingredient_count = ingredient_count_result.scalar()
+        # 병렬로 통계 쿼리 실행
+        async def get_recipe_count():
+            result = await db.execute(select(func.count(Recipe.rcp_sno)))
+            return result.scalar()
 
-        # 평균 재료 수 계산 (division by zero 방지)
-        recipe_ingredient_stats = await db.execute(
-            select(
-                func.count(RecipeIngredient.ingredient_id).label('total_ingredients'),
-                func.count(func.distinct(RecipeIngredient.rcp_sno)).label('recipe_count')
-            ).select_from(RecipeIngredient)
+        async def get_ingredient_count():
+            result = await db.execute(select(func.count(Ingredient.id)))
+            return result.scalar()
+
+        async def get_recipe_ingredient_stats():
+            result = await db.execute(
+                select(
+                    func.count(RecipeIngredient.ingredient_id).label('total_ingredients'),
+                    func.count(func.distinct(RecipeIngredient.rcp_sno)).label('recipe_count')
+                ).select_from(RecipeIngredient)
+            )
+            stats = result.fetchone()
+            return stats if stats else (0, 0)
+
+        async def get_category_stats():
+            result = await db.execute(
+                select(Recipe.ckg_knd_acto_nm, func.count(Recipe.rcp_sno).label('count'))
+                .where(Recipe.ckg_knd_acto_nm.isnot(None))
+                .group_by(Recipe.ckg_knd_acto_nm)
+                .order_by(func.count(Recipe.rcp_sno).desc())
+                .limit(10)
+            )
+            return {row[0]: row[1] for row in result.fetchall()}
+
+        async def get_latest_date():
+            result = await db.execute(
+                select(Recipe.created_at)
+                .order_by(Recipe.created_at.desc())
+                .limit(1)
+            )
+            return result.scalar()
+
+        # 모든 쿼리를 병렬로 실행
+        recipe_count, ingredient_count, ingredient_stats, categories, latest_date = await asyncio.gather(
+            get_recipe_count(),
+            get_ingredient_count(),
+            get_recipe_ingredient_stats(),
+            get_category_stats(),
+            get_latest_date()
         )
 
-        stats = recipe_ingredient_stats.fetchone()
-        total_ingredients, unique_recipes = stats if stats else (0, 0)
-
+        # 평균 재료 수 계산
+        total_ingredients, unique_recipes = ingredient_stats
         avg_ingredients = float(total_ingredients / unique_recipes) if unique_recipes > 0 else 0
-
-        # 카테고리별 레시피 수
-        category_stats = await db.execute(
-            select(Recipe.ckg_knd_acto_nm, func.count(Recipe.rcp_sno).label('count'))
-            .where(Recipe.ckg_knd_acto_nm.isnot(None))
-            .group_by(Recipe.ckg_knd_acto_nm)
-            .order_by(func.count(Recipe.rcp_sno).desc())
-            .limit(10)
-        )
-
-        categories = {row[0]: row[1] for row in category_stats.fetchall()}
-
-        # 최신 레시피 등록일
-        latest_recipe = await db.execute(
-            select(Recipe.created_at)
-            .order_by(Recipe.created_at.desc())
-            .limit(1)
-        )
-        latest_date = latest_recipe.scalar()
 
         return {
             "total_recipes": recipe_count,
