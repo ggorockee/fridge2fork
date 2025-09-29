@@ -31,12 +31,12 @@ async def get_dashboard_overview(
 
     try:
         # 기본 카운트
-        total_ingredients = db.query(func.count(Ingredient.ingredient_id)).scalar() or 0
-        total_recipes = db.query(func.count(Recipe.recipe_id)).scalar() or 0
-        total_recipe_ingredients = db.query(func.count(RecipeIngredient.recipe_id)).scalar() or 0
+        total_ingredients = db.query(func.count(Ingredient.id)).scalar() or 0
+        total_recipes = db.query(func.count(Recipe.rcp_sno)).scalar() or 0
+        total_recipe_ingredients = db.query(func.count(RecipeIngredient.rcp_sno)).scalar() or 0
 
         # 모호한 식재료 수
-        vague_ingredients_count = db.query(func.count(Ingredient.ingredient_id)).filter(
+        vague_ingredients_count = db.query(func.count(Ingredient.id)).filter(
             Ingredient.is_vague == True
         ).scalar() or 0
 
@@ -47,7 +47,7 @@ async def get_dashboard_overview(
         cutoff_date = datetime.now() - timedelta(days=days_back)
 
         try:
-            recent_recipes = db.query(func.count(Recipe.recipe_id)).filter(
+            recent_recipes = db.query(func.count(Recipe.rcp_sno)).filter(
                 Recipe.created_at >= cutoff_date
             ).scalar() or 0
         except Exception:
@@ -61,13 +61,13 @@ async def get_dashboard_overview(
 
         # 인기 식재료 (사용 빈도 높은 순)
         popular_ingredients_query = db.query(
-            Ingredient.ingredient_id,
+            Ingredient.id,
             Ingredient.name,
-            func.count(RecipeIngredient.recipe_id).label('usage_count')
+            func.count(RecipeIngredient.rcp_sno).label('usage_count')
         ).join(
-            RecipeIngredient, Ingredient.ingredient_id == RecipeIngredient.ingredient_id
+            RecipeIngredient, Ingredient.id == RecipeIngredient.ingredient_id
         ).group_by(
-            Ingredient.ingredient_id, Ingredient.name
+            Ingredient.id, Ingredient.name
         ).order_by(
             desc('usage_count')
         ).limit(10)
@@ -88,16 +88,16 @@ async def get_dashboard_overview(
         except Exception:
             # created_at이 없는 경우 recipe_id 역순으로
             recent_recipes_query = db.query(Recipe).order_by(
-                Recipe.recipe_id.desc()
+                Recipe.rcp_sno.desc()
             ).limit(5)
 
         recent_recipes_list = []
         for recipe in recent_recipes_query:
             recent_recipes_list.append({
-                "id": recipe.recipe_id,
-                "title": recipe.title,
-                "url": recipe.url,
-                "image_url": recipe.image_url
+                "id": recipe.rcp_sno,
+                "title": recipe.rcp_ttl,
+                "url": f"#recipe-{recipe.rcp_sno}",  # 임시 URL
+                "image_url": recipe.rcp_img_url
             })
 
         overview = DashboardOverview(
@@ -138,11 +138,11 @@ async def get_ingredients_usage_chart(
         # 식재료별 사용 빈도 조회
         usage_query = db.query(
             Ingredient.name,
-            func.count(RecipeIngredient.recipe_id).label('usage_count')
+            func.count(RecipeIngredient.rcp_sno).label('usage_count')
         ).outerjoin(
-            RecipeIngredient, Ingredient.ingredient_id == RecipeIngredient.ingredient_id
+            RecipeIngredient, Ingredient.id == RecipeIngredient.ingredient_id
         ).group_by(
-            Ingredient.ingredient_id, Ingredient.name
+            Ingredient.id, Ingredient.name
         ).order_by(
             desc('usage_count')
         ).limit(limit)
@@ -194,10 +194,10 @@ async def get_recipes_by_ingredient_count_chart(
     try:
         # 레시피별 식재료 개수 조회
         ingredient_count_query = db.query(
-            func.count(RecipeIngredient.ingredient_id).label('ingredient_count'),
-            func.count(RecipeIngredient.recipe_id).label('recipe_count')
+            func.count(RecipeIngredient.id).label('ingredient_count'),
+            func.count(RecipeIngredient.rcp_sno).label('recipe_count')
         ).group_by(
-            RecipeIngredient.recipe_id
+            RecipeIngredient.rcp_sno
         ).subquery()
 
         # 식재료 개수별 레시피 수 분포
@@ -259,12 +259,12 @@ async def get_vague_vs_precise_chart(
 
     try:
         # 모호한 식재료 수
-        vague_count = db.query(func.count(Ingredient.ingredient_id)).filter(
+        vague_count = db.query(func.count(Ingredient.id)).filter(
             Ingredient.is_vague == True
         ).scalar() or 0
 
         # 정확한 식재료 수
-        precise_count = db.query(func.count(Ingredient.ingredient_id)).filter(
+        precise_count = db.query(func.count(Ingredient.id)).filter(
             Ingredient.is_vague == False
         ).scalar() or 0
 
@@ -339,7 +339,7 @@ async def get_recipes_timeline_chart(
             # 날짜별 레시피 추가 수 조회
             daily_counts = db.query(
                 func.date(Recipe.created_at).label('date'),
-                func.count(Recipe.recipe_id).label('count')
+                func.count(Recipe.rcp_sno).label('count')
             ).filter(
                 func.date(Recipe.created_at) >= start_date,
                 func.date(Recipe.created_at) <= end_date
@@ -443,15 +443,15 @@ async def get_dashboard_summary_stats(
         # 기본 통계
         stats = {
             "총계": {
-                "식재료": db.query(func.count(Ingredient.ingredient_id)).scalar() or 0,
-                "레시피": db.query(func.count(Recipe.recipe_id)).scalar() or 0,
-                "레시피-식재료 연결": db.query(func.count(RecipeIngredient.recipe_id)).scalar() or 0
+                "식재료": db.query(func.count(Ingredient.id)).scalar() or 0,
+                "레시피": db.query(func.count(Recipe.rcp_sno)).scalar() or 0,
+                "레시피-식재료 연결": db.query(func.count(RecipeIngredient.rcp_sno)).scalar() or 0
             },
             "식재료 분류": {
-                "모호한 식재료": db.query(func.count(Ingredient.ingredient_id)).filter(
+                "모호한 식재료": db.query(func.count(Ingredient.id)).filter(
                     Ingredient.is_vague == True
                 ).scalar() or 0,
-                "정확한 식재료": db.query(func.count(Ingredient.ingredient_id)).filter(
+                "정확한 식재료": db.query(func.count(Ingredient.id)).filter(
                     Ingredient.is_vague == False
                 ).scalar() or 0
             },
@@ -505,9 +505,9 @@ def calculate_avg_ingredients_per_recipe(db: Session) -> float:
     """레시피당 평균 식재료 수 계산"""
     try:
         result = db.query(
-            func.avg(func.count(RecipeIngredient.ingredient_id))
+            func.avg(func.count(RecipeIngredient.id))
         ).group_by(
-            RecipeIngredient.recipe_id
+            RecipeIngredient.rcp_sno
         ).scalar()
 
         return round(float(result or 0), 2)
@@ -518,8 +518,8 @@ def calculate_avg_ingredients_per_recipe(db: Session) -> float:
 def calculate_avg_usage_per_ingredient(db: Session) -> float:
     """식재료당 평균 사용 횟수 계산"""
     try:
-        total_ingredients = db.query(func.count(Ingredient.ingredient_id)).scalar() or 1
-        total_usages = db.query(func.count(RecipeIngredient.recipe_id)).scalar() or 0
+        total_ingredients = db.query(func.count(Ingredient.id)).scalar() or 1
+        total_usages = db.query(func.count(RecipeIngredient.rcp_sno)).scalar() or 0
 
         return round(total_usages / total_ingredients, 2)
     except Exception:
@@ -530,11 +530,11 @@ def get_max_ingredient_usage(db: Session) -> int:
     """가장 많이 사용된 식재료의 사용 횟수"""
     try:
         result = db.query(
-            func.count(RecipeIngredient.recipe_id)
+            func.count(RecipeIngredient.rcp_sno)
         ).group_by(
-            RecipeIngredient.ingredient_id
+            RecipeIngredient.id
         ).order_by(
-            desc(func.count(RecipeIngredient.recipe_id))
+            desc(func.count(RecipeIngredient.rcp_sno))
         ).first()
 
         return result[0] if result else 0
@@ -546,11 +546,11 @@ def get_max_recipe_ingredients(db: Session) -> int:
     """가장 많은 식재료를 사용한 레시피의 식재료 수"""
     try:
         result = db.query(
-            func.count(RecipeIngredient.ingredient_id)
+            func.count(RecipeIngredient.id)
         ).group_by(
-            RecipeIngredient.recipe_id
+            RecipeIngredient.rcp_sno
         ).order_by(
-            desc(func.count(RecipeIngredient.ingredient_id))
+            desc(func.count(RecipeIngredient.id))
         ).first()
 
         return result[0] if result else 0

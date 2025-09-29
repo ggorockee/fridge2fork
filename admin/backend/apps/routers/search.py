@@ -78,19 +78,19 @@ async def global_search(
             ).limit(request.limit_per_type).all()
 
             for recipe in recipes:
-                score = calculate_search_score(request.query, recipe.title)
-                highlight = highlight_text(recipe.title, request.query)
+                score = calculate_search_score(request.query, recipe.rcp_ttl)
+                highlight = highlight_text(recipe.rcp_ttl, request.query)
 
                 recipe_results.append(SearchResultItem(
                     type="recipe",
-                    id=recipe.recipe_id,
-                    title=recipe.title,
+                    id=recipe.rcp_sno,
+                    title=recipe.rcp_ttl,
                     description=recipe.description,
                     highlight=highlight,
                     score=score,
                     metadata={
-                        "url": recipe.url,
-                        "image_url": recipe.image_url,
+                        "url": f"#recipe-{recipe.rcp_sno}",
+                        "image_url": recipe.rcp_img_url,
                         "type": "recipe"
                     }
                 ))
@@ -161,7 +161,7 @@ async def advanced_search(
         # 식재료 필터
         if filters.ingredient_ids:
             ingredient_query = ingredient_query.filter(
-                Ingredient.ingredient_id.in_(filters.ingredient_ids)
+                Ingredient.id.in_(filters.ingredient_ids)
             )
 
         if filters.is_vague is not None:
@@ -172,7 +172,7 @@ async def advanced_search(
         # 레시피 필터
         if filters.recipe_ids:
             recipe_query = recipe_query.filter(
-                Recipe.recipe_id.in_(filters.recipe_ids)
+                Recipe.rcp_sno.in_(filters.recipe_ids)
             )
 
         if filters.date_from:
@@ -233,19 +233,19 @@ async def advanced_search(
             ))
 
         for recipe in recipes:
-            score = calculate_search_score(request.query or "", recipe.title)
-            highlight = highlight_text(recipe.title, request.query) if request.highlight and request.query else None
+            score = calculate_search_score(request.query or "", recipe.rcp_ttl)
+            highlight = highlight_text(recipe.rcp_ttl, request.query) if request.highlight and request.query else None
 
             results.append(SearchResultItem(
                 type="recipe",
-                id=recipe.recipe_id,
-                title=recipe.title,
+                id=recipe.rcp_sno,
+                title=recipe.rcp_ttl,
                 description=recipe.description,
                 highlight=highlight,
                 score=score,
                 metadata={
-                    "url": recipe.url,
-                    "image_url": recipe.image_url,
+                    "url": f"#recipe-{recipe.rcp_sno}",
+                    "image_url": recipe.rcp_img_url,
                     "created_at": recipe.created_at.isoformat(),
                     "type": "recipe"
                 }
@@ -305,7 +305,7 @@ async def search_recipes_by_ingredients(
         # 제외할 레시피 필터
         if request.exclude_recipe_ids:
             query = query.filter(
-                ~Recipe.recipe_id.in_(request.exclude_recipe_ids)
+                ~Recipe.rcp_sno.in_(request.exclude_recipe_ids)
             )
 
         # 매치 타입에 따른 조건
@@ -314,45 +314,45 @@ async def search_recipes_by_ingredients(
             for ingredient_id in request.ingredient_ids:
                 query = query.filter(
                     Recipe.recipe_ingredients.any(
-                        RecipeIngredient.ingredient_id == ingredient_id
+                        RecipeIngredient.id == ingredient_id
                     )
                 )
 
         elif request.match_type == "any":
             # 하나 이상의 재료가 포함된 레시피
             query = query.filter(
-                RecipeIngredient.ingredient_id.in_(request.ingredient_ids)
+                RecipeIngredient.id.in_(request.ingredient_ids)
             )
 
         elif request.match_type == "exact":
             # 정확히 지정된 재료만 있는 레시피 (복잡한 쿼리)
-            recipe_ids_with_exact_ingredients = db.query(RecipeIngredient.recipe_id).filter(
-                RecipeIngredient.ingredient_id.in_(request.ingredient_ids)
-            ).group_by(RecipeIngredient.recipe_id).having(
-                func.count(func.distinct(RecipeIngredient.ingredient_id)) == len(request.ingredient_ids)
+            recipe_ids_with_exact_ingredients = db.query(RecipeIngredient.rcp_sno).filter(
+                RecipeIngredient.id.in_(request.ingredient_ids)
+            ).group_by(RecipeIngredient.rcp_sno).having(
+                func.count(func.distinct(RecipeIngredient.id)) == len(request.ingredient_ids)
             ).subquery()
 
             # 다른 재료가 없는 레시피만 선택
-            recipe_ids_with_only_these_ingredients = db.query(RecipeIngredient.recipe_id).group_by(
-                RecipeIngredient.recipe_id
+            recipe_ids_with_only_these_ingredients = db.query(RecipeIngredient.rcp_sno).group_by(
+                RecipeIngredient.rcp_sno
             ).having(
-                func.count(func.distinct(RecipeIngredient.ingredient_id)) == len(request.ingredient_ids)
+                func.count(func.distinct(RecipeIngredient.id)) == len(request.ingredient_ids)
             ).subquery()
 
             query = query.filter(
-                Recipe.recipe_id.in_(recipe_ids_with_exact_ingredients),
-                Recipe.recipe_id.in_(recipe_ids_with_only_these_ingredients)
+                Recipe.rcp_sno.in_(recipe_ids_with_exact_ingredients),
+                Recipe.rcp_sno.in_(recipe_ids_with_only_these_ingredients)
             )
 
         # 최소 매치 개수 조건
         if request.match_type == "any" and request.min_match_count > 1:
-            recipe_ids_with_min_matches = db.query(RecipeIngredient.recipe_id).filter(
-                RecipeIngredient.ingredient_id.in_(request.ingredient_ids)
-            ).group_by(RecipeIngredient.recipe_id).having(
-                func.count(func.distinct(RecipeIngredient.ingredient_id)) >= request.min_match_count
+            recipe_ids_with_min_matches = db.query(RecipeIngredient.rcp_sno).filter(
+                RecipeIngredient.id.in_(request.ingredient_ids)
+            ).group_by(RecipeIngredient.rcp_sno).having(
+                func.count(func.distinct(RecipeIngredient.id)) >= request.min_match_count
             ).subquery()
 
-            query = query.filter(Recipe.recipe_id.in_(recipe_ids_with_min_matches))
+            query = query.filter(Recipe.rcp_sno.in_(recipe_ids_with_min_matches))
 
         # 중복 제거 및 정렬
         query = query.distinct().order_by(Recipe.created_at.desc())
@@ -410,9 +410,9 @@ async def get_search_suggestions(
             ).order_by(Recipe.title).limit(limit // 2 if suggestion_type == "all" else limit).all()
 
             for recipe in recipes:
-                confidence = calculate_suggestion_confidence(query, recipe.title)
+                confidence = calculate_suggestion_confidence(query, recipe.rcp_ttl)
                 suggestions.append(SuggestionItem(
-                    text=recipe.title,
+                    text=recipe.rcp_ttl,
                     type="recipe",
                     frequency=1,  # 레시피는 빈도 1로 고정
                     confidence=confidence
@@ -527,7 +527,7 @@ def get_ingredient_usage_frequency(ingredient_id: int, db: Session) -> int:
     """식재료 사용 빈도 조회"""
     try:
         count = db.query(RecipeIngredient).filter(
-            RecipeIngredient.ingredient_id == ingredient_id
+            RecipeIngredient.id == ingredient_id
         ).count()
         return count
     except Exception:

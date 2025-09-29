@@ -132,7 +132,7 @@ async def batch_update_ingredients(
 
                 # 존재 여부 확인
                 ingredient = db.query(Ingredient).filter(
-                    Ingredient.ingredient_id == ingredient_id
+                    Ingredient.id == ingredient_id
                 ).first()
 
                 if not ingredient:
@@ -207,7 +207,7 @@ async def batch_delete_ingredients(
         for idx, ingredient_id in enumerate(ingredient_ids):
             try:
                 ingredient = db.query(Ingredient).filter(
-                    Ingredient.ingredient_id == ingredient_id
+                    Ingredient.id == ingredient_id
                 ).first()
 
                 if not ingredient:
@@ -217,7 +217,7 @@ async def batch_delete_ingredients(
 
                 # 관련 레시피 확인
                 recipe_count = db.query(RecipeIngredient).filter(
-                    RecipeIngredient.ingredient_id == ingredient_id
+                    RecipeIngredient.id == ingredient_id
                 ).count()
 
                 if recipe_count > 0 and not force_delete:
@@ -228,7 +228,7 @@ async def batch_delete_ingredients(
                 # 관련 레시피 연결 삭제
                 if force_delete:
                     db.query(RecipeIngredient).filter(
-                        RecipeIngredient.ingredient_id == ingredient_id
+                        RecipeIngredient.id == ingredient_id
                     ).delete()
 
                 # 식재료 삭제
@@ -317,8 +317,8 @@ async def batch_create_recipes(
                 db.flush()  # ID 얻기 위해
 
                 result.success_count += 1
-                result.created_ids.append(recipe.recipe_id)
-                logger.debug(f"✅ 레시피 생성 성공: {recipe_data.title} (ID: {recipe.recipe_id})")
+                result.created_ids.append(recipe.rcp_sno)
+                logger.debug(f"✅ 레시피 생성 성공: {recipe_data.title} (ID: {recipe.rcp_sno})")
 
             except Exception as e:
                 result.error_count += 1
@@ -375,7 +375,7 @@ async def batch_delete_recipes(
         for idx, recipe_id in enumerate(recipe_ids):
             try:
                 recipe = db.query(Recipe).filter(
-                    Recipe.recipe_id == recipe_id
+                    Recipe.rcp_sno == recipe_id
                 ).first()
 
                 if not recipe:
@@ -385,7 +385,7 @@ async def batch_delete_recipes(
 
                 # 관련 레시피-식재료 연결 삭제
                 db.query(RecipeIngredient).filter(
-                    RecipeIngredient.recipe_id == recipe_id
+                    RecipeIngredient.rcp_sno == recipe_id
                 ).delete()
 
                 # 레시피 삭제
@@ -508,10 +508,10 @@ async def merge_ingredients(
     try:
         # 소스와 대상 식재료 확인
         source = db.query(Ingredient).filter(
-            Ingredient.ingredient_id == request.source_id
+            Ingredient.id == request.source_id
         ).first()
         target = db.query(Ingredient).filter(
-            Ingredient.ingredient_id == request.target_id
+            Ingredient.id == request.target_id
         ).first()
 
         if not source:
@@ -534,7 +534,7 @@ async def merge_ingredients(
 
         # 소스의 모든 레시피 연결을 대상으로 이동
         recipe_ingredients = db.query(RecipeIngredient).filter(
-            RecipeIngredient.ingredient_id == request.source_id
+            RecipeIngredient.id == request.source_id
         ).all()
 
         affected_recipes = len(recipe_ingredients)
@@ -542,8 +542,8 @@ async def merge_ingredients(
         for ri in recipe_ingredients:
             # 대상에 이미 같은 레시피 연결이 있는지 확인
             existing = db.query(RecipeIngredient).filter(
-                RecipeIngredient.recipe_id == ri.recipe_id,
-                RecipeIngredient.ingredient_id == request.target_id
+                RecipeIngredient.rcp_sno == ri.recipe_id,
+                RecipeIngredient.id == request.target_id
             ).first()
 
             if existing:

@@ -64,17 +64,7 @@ app.add_middleware(
 )
 
 
-# 헬스체크 엔드포인트 (기존)
-@app.get("/health", tags=["🏥 헬스체크"], summary="서버 상태 확인")
-async def health_check():
-    """서버 상태를 확인합니다."""
-    logger.info("🏥 헬스체크 요청")
-    return {
-        "status": "healthy",
-        "app_name": settings.app_name,
-        "version": settings.app_version,
-        "message": "Fridge2Fork Admin API가 정상적으로 동작 중입니다! 🚀"
-    }
+# 루트 레벨 헬스체크 엔드포인트 제거됨 (중복 방지)
 
 
 # API 라우터 등록

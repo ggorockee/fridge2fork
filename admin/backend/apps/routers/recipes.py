@@ -91,7 +91,7 @@ async def get_recipe(
     """🍳 특정 레시피의 상세 정보를 조회합니다."""
     logger.info(f"🔍 레시피 상세 조회 - ID: {recipe_id}")
     
-    recipe = db.query(Recipe).filter(Recipe.recipe_id == recipe_id).first()
+    recipe = db.query(Recipe).filter(Recipe.rcp_sno == recipe_id).first()
     
     if not recipe:
         logger.warning(f"❌ 레시피를 찾을 수 없음 - ID: {recipe_id}")
@@ -99,8 +99,8 @@ async def get_recipe(
     
     # 식재료 정보 조회
     ingredients_query = db.query(RecipeIngredient, Ingredient).join(
-        Ingredient, RecipeIngredient.ingredient_id == Ingredient.ingredient_id
-    ).filter(RecipeIngredient.recipe_id == recipe_id)
+        Ingredient, RecipeIngredient.id == Ingredient.id
+    ).filter(RecipeIngredient.rcp_sno == recipe_id)
     
     ingredients = []
     for ri, ingredient in ingredients_query.all():
@@ -111,13 +111,13 @@ async def get_recipe(
             vague_description=ingredient.vague_description
         ))
     
-    logger.info(f"✅ 레시피 조회 완료 - {recipe.title}")
+    logger.info(f"✅ 레시피 조회 완료 - {recipe.rcp_ttl}")
     return RecipeDetailResponse(
-        recipe_id=recipe.recipe_id,
-        url=recipe.url,
-        title=recipe.title,
+        recipe_id=recipe.rcp_sno,
+        url=f"#recipe-{recipe.rcp_sno}",
+        title=recipe.rcp_ttl,
         description=recipe.description,
-        image_url=recipe.image_url,
+        image_url=recipe.rcp_img_url,
         created_at=recipe.created_at,
         ingredients=ingredients,
         instructions=[]  # 조리법은 현재 스키마에 없음
@@ -136,12 +136,12 @@ async def create_recipe(
     db: Session = Depends(get_db)
 ):
     """🍳 새로운 레시피를 생성합니다."""
-    logger.info(f"➕ 레시피 생성 시작 - {recipe.title}")
+    logger.info(f"➕ 레시피 생성 시작 - {recipe.rcp_ttl}")
     
     # 중복 URL 확인
-    existing = db.query(Recipe).filter(Recipe.url == recipe.url).first()
+    existing = db.query(Recipe).filter(Recipe.url == f"#recipe-{recipe.rcp_sno}").first()
     if existing:
-        logger.warning(f"❌ 중복된 레시피 URL: {recipe.url}")
+        logger.warning(f"❌ 중복된 레시피 URL: {f"#recipe-{recipe.rcp_sno}"}")
         raise HTTPException(status_code=400, detail="이미 존재하는 레시피 URL입니다")
     
     # 새 레시피 생성
@@ -150,7 +150,7 @@ async def create_recipe(
     db.commit()
     db.refresh(db_recipe)
     
-    logger.info(f"✅ 레시피 생성 완료 - ID: {db_recipe.recipe_id}, 제목: {db_recipe.title}")
+    logger.info(f"✅ 레시피 생성 완료 - ID: {db_recipe.rcp_sno}, 제목: {db_recipe.rcp_ttl}")
     return db_recipe
 
 
@@ -169,13 +169,13 @@ async def update_recipe(
     logger.info(f"✏️ 레시피 수정 시작 - ID: {recipe_id}")
     
     # 레시피 조회
-    db_recipe = db.query(Recipe).filter(Recipe.recipe_id == recipe_id).first()
+    db_recipe = db.query(Recipe).filter(Recipe.rcp_sno == recipe_id).first()
     if not db_recipe:
         logger.warning(f"❌ 수정할 레시피를 찾을 수 없음 - ID: {recipe_id}")
         raise HTTPException(status_code=404, detail="레시피를 찾을 수 없습니다")
     
     # URL 중복 확인 (URL이 변경되는 경우)
-    if recipe_update.url and recipe_update.url != db_recipe.url:
+    if recipe_update.url and recipe_update.url != db_f"#recipe-{recipe.rcp_sno}":
         existing = db.query(Recipe).filter(Recipe.url == recipe_update.url).first()
         if existing:
             logger.warning(f"❌ 중복된 레시피 URL: {recipe_update.url}")
@@ -204,12 +204,12 @@ async def delete_recipe(recipe_id: int, db: Session = Depends(get_db)):
     logger.info(f"🗑️ 레시피 삭제 시작 - ID: {recipe_id}")
     
     # 레시피 조회
-    db_recipe = db.query(Recipe).filter(Recipe.recipe_id == recipe_id).first()
+    db_recipe = db.query(Recipe).filter(Recipe.rcp_sno == recipe_id).first()
     if not db_recipe:
         logger.warning(f"❌ 삭제할 레시피를 찾을 수 없음 - ID: {recipe_id}")
         raise HTTPException(status_code=404, detail="레시피를 찾을 수 없습니다")
     
-    recipe_title = db_recipe.title
+    recipe_title = db_recipe.rcp_ttl
     db.delete(db_recipe)
     db.commit()
     
@@ -231,13 +231,13 @@ async def get_recipe_ingredients(
     logger.info(f"🔍 레시피 식재료 목록 조회 - Recipe ID: {recipe_id}")
     
     # 레시피 존재 확인
-    recipe = db.query(Recipe).filter(Recipe.recipe_id == recipe_id).first()
+    recipe = db.query(Recipe).filter(Recipe.rcp_sno == recipe_id).first()
     if not recipe:
         logger.warning(f"❌ 레시피를 찾을 수 없음 - ID: {recipe_id}")
         raise HTTPException(status_code=404, detail="레시피를 찾을 수 없습니다")
     
     # 식재료 목록 조회
-    query = db.query(RecipeIngredient).filter(RecipeIngredient.recipe_id == recipe_id)
+    query = db.query(RecipeIngredient).filter(RecipeIngredient.rcp_sno == recipe_id)
     
     if importance:
         query = query.filter(RecipeIngredient.importance == importance)
