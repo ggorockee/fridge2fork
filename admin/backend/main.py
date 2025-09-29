@@ -10,7 +10,7 @@ import uvicorn
 from apps.config import settings
 from apps.logging_config import setup_logging, get_logger, AccessLogMiddleware
 from apps.database import init_db
-from apps.routers import ingredients, recipes, health, system, normalization, audit
+from apps.routers import ingredients, recipes, health, system, normalization, audit, batch, search, dashboard, analytics, export
 
 # 로깅 시스템 초기화
 setup_logging()
@@ -110,6 +110,37 @@ app.include_router(
 
 app.include_router(
     audit.router,
+    prefix=settings.api_prefix,
+    responses={404: {"description": "Not found"}}
+)
+
+# Phase 1 API 확장 라우터 등록
+app.include_router(
+    batch.router,
+    prefix=settings.api_prefix,
+    responses={404: {"description": "Not found"}}
+)
+
+app.include_router(
+    search.router,
+    prefix=settings.api_prefix,
+    responses={404: {"description": "Not found"}}
+)
+
+app.include_router(
+    dashboard.router,
+    prefix=settings.api_prefix,
+    responses={404: {"description": "Not found"}}
+)
+
+app.include_router(
+    analytics.router,
+    prefix=settings.api_prefix,
+    responses={404: {"description": "Not found"}}
+)
+
+app.include_router(
+    export.router,
     prefix=settings.api_prefix,
     responses={404: {"description": "Not found"}}
 )
