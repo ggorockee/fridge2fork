@@ -2,7 +2,7 @@
 📊 데이터베이스 모델 정의
 """
 from sqlalchemy import (
-    Column, Integer, String, Text, Boolean, Numeric, 
+    Column, Integer, String, Text, Boolean, Numeric, Float,
     DateTime, ForeignKey, UniqueConstraint, Index
 )
 from sqlalchemy.orm import relationship
