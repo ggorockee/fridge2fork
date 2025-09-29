@@ -35,13 +35,11 @@ async def get_dashboard_overview(
         total_recipes = db.query(func.count(Recipe.rcp_sno)).scalar() or 0
         total_recipe_ingredients = db.query(func.count(RecipeIngredient.rcp_sno)).scalar() or 0
 
-        # 모호한 식재료 수
-        vague_ingredients_count = db.query(func.count(Ingredient.id)).filter(
-            Ingredient.is_vague == True
-        ).scalar() or 0
+        # 모호한 식재료 수 (실제 DB에 is_vague 필드가 없으므로 0으로 처리)
+        vague_ingredients_count = 0
 
-        # 정규화된 식재료 수 (임시로 전체 - 모호한 것으로 계산)
-        normalized_ingredients_count = total_ingredients - vague_ingredients_count
+        # 정규화된 식재료 수 (전체 식재료 수로 처리)
+        normalized_ingredients_count = total_ingredients
 
         # 최근 추가된 항목 (날짜 필드가 있다고 가정)
         cutoff_date = datetime.now() - timedelta(days=days_back)
@@ -258,17 +256,12 @@ async def get_vague_vs_precise_chart(
     logger.info("📈 모호한 vs 정확한 식재료 비율 차트 조회")
 
     try:
-        # 모호한 식재료 수
-        vague_count = db.query(func.count(Ingredient.id)).filter(
-            Ingredient.is_vague == True
-        ).scalar() or 0
+        # 전체 식재료 수 조회
+        total_count = db.query(func.count(Ingredient.id)).scalar() or 0
 
-        # 정확한 식재료 수
-        precise_count = db.query(func.count(Ingredient.id)).filter(
-            Ingredient.is_vague == False
-        ).scalar() or 0
-
-        total_count = vague_count + precise_count
+        # is_vague 필드가 실제 DB에 없으므로 모든 식재료를 '정확한' 것으로 처리
+        vague_count = 0
+        precise_count = total_count
 
         data_points = [
             ChartDataPoint(
@@ -448,12 +441,8 @@ async def get_dashboard_summary_stats(
                 "레시피-식재료 연결": db.query(func.count(RecipeIngredient.rcp_sno)).scalar() or 0
             },
             "식재료 분류": {
-                "모호한 식재료": db.query(func.count(Ingredient.id)).filter(
-                    Ingredient.is_vague == True
-                ).scalar() or 0,
-                "정확한 식재료": db.query(func.count(Ingredient.id)).filter(
-                    Ingredient.is_vague == False
-                ).scalar() or 0
+                "모호한 식재료": 0,  # is_vague 필드가 실제 DB에 없으므로 0
+                "정확한 식재료": db.query(func.count(Ingredient.id)).scalar() or 0  # 전체 식재료
             },
             "평균값": {
                 "레시피당 식재료 수": calculate_avg_ingredients_per_recipe(db),
@@ -532,7 +521,7 @@ def get_max_ingredient_usage(db: Session) -> int:
         result = db.query(
             func.count(RecipeIngredient.rcp_sno)
         ).group_by(
-            RecipeIngredient.id
+            RecipeIngredient.ingredient_id
         ).order_by(
             desc(func.count(RecipeIngredient.rcp_sno))
         ).first()
