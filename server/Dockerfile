@@ -19,11 +19,18 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Upgrade pip and install wheel for better dependency handling
 RUN pip install --no-cache-dir --upgrade pip wheel
 
-# Copy requirements files for better caching
-COPY requirements.common.txt requirements.prod.txt ./
+# Copy all requirements files for better caching
+COPY requirements.common.txt requirements.prod.txt requirements.dev.txt ./
 
-# Install dependencies in virtual environment
-RUN pip install --no-cache-dir -r requirements.prod.txt
+# Build argument to determine environment-specific dependencies
+ARG BUILD_ENV=prod
+
+# Install dependencies based on BUILD_ENV
+RUN if [ "$BUILD_ENV" = "dev" ]; then \
+        pip install --no-cache-dir -r requirements.dev.txt; \
+    else \
+        pip install --no-cache-dir -r requirements.prod.txt; \
+    fi
 
 # Final stage
 FROM python:3.11-slim-bookworm
@@ -56,21 +63,23 @@ RUN chmod +x /app/entrypoint.sh
 RUN mkdir -p /app/logs /app/data && \
     chown -R appuser:appuser /app
 
-# Build argument for environment
+# Build arguments for environment configuration
 ARG BUILD_MODE=production
+ARG BUILD_ENV=prod
 
 # Set environment variables
 ENV PYTHONPATH=/app \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    BUILD_MODE=${BUILD_MODE}
+    BUILD_MODE=${BUILD_MODE} \
+    BUILD_ENV=${BUILD_ENV}
 
 # Expose port
 EXPOSE 8000
 
-# Add healthcheck
+# Add healthcheck for K8s liveness probe
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+    CMD curl -f http://localhost:8000/fridge2fork/v1/system/health || exit 1
 
 # Switch to non-root user
 USER appuser

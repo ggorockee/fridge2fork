@@ -3,7 +3,7 @@
 # Exit on any error
 set -e
 
-# Default values
+# Default values with K8s environment support
 APP_ENV=${APP_ENV:-${BUILD_MODE:-production}}
 ENVIRONMENT=${ENVIRONMENT:-${BUILD_MODE:-production}}
 HOST=${HOST:-0.0.0.0}
@@ -11,6 +11,8 @@ PORT=${PORT:-8000}
 WORKERS=${WORKERS:-4}
 TIMEOUT=${TIMEOUT:-120}
 KEEPALIVE=${KEEPALIVE:-5}
+MAX_REQUESTS=${MAX_REQUESTS:-1000}
+MAX_REQUESTS_JITTER=${MAX_REQUESTS_JITTER:-100}
 
 # Colors for output
 RED='\033[0;31m'
@@ -88,15 +90,8 @@ asyncio.run(check_db())
     success "Database connection successful"
 fi
 
-# Run database migrations if in production
-if [ "$APP_ENV" = "production" ] && [ -f "alembic.ini" ]; then
-    log "Running database migrations..."
-    python -m alembic upgrade head || {
-        error "Database migration failed. Exiting..."
-        exit 1
-    }
-    success "Database migrations completed"
-fi
+# Note: Database migrations are handled by init container in K8s
+# This ensures migrations complete before the main app container starts
 
 # Check if any arguments are passed to the container
 if [ $# -gt 0 ]; then
@@ -110,13 +105,16 @@ if [ "$APP_ENV" = "production" ]; then
     log "Workers: $WORKERS"
     log "Timeout: $TIMEOUT seconds"
     log "Keep-alive: $KEEPALIVE seconds"
+    log "Max requests: $MAX_REQUESTS (jitter: $MAX_REQUESTS_JITTER)"
     
     exec gunicorn main:app \
         -c gunicorn.conf.py \
         --bind $HOST:$PORT \
         --workers $WORKERS \
         --timeout $TIMEOUT \
-        --keepalive $KEEPALIVE
+        --keepalive $KEEPALIVE \
+        --max-requests $MAX_REQUESTS \
+        --max-requests-jitter $MAX_REQUESTS_JITTER
 elif [ "$APP_ENV" = "development" ] || [ "$APP_ENV" = "dev" ] || [ "$APP_ENV" = "develop" ]; then
     log "🔧 Running Uvicorn for development..."
     exec uvicorn main:app \
