@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fridge2fork-config
+  namespace: default
+  labels:
+    app: fridge2fork-admin-web
+data:
+  # Backend API URL
+  api_url: "http://fridge2fork-backend:8000"
+
+  # 추가 설정
+  node_env: "production"
+  log_level: "info"
