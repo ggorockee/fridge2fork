@@ -1,0 +1,35 @@
+/sc:implement 
+
+admin api 는 /home/woohaen88/woohalabs/fridge2fork/admin 에 있어
+server api는 /home/woohaen88/woohalabs/fridge2fork/server에 있어어
+
+디자인 가이드는 @reference/ 폴더에 있어
+디자인 가이드에 따라서 @src/app/globals.css를 업데이트 시켜줘
+
+모든 디자인 요소는 /componenets에서 확인할 수 있게 해줘
+그리고 디자인에 들어가는 모든 요소는 /componenets에서 구현된 components를 이용해줘 디자인 일관성을 위해
+
+database와 사용자 서버를 컨트롤 할 수 있는 어드민 페이지를 만들어줘
+일단 로그인은 없어. 나중에 구현할거야 
+
+그리고 새로운 테마를 추가할때는 /componenets를 추가하고 그 내용으로 디자인을 꾸며야해
+
+현재는 API없는 동작만 제대로 구현해보자.
+
+---
+/sc:implement
+@reference/apis
+
+의 내용을 읽고 실제 API를 붙여서 개발해줘 
+
+axios를 이용해주고, 비동기로 진행. 비동기로 진행 불가면
+
+@docs/에 @docs/NOTE.md에 기록해줘
+
+그리고 현재는 localhost:3000으로 되어있는데
+
+그게 아니고 localhost:3000/woohalabs 에서 동작하게 바꿔줘
+
+
+server api주소: https://api-dev.woohalabs.com/fridge2fork/v1
+admin api 주소: https://admin-api-dev.woohalabs.com/fridge2fork/v1
