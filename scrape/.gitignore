@@ -64,6 +64,9 @@ datas/RecipeSpecipic.csv
 *.json
 *.jsonl
 
+# Jupyter Notebooks
+*.ipynb
+
 # Migrations (generated)
 # migrations/versions/0*.py
 # !migrations/versions/__init__.py
