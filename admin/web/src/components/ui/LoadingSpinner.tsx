@@ -42,7 +42,10 @@ export const LoadingSpinner = React.forwardRef<
         {/* Spinner */}
         <div className="relative">
           <div className="w-16 h-16 border-4 border-muted rounded-full"></div>
-          <div className="absolute top-0 left-0 w-16 h-16 border-4 border-accent border-t-transparent rounded-full animate-spin"></div>
+          <div
+            className="absolute top-0 left-0 w-16 h-16 border-4 border-t-transparent rounded-full animate-spin"
+            style={{ borderColor: '#10b981', borderTopColor: 'transparent' }}
+          ></div>
         </div>
 
         {/* Message */}
@@ -83,12 +86,21 @@ export const InlineSpinner = React.forwardRef<
       role="status"
       aria-label="로딩 중"
     >
-      <div
-        className={cn(
-          sizeClasses[size],
-          "border-accent border-t-transparent rounded-full animate-spin"
-        )}
-      ></div>
+      <div className="relative">
+        <div
+          className={cn(
+            sizeClasses[size],
+            "border-muted rounded-full"
+          )}
+        ></div>
+        <div
+          className={cn(
+            sizeClasses[size],
+            "absolute top-0 left-0 border-t-transparent rounded-full animate-spin"
+          )}
+          style={{ borderColor: '#10b981', borderTopColor: 'transparent' }}
+        ></div>
+      </div>
     </div>
   );
 });

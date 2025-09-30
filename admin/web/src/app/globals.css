@@ -42,6 +42,10 @@
   --error: #ef4444;
   --info: #3b82f6;
 
+  /* Loading Spinner Colors */
+  --spinner-primary: #12de9a;
+  --spinner-secondary: #096c4b;
+
   /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -122,6 +126,10 @@
   --color-warning: var(--warning);
   --color-error: var(--error);
   --color-info: var(--info);
+
+  /* Loading Spinner Colors */
+  --color-spinner-primary: var(--spinner-primary);
+  --color-spinner-secondary: var(--spinner-secondary);
 
   /* Typography */
   --font-sans: var(--font-geist-sans);

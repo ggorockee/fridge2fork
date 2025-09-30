@@ -68,7 +68,10 @@ export default function ServersPage() {
           <div className="text-center">
             <div className="relative w-12 h-12 mx-auto mb-4">
               <div className="w-12 h-12 border-4 border-muted rounded-full"></div>
-              <div className="absolute top-0 left-0 w-12 h-12 border-4 border-accent border-t-transparent rounded-full animate-spin"></div>
+              <div
+                className="absolute top-0 left-0 w-12 h-12 border-4 border-t-transparent rounded-full animate-spin"
+                style={{ borderColor: '#10b981', borderTopColor: 'transparent' }}
+              ></div>
             </div>
             <p className="text-muted-foreground">데이터를 불러오는 중...</p>
           </div>
