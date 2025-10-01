@@ -2,12 +2,13 @@
 데이터베이스 연결 및 세션 관리
 """
 import logging
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import declarative_base
-from sqlalchemy.orm import sessionmaker
+import uuid
+from typing import AsyncGenerator
+
+from sqlalchemy import text
+from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 import redis.asyncio as redis
-from typing import AsyncGenerator
 
 from app.core.config import settings
 
@@ -44,6 +45,14 @@ engine = create_async_engine(
     database_url,
     echo=settings.DEBUG,
     future=True,
+    pool_pre_ping=True,
+    connect_args={
+        "statement_cache_size": 0,
+        "prepared_statement_cache_size": 0,
+        "server_settings": {
+            "application_name": f"fridge2fork_{str(uuid.uuid4())[:8]}"
+        }
+    } if "postgresql" in database_url else {},
 )
 
 # 세션 팩토리

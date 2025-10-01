@@ -65,10 +65,10 @@ async def check_db():
         db_url = os.getenv('DATABASE_URL')
         if db_url.startswith('postgresql://'):
             db_url = db_url.replace('postgresql://', 'postgresql+asyncpg://', 1)
-        
+
         # Parse URL to get connection params
         parsed = urlparse(db_url)
-        
+
         conn = await asyncpg.connect(
             host=parsed.hostname,
             port=parsed.port or 5432,
@@ -88,10 +88,18 @@ asyncio.run(check_db())
         exit 1
     }
     success "Database connection successful"
-fi
 
-# Note: Database migrations are handled by init container in K8s
-# This ensures migrations complete before the main app container starts
+    # Run Alembic migrations automatically
+    log "Running Alembic database migrations..."
+    if alembic upgrade head; then
+        success "Database migrations completed successfully"
+    else
+        error "Database migration failed. Exiting..."
+        exit 1
+    fi
+else
+    warn "DATABASE_URL not set. Skipping database connection check and migrations."
+fi
 
 # Check if any arguments are passed to the container
 if [ $# -gt 0 ]; then
@@ -100,13 +108,13 @@ if [ $# -gt 0 ]; then
 fi
 
 # Check APP_ENV and run appropriate server
-if [ "$APP_ENV" = "production" ]; then
-    log "🔥 Running Gunicorn for production..."
+if [ "$APP_ENV" = "prod" ] || [ "$APP_ENV" = "production" ]; then
+    log "🔥 Running Gunicorn for production environment..."
     log "Workers: $WORKERS"
     log "Timeout: $TIMEOUT seconds"
     log "Keep-alive: $KEEPALIVE seconds"
     log "Max requests: $MAX_REQUESTS (jitter: $MAX_REQUESTS_JITTER)"
-    
+
     exec gunicorn main:app \
         -c gunicorn.conf.py \
         --bind $HOST:$PORT \
@@ -115,14 +123,14 @@ if [ "$APP_ENV" = "production" ]; then
         --keepalive $KEEPALIVE \
         --max-requests $MAX_REQUESTS \
         --max-requests-jitter $MAX_REQUESTS_JITTER
-elif [ "$APP_ENV" = "development" ] || [ "$APP_ENV" = "dev" ] || [ "$APP_ENV" = "develop" ]; then
-    log "🔧 Running Uvicorn for development..."
+elif [ "$APP_ENV" = "dev" ] || [ "$APP_ENV" = "development" ] || [ "$APP_ENV" = "develop" ]; then
+    log "🔧 Running Uvicorn for development environment..."
     exec uvicorn main:app \
         --host $HOST \
         --port $PORT \
         --reload \
         --log-level debug
 else
-    error "Invalid APP_ENV: $APP_ENV. Must be 'production', 'development', 'dev', or 'develop'"
+    error "Invalid APP_ENV: $APP_ENV. Must be 'prod', 'production', 'dev', 'development', or 'develop'"
     exit 1
 fi

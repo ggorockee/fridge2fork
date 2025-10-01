@@ -8,6 +8,13 @@ from .recipe import (
     Feedback
 )
 from .system import SystemStatus, PlatformVersion
+from .admin import (
+    IngredientCategory,
+    SystemConfig,
+    ImportBatch,
+    PendingRecipe,
+    PendingIngredient
+)
 
 __all__ = [
     "Recipe",
@@ -17,5 +24,10 @@ __all__ = [
     "UserFridgeIngredient",
     "Feedback",
     "SystemStatus",
-    "PlatformVersion"
+    "PlatformVersion",
+    "IngredientCategory",
+    "SystemConfig",
+    "ImportBatch",
+    "PendingRecipe",
+    "PendingIngredient"
 ]

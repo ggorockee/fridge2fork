@@ -1,16 +1,16 @@
 """
 냉장고 관리 API 엔드포인트 (세션 기반)
 """
-from typing import Optional, List, Dict, Any
+from typing import Optional, Dict, Any
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_
+from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.core.session import SessionManager
-from app.models.recipe import Recipe, Ingredient, RecipeIngredient, UserFridgeSession, UserFridgeIngredient
+from app.models.recipe import Recipe, Ingredient, RecipeIngredient, UserFridgeSession
 from app.schemas.fridge import (
     AddIngredientsRequest, AddIngredientsResponse,
     FridgeIngredientsResponse, RemoveIngredientsRequest, RemoveIngredientsResponse

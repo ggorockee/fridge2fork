@@ -9,8 +9,20 @@ import logging
 import sys
 
 from app.core.config import settings
-from app.core.database import close_db_connection, close_redis_connection
+from app.core.database import close_db_connection, close_redis_connection, engine
 from app.api.v1.api import api_router
+
+# SQLAdmin import
+from sqladmin import Admin
+from app.admin.views import (
+    ImportBatchAdmin,
+    PendingIngredientAdmin,
+    PendingRecipeAdmin,
+    IngredientCategoryAdmin,
+    SystemConfigAdmin,
+    RecipeAdmin,
+    IngredientAdmin,
+)
 
 # 로깅 설정
 logging.basicConfig(
@@ -34,13 +46,14 @@ async def lifespan(app: FastAPI):
 
     # 데이터베이스 연결 테스트
     from app.core.database import test_database_connection
+    import asyncio
+
     logger.info("🔍 데이터베이스 연결 테스트 중...")
     db_connected = await test_database_connection()
     if not db_connected:
         logger.warning("⚠️ 데이터베이스 연결 실패. 일부 기능이 제한될 수 있습니다.")
 
     # OpenAPI 스키마 로딩을 위한 지연
-    import asyncio
     logger.info("OpenAPI 스키마 초기화 중...")
     await asyncio.sleep(2)  # 2초 지연으로 스키마 로딩 시간 확보
     logger.info("OpenAPI 스키마 초기화 완료")
@@ -82,6 +95,20 @@ app.add_middleware(
 
 # API 라우터 포함
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
+# SQLAdmin 설정 및 마운트
+admin = Admin(app, engine, title="Fridge2Fork Admin")
+
+# Admin View 등록
+admin.add_view(ImportBatchAdmin)
+admin.add_view(PendingIngredientAdmin)
+admin.add_view(PendingRecipeAdmin)
+admin.add_view(IngredientCategoryAdmin)
+admin.add_view(SystemConfigAdmin)
+admin.add_view(RecipeAdmin)
+admin.add_view(IngredientAdmin)
+
+logger.info("✅ SQLAdmin 마운트 완료: /admin")
 
 # 루트 엔드포인트
 @app.get("/")

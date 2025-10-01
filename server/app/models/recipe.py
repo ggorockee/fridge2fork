@@ -34,6 +34,12 @@ class Recipe(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
 
+    # 승인 워크플로우 컬럼 (Phase 1 추가)
+    approval_status = Column(String(20), nullable=True, index=True, default='approved')  # pending, approved, rejected
+    import_batch_id = Column(String(50), ForeignKey("import_batches.id", ondelete="SET NULL"), nullable=True, index=True)
+    approved_by = Column(String(50), nullable=True)  # 승인 관리자
+    approved_at = Column(DateTime(timezone=True), nullable=True)  # 승인 시각
+
     # 관계 정의
     ingredients = relationship("RecipeIngredient", back_populates="recipe", cascade="all, delete-orphan")
 
@@ -45,12 +51,18 @@ class Ingredient(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False, unique=True, index=True)  # 재료명
     original_name = Column(String(100), nullable=True)  # 원본 재료명
-    category = Column(String(50), nullable=True, index=True)  # 재료 카테고리
+    category = Column(String(50), nullable=True, index=True)  # 재료 카테고리 (레거시)
     is_common = Column(Boolean, nullable=True, default=False, index=True)  # 공통 재료 여부
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
 
+    # 승인 워크플로우 컬럼 (Phase 1 추가)
+    category_id = Column(Integer, ForeignKey("ingredient_categories.id", ondelete="SET NULL"), nullable=True, index=True)  # 새 카테고리 시스템
+    approval_status = Column(String(20), nullable=True, index=True, default='approved')  # pending, approved, rejected
+    normalized_at = Column(DateTime(timezone=True), nullable=True)  # 정규화 완료 시각
+
     # 관계 정의
     recipe_ingredients = relationship("RecipeIngredient", back_populates="ingredient", cascade="all, delete-orphan")
+    ingredient_category = relationship("IngredientCategory")
 
 
 class RecipeIngredient(Base):
@@ -68,9 +80,14 @@ class RecipeIngredient(Base):
     display_order = Column(Integer, nullable=True, default=0)  # 표시 순서
     importance = Column(String(20), nullable=True, default='normal', index=True)  # 중요도
 
+    # Phase 1 추가 컬럼
+    category_id = Column(Integer, ForeignKey("ingredient_categories.id", ondelete="SET NULL"), nullable=True, index=True)  # 재료 카테고리 참조
+    raw_quantity_text = Column(Text, nullable=True)  # 파싱 전 원본 텍스트 (디버깅용)
+
     # 관계 정의
     recipe = relationship("Recipe", back_populates="ingredients")
     ingredient = relationship("Ingredient", back_populates="recipe_ingredients")
+    ingredient_category = relationship("IngredientCategory")
 
 
 # Phase 2에서 추가할 세션 관리 모델들
@@ -82,6 +99,10 @@ class UserFridgeSession(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     expires_at = Column(DateTime(timezone=True), nullable=False, index=True)
     last_accessed = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Phase 1 추가 컬럼
+    session_duration_hours = Column(Integer, nullable=True, default=24)  # 세션 유효 시간 (시간 단위)
+    session_type = Column(String(20), nullable=True, default='guest')  # guest, registered
 
     # 관계 정의
     ingredients = relationship("UserFridgeIngredient", back_populates="session", cascade="all, delete-orphan")
