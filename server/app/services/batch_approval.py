@@ -227,14 +227,26 @@ class BatchApprovalService:
         recipe_mapping = {}
 
         for pending in pending_recipes:
-            # Recipe 생성 (PendingRecipe에 존재하는 필드만 사용)
+            # Recipe 생성 (모든 PendingRecipe 필드 포함)
             new_recipe = Recipe(
                 rcp_sno=pending.rcp_sno,
                 rcp_ttl=pending.rcp_ttl,
                 ckg_nm=pending.ckg_nm,
+                rgtr_id=pending.rgtr_id,
+                rgtr_nm=pending.rgtr_nm,
+                inq_cnt=pending.inq_cnt,
+                rcmm_cnt=pending.rcmm_cnt,
+                srap_cnt=pending.srap_cnt,
+                ckg_mth_acto_nm=pending.ckg_mth_acto_nm,
+                ckg_sta_acto_nm=pending.ckg_sta_acto_nm,
+                ckg_mtrl_acto_nm=pending.ckg_mtrl_acto_nm,
+                ckg_knd_acto_nm=pending.ckg_knd_acto_nm,
+                ckg_ipdc=pending.ckg_ipdc,
+                ckg_mtrl_cn=pending.ckg_mtrl_cn,
                 ckg_inbun_nm=pending.ckg_inbun_nm,
                 ckg_dodf_nm=pending.ckg_dodf_nm,
-                ckg_mtrl_cn=pending.ckg_mtrl_cn,
+                ckg_time_nm=pending.ckg_time_nm,
+                first_reg_dt=pending.first_reg_dt,
                 rcp_img_url=pending.rcp_img_url,
                 approval_status="approved",
                 import_batch_id=batch_id,
@@ -259,22 +271,62 @@ class BatchApprovalService:
         """
         RecipeIngredient 관계 생성
 
+        recipe_name을 기준으로 PendingIngredient와 매칭하여 RecipeIngredient 생성
+
         Returns:
             int: 생성된 관계 개수
         """
         relationships_count = 0
 
-        # PendingRecipe → PendingIngredient 연결 정보 필요
-        # 현재 스키마에는 명시적 연결이 없으므로, ckg_mtrl_cn 파싱 기반으로 처리
-        # (실제로는 PendingRecipe에 ingredients relationship이 있어야 정확함)
+        # recipe_name을 key로 하는 pending_ingredients 그룹핑
+        recipe_ingredients_map = {}
+        for pending_ing_id, ing_info in ingredient_mapping.items():
+            # PendingIngredient 조회
+            result = await db.execute(
+                select(PendingIngredient).where(PendingIngredient.id == pending_ing_id)
+            )
+            pending_ing = result.scalar_one_or_none()
 
-        logger.warning("⚠️ RecipeIngredient 관계 생성은 현재 스키마 제약으로 생략")
-        logger.info("💡 향후 개선: PendingRecipe ↔ PendingIngredient 관계 테이블 추가 필요")
+            if pending_ing and pending_ing.recipe_name:
+                if pending_ing.recipe_name not in recipe_ingredients_map:
+                    recipe_ingredients_map[pending_ing.recipe_name] = []
+                recipe_ingredients_map[pending_ing.recipe_name].append({
+                    "ingredient_id": ing_info["ingredient_id"],
+                    "pending_ing": pending_ing
+                })
 
-        # TODO: Phase 5.5에서 개선
-        # - pending_recipe_ingredients 중간 테이블 추가
-        # - 또는 ckg_mtrl_cn 재파싱하여 ingredient_mapping과 매칭
+        # 각 PendingRecipe에 대해 RecipeIngredient 생성
+        for pending_recipe in pending_recipes:
+            if pending_recipe.rcp_sno not in recipe_mapping:
+                continue
 
+            recipe_sno = recipe_mapping[pending_recipe.rcp_sno]
+            recipe_title = pending_recipe.rcp_ttl
+
+            # recipe_name으로 매칭되는 PendingIngredient 찾기
+            matched_ingredients = recipe_ingredients_map.get(recipe_title, [])
+
+            for idx, ing_data in enumerate(matched_ingredients):
+                # RecipeIngredient 생성
+                recipe_ingredient = RecipeIngredient(
+                    rcp_sno=recipe_sno,
+                    ingredient_id=ing_data["ingredient_id"],
+                    quantity_from=ing_data["pending_ing"].quantity_from,
+                    quantity_to=ing_data["pending_ing"].quantity_to,
+                    unit=ing_data["pending_ing"].quantity_unit,
+                    is_vague=ing_data["pending_ing"].is_vague,
+                    display_order=idx,
+                    category_id=ing_data["pending_ing"].suggested_category_id,
+                    raw_quantity_text=ing_data["pending_ing"].raw_name
+                )
+                db.add(recipe_ingredient)
+                relationships_count += 1
+
+            if matched_ingredients:
+                logger.info(f"🔗 {recipe_title}: {len(matched_ingredients)}개 재료 연결")
+
+        await db.flush()
+        logger.info(f"✅ RecipeIngredient 관계 생성 완료: {relationships_count}개")
         return relationships_count
 
     @staticmethod

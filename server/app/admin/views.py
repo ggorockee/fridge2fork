@@ -23,9 +23,25 @@ from app.models.recipe import Recipe, Ingredient
 class ImportBatchAdmin(ModelView, model=ImportBatch):
     """CSV 임포트 배치 관리"""
 
-    name = "Import Batch"
-    name_plural = "Import Batches"
-    icon = "fa-solid fa-file-csv"
+    name = "요리책 업로드"
+    name_plural = "요리책 배치 목록"
+    icon = "upload_file"
+
+    # 한글 컬럼 레이블
+    column_labels = {
+        "id": "배치 ID",
+        "filename": "파일 이름",
+        "status": "상태",
+        "total_rows": "전체 건수",
+        "processed_rows": "처리 건수",
+        "success_count": "성공",
+        "error_count": "오류",
+        "created_by": "등록자",
+        "approved_by": "승인자",
+        "created_at": "등록일",
+        "approved_at": "승인일",
+        "error_log": "오류 로그",
+    }
 
     # 컬럼 표시 설정
     column_list = [
@@ -145,9 +161,9 @@ class ImportBatchAdmin(ModelView, model=ImportBatch):
 class PendingIngredientAdmin(ModelView, model=PendingIngredient):
     """승인 대기 재료 관리 (핵심 기능)"""
 
-    name = "대기 재료"
-    name_plural = "대기 재료 목록"
-    icon = "fa-solid fa-carrot"
+    name = "재료 검토함"
+    name_plural = "재료 검토함"
+    icon = "inventory_2"
 
     # 한글 컬럼 레이블 및 설명
     column_labels = {
@@ -327,9 +343,26 @@ class PendingIngredientAdmin(ModelView, model=PendingIngredient):
 class PendingRecipeAdmin(ModelView, model=PendingRecipe):
     """승인 대기 레시피 관리"""
 
-    name = "Pending Recipe"
-    name_plural = "Pending Recipes"
-    icon = "fa-solid fa-book"
+    name = "레시피 검토함"
+    name_plural = "레시피 검토함"
+    icon = "menu_book"
+
+    # 한글 컬럼 레이블
+    column_labels = {
+        "rcp_sno": "레시피 일련번호",
+        "rcp_ttl": "레시피 제목",
+        "ckg_nm": "요리명",
+        "ckg_mtrl_cn": "재료 목록",
+        "ckg_inbun_nm": "재료 분량",
+        "ckg_dodf_nm": "난이도",
+        "rcp_img_url": "레시피 이미지",
+        "approval_status": "승인 상태",
+        "rejection_reason": "거부 사유",
+        "import_batch_id": "배치 ID",
+        "approved_by": "승인자",
+        "approved_at": "승인일",
+        "created_at": "등록일",
+    }
 
     # 컬럼 표시
     column_list = [
@@ -475,9 +508,22 @@ class PendingRecipeAdmin(ModelView, model=PendingRecipe):
 class IngredientCategoryAdmin(ModelView, model=IngredientCategory):
     """재료 카테고리 관리"""
 
-    name = "Ingredient Category"
-    name_plural = "Ingredient Categories"
-    icon = "fa-solid fa-tags"
+    name = "재료 분류"
+    name_plural = "재료 분류 관리"
+    icon = "category"
+
+    # 한글 컬럼 레이블
+    column_labels = {
+        "id": "ID",
+        "code": "분류 코드",
+        "name_ko": "한글명",
+        "name_en": "영문명",
+        "description": "설명",
+        "display_order": "정렬 순서",
+        "is_active": "활성화",
+        "created_at": "등록일",
+        "updated_at": "수정일",
+    }
 
     # 컬럼 표시
     column_list = [
@@ -535,9 +581,22 @@ class IngredientCategoryAdmin(ModelView, model=IngredientCategory):
 class SystemConfigAdmin(ModelView, model=SystemConfig):
     """시스템 설정 관리"""
 
-    name = "System Config"
-    name_plural = "System Configs"
-    icon = "fa-solid fa-cog"
+    name = "시스템 설정"
+    name_plural = "시스템 설정 관리"
+    icon = "settings"
+
+    # 한글 컬럼 레이블
+    column_labels = {
+        "id": "ID",
+        "config_key": "설정 키",
+        "config_value": "설정 값",
+        "value_type": "데이터 타입",
+        "category": "카테고리",
+        "description": "설명",
+        "is_editable": "수정 가능",
+        "created_at": "등록일",
+        "updated_at": "수정일",
+    }
 
     # 컬럼 표시
     column_list = [
@@ -591,9 +650,27 @@ class SystemConfigAdmin(ModelView, model=SystemConfig):
 class RecipeAdmin(ModelView, model=Recipe):
     """레시피 관리 (기존 테이블 강화)"""
 
-    name = "Recipe"
-    name_plural = "Recipes"
-    icon = "fa-solid fa-utensils"
+    name = "오늘 뭐 먹지?"
+    name_plural = "레시피 도서관"
+    icon = "restaurant"
+
+    # 한글 컬럼 레이블
+    column_labels = {
+        "rcp_sno": "레시피 일련번호",
+        "rcp_ttl": "레시피 제목",
+        "ckg_nm": "요리명",
+        "ckg_mtrl_cn": "재료 목록",
+        "ckg_inbun_nm": "재료 분량",
+        "ckg_dodf_nm": "난이도",
+        "ckg_time_nm": "조리 시간",
+        "rcp_img_url": "레시피 이미지",
+        "approval_status": "승인 상태",
+        "import_batch_id": "배치 ID",
+        "approved_by": "승인자",
+        "approved_at": "승인일",
+        "created_at": "등록일",
+        "updated_at": "수정일",
+    }
 
     # 컬럼 표시
     column_list = [
@@ -620,6 +697,7 @@ class RecipeAdmin(ModelView, model=Recipe):
         "ckg_mtrl_cn",
         "ckg_inbun_nm",
         "ckg_dodf_nm",
+        "ckg_time_nm",
         "rcp_img_url",
         "approval_status",
         "import_batch_id",
@@ -653,9 +731,20 @@ class RecipeAdmin(ModelView, model=Recipe):
 class IngredientAdmin(ModelView, model=Ingredient):
     """재료 관리 (기존 테이블 강화)"""
 
-    name = "Ingredient"
-    name_plural = "Ingredients"
-    icon = "fa-solid fa-seedling"
+    name = "냉장고 식재료"
+    name_plural = "식재료 창고"
+    icon = "grass"
+
+    # 한글 컬럼 레이블
+    column_labels = {
+        "id": "ID",
+        "name": "재료명",
+        "category": "분류",
+        "approval_status": "승인 상태",
+        "normalized_at": "정규화 일시",
+        "created_at": "등록일",
+        "updated_at": "수정일",
+    }
 
     # 컬럼 표시
     column_list = [

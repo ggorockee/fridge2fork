@@ -140,6 +140,7 @@ async def upload_csv_batch(
                     ckg_mtrl_cn=ckg_mtrl_cn,
                     ckg_inbun_nm=row_dict.get('ckg_inbun_nm', '')[:200] if row_dict.get('ckg_inbun_nm') else None,
                     ckg_dodf_nm=row_dict.get('ckg_dodf_nm', '')[:200] if row_dict.get('ckg_dodf_nm') else None,
+                    ckg_time_nm=row_dict.get('ckg_time_nm', '')[:200] if row_dict.get('ckg_time_nm') else None,
                     rcp_img_url=row_dict.get('rcp_img_url', '') if row_dict.get('rcp_img_url') else None,
                     approval_status='pending',
                     source_type='csv_import',

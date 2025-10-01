@@ -77,14 +77,14 @@ class Settings(BaseSettings):
 
 class TestSettings(BaseSettings):
     """테스트 환경 설정"""
-    
+
     # 기본 설정
     PROJECT_NAME: str = "Fridge2Fork API"
     PROJECT_VERSION: str = "1.0.0"
     API_V1_STR: str = "/fridge2fork/v1"
     DEBUG: bool = False
     ENVIRONMENT: str = "test"
-    
+
     # 데이터베이스 설정 (테스트에서는 선택적)
     DATABASE_URL: str = "sqlite+aiosqlite:///./test.db"
     DB_HOST: str = "localhost"
@@ -92,6 +92,13 @@ class TestSettings(BaseSettings):
     DB_NAME: str = "test_db"
     DB_USER: str = "test_user"
     DB_PASSWORD: str = "test_password"
+
+    # PostgreSQL 환경변수 (테스트에서는 사용 안함)
+    POSTGRES_SERVER: str | None = None
+    POSTGRES_PORT: int = 5432
+    POSTGRES_DB: str | None = None
+    POSTGRES_USER: str | None = None
+    POSTGRES_PASSWORD: str | None = None
     
     # JWT 설정
     JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "test_secret_key_for_testing_only")
