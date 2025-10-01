@@ -50,8 +50,8 @@ log "App Environment: $APP_ENV"
 log "Host: $HOST"
 log "Port: $PORT"
 
-# Wait for database (if DATABASE_URL is set)
-if [ -n "$DATABASE_URL" ]; then
+# Wait for database (if DATABASE_URL or POSTGRES_* variables are set)
+if [ -n "$DATABASE_URL" ] || [ -n "$POSTGRES_SERVER" ]; then
     log "Checking database connection..."
     python -c "
 import asyncio
@@ -63,6 +63,18 @@ from urllib.parse import urlparse
 async def check_db():
     try:
         db_url = os.getenv('DATABASE_URL')
+
+        # If DATABASE_URL is not set, construct from POSTGRES_* variables
+        if not db_url:
+            postgres_server = os.getenv('POSTGRES_SERVER', 'localhost')
+            postgres_port = os.getenv('POSTGRES_PORT', '5432')
+            postgres_user = os.getenv('POSTGRES_USER', 'postgres')
+            postgres_password = os.getenv('POSTGRES_PASSWORD', '')
+            postgres_db = os.getenv('POSTGRES_DB', 'postgres')
+
+            db_url = f'postgresql://{postgres_user}:{postgres_password}@{postgres_server}:{postgres_port}/{postgres_db}'
+            print(f'Using POSTGRES_* variables: {postgres_server}:{postgres_port}/{postgres_db}')
+
         if db_url.startswith('postgresql://'):
             db_url = db_url.replace('postgresql://', 'postgresql+asyncpg://', 1)
 
