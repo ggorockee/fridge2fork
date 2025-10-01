@@ -96,8 +96,8 @@ app.add_middleware(
 # API 라우터 포함
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
-# SQLAdmin 설정 및 마운트
-admin = Admin(app, engine, title="Fridge2Fork Admin")
+# SQLAdmin 설정 및 마운트 (Kubernetes Ingress와 호환되도록 /fridge2fork/admin 경로 사용)
+admin = Admin(app, engine, title="Fridge2Fork Admin", base_url="/fridge2fork/admin")
 
 # Admin View 등록
 admin.add_view(ImportBatchAdmin)
@@ -108,7 +108,7 @@ admin.add_view(SystemConfigAdmin)
 admin.add_view(RecipeAdmin)
 admin.add_view(IngredientAdmin)
 
-logger.info("✅ SQLAdmin 마운트 완료: /admin")
+logger.info("✅ SQLAdmin 마운트 완료: /fridge2fork/admin")
 
 # 루트 엔드포인트
 @app.get("/")
