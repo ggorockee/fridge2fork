@@ -238,7 +238,7 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
             height: 4,
             margin: const EdgeInsets.symmetric(vertical: AppTheme.spacingM),
             decoration: BoxDecoration(
-              color: AppTheme.textSecondary.withOpacity(0.3),
+              color: AppTheme.textSecondary.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -542,7 +542,7 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
           height: 4,
           margin: const EdgeInsets.symmetric(vertical: AppTheme.spacingM),
           decoration: BoxDecoration(
-            color: AppTheme.textSecondary.withOpacity(0.3),
+            color: AppTheme.textSecondary.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(2),
           ),
         ),
@@ -596,7 +596,7 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
     );
   }
 
-  /// 에러 상태 UI
+  /// 에러 상태 UI (개선된 버전)
   Widget _buildErrorState(String error) {
     return Column(
       children: [
@@ -606,11 +606,11 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
           height: 4,
           margin: const EdgeInsets.symmetric(vertical: AppTheme.spacingM),
           decoration: BoxDecoration(
-            color: AppTheme.textSecondary.withOpacity(0.3),
+            color: AppTheme.textSecondary.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(2),
           ),
         ),
-        
+
         // 헤더 영역
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingM),
@@ -635,48 +635,148 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
             ],
           ),
         ),
-        
+
         // 에러 메시지와 재시도 버튼
         Expanded(
           child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.error_outline,
-                  size: 64,
-                  color: AppTheme.textSecondary,
-                ),
-                const SizedBox(height: AppTheme.spacingM),
-                Text(
-                  '식재료 목록을 불러올 수 없습니다',
-                  style: AppTheme.headingSmall.copyWith(
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: AppTheme.spacingS),
-                Text(
-                  error,
-                  style: AppTheme.bodySmall.copyWith(
+            child: Padding(
+              padding: const EdgeInsets.all(AppTheme.spacingL),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    _getErrorIcon(error),
+                    size: 64,
                     color: AppTheme.textSecondary,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppTheme.spacingL),
-                CustomButton(
-                  text: '다시 시도',
-                  onPressed: () {
-                    ref.read(ingredientApiProvider.notifier).refresh();
-                  },
-                  type: ButtonType.primary,
-                  height: 48,
-                  icon: Icons.refresh,
-                ),
-              ],
+                  const SizedBox(height: AppTheme.spacingM),
+                  Text(
+                    _getErrorTitle(error),
+                    style: AppTheme.headingSmall.copyWith(
+                      color: AppTheme.textPrimary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: AppTheme.spacingS),
+                  Text(
+                    _getErrorDescription(error),
+                    style: AppTheme.bodySmall.copyWith(
+                      color: AppTheme.textSecondary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: AppTheme.spacingL),
+
+                  // 재시도 버튼
+                  CustomButton(
+                    text: '다시 시도',
+                    onPressed: () async {
+                      await ref.read(ingredientApiProvider.notifier).refresh();
+                    },
+                    type: ButtonType.primary,
+                    height: 48,
+                    icon: Icons.refresh,
+                  ),
+
+                  const SizedBox(height: AppTheme.spacingM),
+
+                  // 오프라인 모드 안내
+                  Container(
+                    padding: const EdgeInsets.all(AppTheme.spacingM),
+                    decoration: BoxDecoration(
+                      color: AppTheme.lightOrange.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                      border: Border.all(
+                        color: AppTheme.lightOrange,
+                        width: 1,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.info_outline,
+                              size: 16,
+                              color: AppTheme.primaryOrange,
+                            ),
+                            const SizedBox(width: AppTheme.spacingS),
+                            Expanded(
+                              child: Text(
+                                '오프라인 상태일 수 있습니다',
+                                style: AppTheme.bodySmall.copyWith(
+                                  color: AppTheme.primaryOrange,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: AppTheme.spacingS),
+                        Text(
+                          '네트워크 연결을 확인하고 다시 시도해주세요.\n연결이 복구되면 자동으로 식재료 목록이 로드됩니다.',
+                          style: AppTheme.bodySmall.copyWith(
+                            color: AppTheme.textSecondary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       ],
     );
+  }
+
+  /// 에러 타입별 아이콘 반환
+  IconData _getErrorIcon(String error) {
+    if (error.toLowerCase().contains('network') ||
+        error.toLowerCase().contains('connection') ||
+        error.toLowerCase().contains('연결')) {
+      return Icons.wifi_off;
+    } else if (error.toLowerCase().contains('timeout') ||
+               error.toLowerCase().contains('시간')) {
+      return Icons.schedule;
+    } else if (error.toLowerCase().contains('server') ||
+               error.toLowerCase().contains('서버')) {
+      return Icons.dns;
+    }
+    return Icons.error_outline;
+  }
+
+  /// 에러 타입별 제목 반환
+  String _getErrorTitle(String error) {
+    if (error.toLowerCase().contains('network') ||
+        error.toLowerCase().contains('connection') ||
+        error.toLowerCase().contains('연결')) {
+      return '네트워크 연결 오류';
+    } else if (error.toLowerCase().contains('timeout') ||
+               error.toLowerCase().contains('시간')) {
+      return '응답 시간 초과';
+    } else if (error.toLowerCase().contains('server') ||
+               error.toLowerCase().contains('서버')) {
+      return '서버 연결 오류';
+    }
+    return '식재료 목록을 불러올 수 없습니다';
+  }
+
+  /// 에러 타입별 설명 반환
+  String _getErrorDescription(String error) {
+    if (error.toLowerCase().contains('network') ||
+        error.toLowerCase().contains('connection') ||
+        error.toLowerCase().contains('연결')) {
+      return '네트워크 연결 상태를 확인하고\n다시 시도해주세요.';
+    } else if (error.toLowerCase().contains('timeout') ||
+               error.toLowerCase().contains('시간')) {
+      return '서버 응답이 지연되고 있습니다.\n잠시 후 다시 시도해주세요.';
+    } else if (error.toLowerCase().contains('server') ||
+               error.toLowerCase().contains('서버')) {
+      return '서버에 일시적인 문제가 발생했습니다.\n잠시 후 다시 시도해주세요.';
+    }
+    return '오류가 발생했습니다.\n잠시 후 다시 시도해주세요.';
   }
 }

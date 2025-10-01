@@ -10,13 +10,13 @@ import '../providers/api/recipe_api_provider.dart';
 import '../providers/api/ingredient_api_provider.dart';
 import '../providers/api/api_connection_provider.dart';
 import '../providers/api/random_recipe_provider.dart';
+import '../providers/async_state_manager.dart';
 import '../models/api/api_recipe.dart';
 import '../models/api/api_ingredient.dart';
 import '../services/interstitial_ad_manager.dart';
 import '../services/analytics_service.dart';
 import 'add_ingredient_screen.dart';
 import 'my_fridge_screen.dart';
-import 'recipe_detail_screen.dart';
 
 // HomeScreen의 Showcase Key를 MainScreen에서 참조할 수 있도록 전역 변수로 선언
 final homeScreenAddButtonKey = GlobalKey();
@@ -37,27 +37,138 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     super.initState();
     // API 클라이언트 초기화 및 연결 상태 확인
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (kDebugMode) debugPrint('🏠 [Home Screen] Initializing API client...');
-      await initializeApiClient(ref);
-      if (kDebugMode) debugPrint('🏠 [Home Screen] API client initialization completed');
+      await _initializeWithRetry();
+    });
+  }
 
-      // API 클라이언트 초기화 완료 후 기본 데이터 로드
-      final isApiClientInitialized = ref.read(apiClientInitializedProvider);
-      if (isApiClientInitialized) {
-        if (kDebugMode) debugPrint('🏠 [Home Screen] Loading random recipe recommendations...');
-        ref.read(randomRecipeProvider.notifier).loadRandomRecipes(count: 10);
+  /// 재시도 로직이 포함된 초기화 함수
+  Future<void> _initializeWithRetry({int maxRetries = 3}) async {
+    if (kDebugMode) debugPrint('🏠 [Home Screen] Starting initialization with retry...');
 
-        if (kDebugMode) debugPrint('🏠 [Home Screen] Loading ingredients for selection...');
-        ref.read(ingredientApiProvider.notifier).loadIngredients(
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        if (kDebugMode) debugPrint('🏠 [Home Screen] Initialization attempt $attempt/$maxRetries');
+
+        // API 클라이언트 초기화
+        await initializeApiClient(ref);
+
+        // 초기화 완료 확인
+        final isApiClientInitialized = ref.read(apiClientInitializedProvider);
+        if (kDebugMode) debugPrint('🏠 [Home Screen] API client initialized: $isApiClientInitialized');
+
+        if (isApiClientInitialized) {
+          await _loadInitialData();
+          if (kDebugMode) debugPrint('✅ [Home Screen] Initialization completed successfully');
+          return; // 성공적으로 초기화 완료
+        }
+      } catch (e) {
+        if (kDebugMode) debugPrint('❌ [Home Screen] Initialization attempt $attempt failed: $e');
+
+        if (attempt < maxRetries) {
+          // 재시도 전 대기 시간 (1초, 2초, 3초...)
+          final delaySeconds = attempt;
+          if (kDebugMode) debugPrint('🔄 [Home Screen] Retrying in ${delaySeconds}s...');
+          await Future.delayed(Duration(seconds: delaySeconds));
+        }
+      }
+    }
+
+    // 모든 재시도 실패 시 오프라인 모드로 데이터 로드 시도
+    if (kDebugMode) debugPrint('⚠️ [Home Screen] All initialization attempts failed, trying offline mode...');
+    await _loadInitialDataOffline();
+  }
+
+  /// 초기 데이터 로드 (온라인 - 병렬 처리 최적화)
+  Future<void> _loadInitialData() async {
+    try {
+      if (kDebugMode) debugPrint('🏠 [Home Screen] Loading initial data (online mode)...');
+
+      // 병렬 데이터 로딩 - 모든 요청을 동시에 시작
+      final futures = [
+        // 랜덤 레시피 로드
+        _loadRandomRecipes(),
+        // 식재료 목록 로드
+        _loadIngredients(),
+        // 연결 상태 확인
+        _verifyApiConnection(),
+      ];
+
+      // 모든 요청을 병렬로 실행하되, 개별 실패는 무시
+      final results = await Future.wait(futures, eagerError: false);
+
+      final successCount = results.where((result) => result == true).length;
+      if (kDebugMode) {
+        debugPrint('✅ [Home Screen] Initialization completed: $successCount/${results.length} operations successful');
+      }
+
+    } catch (e) {
+      if (kDebugMode) debugPrint('❌ [Home Screen] Initial data loading failed: $e');
+    }
+  }
+
+  /// 랜덤 레시피 로드 (독립적 실행 - 비동기 최적화)
+  Future<bool> _loadRandomRecipes() async {
+    return await AsyncStateManager.executeTask<bool>(
+      'home_random_recipes',
+      () async {
+        if (kDebugMode) debugPrint('🍳 [Home Screen] Loading random recipe recommendations...');
+        await ref.read(randomRecipeProvider.notifier).loadRandomRecipes(count: 10);
+        if (kDebugMode) debugPrint('✅ [Home Screen] Random recipes loaded successfully');
+        return true;
+      },
+      timeout: const Duration(seconds: 30),
+      maxRetries: 3,
+      retryDelay: const Duration(seconds: 2),
+    );
+  }
+
+  /// 식재료 목록 로드 (독립적 실행 - 비동기 최적화)
+  Future<bool> _loadIngredients() async {
+    return await AsyncStateManager.executeTask<bool>(
+      'home_ingredients',
+      () async {
+        if (kDebugMode) debugPrint('🥬 [Home Screen] Loading ingredients for selection...');
+        await ref.read(ingredientApiProvider.notifier).loadIngredients(
           filter: const IngredientSearchFilter(
             page: 1,
             size: 200, // 전체 식재료 로드
           ),
         );
-      } else {
-        if (kDebugMode) debugPrint('⚠️ [Home Screen] API client not initialized, skipping data load');
-      }
-    });
+        if (kDebugMode) debugPrint('✅ [Home Screen] Ingredients loaded successfully');
+        return true;
+      },
+      timeout: const Duration(seconds: 20),
+      maxRetries: 2,
+      retryDelay: const Duration(seconds: 1),
+    );
+  }
+
+  /// API 연결 상태 확인 (독립적 실행)
+  Future<bool> _verifyApiConnection() async {
+    try {
+      if (kDebugMode) debugPrint('📡 [Home Screen] Verifying API connection...');
+      await ref.read(apiConnectionProvider.notifier).checkConnection();
+      final isOnline = ref.read(apiConnectionProvider).isOnline;
+      if (kDebugMode) debugPrint('${isOnline ? "✅" : "❌"} [Home Screen] API connection: $isOnline');
+      return isOnline;
+    } catch (e) {
+      if (kDebugMode) debugPrint('❌ [Home Screen] API connection check failed: $e');
+      return false;
+    }
+  }
+
+  /// 초기 데이터 로드 (오프라인)
+  Future<void> _loadInitialDataOffline() async {
+    try {
+      if (kDebugMode) debugPrint('📱 [Home Screen] Loading initial data (offline mode)...');
+
+      // 오프라인 모드에서 캐시된 데이터 로드 시도
+      await ref.read(ingredientApiProvider.notifier).loadIngredients(forceRefresh: false);
+
+      if (kDebugMode) debugPrint('✅ [Home Screen] Offline data loaded');
+    } catch (e) {
+      if (kDebugMode) debugPrint('❌ [Home Screen] Offline data loading failed: $e');
+    }
   }
 
   Future<void> _onRefresh() async {
@@ -325,7 +436,7 @@ class _RecipeRecommendationSection extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.only(bottom: AppTheme.spacingM),
             child: Text(
-              selectedIngredients.isNotEmpty ? '맞춤 레시피' : '인기 레시피',
+              selectedIngredients.isNotEmpty ? '맞춤 레시피' : '추천 레시피',
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -339,7 +450,7 @@ class _RecipeRecommendationSection extends ConsumerWidget {
             height: 160, // 카드 높이와 동일하게 고정
             child: selectedIngredients.isEmpty
                 // 식재료가 없는 경우: 랜덤 레시피 추천 표시
-                ? _buildRandomRecipeList(context, randomRecipeState, isApiOnline, isApiClientInitialized)
+                ? _buildRandomRecipeList(context, randomRecipeState, isApiOnline, isApiClientInitialized, ref)
                 // 식재료가 있는 경우: 맞춤 레시피 표시
                 : _buildCustomRecipeList(context, recipesState!, selectedIngredients, isApiOnline, isApiClientInitialized),
           ),
@@ -348,12 +459,13 @@ class _RecipeRecommendationSection extends ConsumerWidget {
     );
   }
 
-  /// 랜덤 레시피 목록 위젯 빌드
+  /// 랜덤 레시피 목록 위젯 빌드 (개선된 오프라인 대응)
   Widget _buildRandomRecipeList(
     BuildContext context,
     RandomRecipeState randomRecipeState,
     bool isApiOnline,
     bool isApiClientInitialized,
+    WidgetRef ref,
   ) {
     if (randomRecipeState.isLoading) {
       return const Center(
@@ -365,7 +477,7 @@ class _RecipeRecommendationSection extends ConsumerWidget {
             ),
             SizedBox(height: AppTheme.spacingS),
             Text(
-              '인기 레시피를 불러오고 있어요!',
+              '추천 레시피를 불러오고 있어요!',
               style: TextStyle(
                 fontSize: 12,
                 color: AppTheme.textSecondary,
@@ -388,9 +500,50 @@ class _RecipeRecommendationSection extends ConsumerWidget {
             ),
             const SizedBox(height: AppTheme.spacingS),
             Text(
-              randomRecipeState.error ?? '레시피를 불러올 수 없습니다',
+              _getErrorMessage(randomRecipeState.error, isApiOnline),
               style: AppTheme.bodySmall.copyWith(
                 color: AppTheme.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppTheme.spacingM),
+            // 재시도 버튼 추가
+            GestureDetector(
+              onTap: () async {
+                if (kDebugMode) debugPrint('🔄 [Home Screen] Manual retry requested');
+                await ref.read(randomRecipeProvider.notifier).refresh();
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppTheme.spacingM,
+                  vertical: AppTheme.spacingS,
+                ),
+                decoration: BoxDecoration(
+                  color: AppTheme.lightOrange,
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                  border: Border.all(
+                    color: AppTheme.primaryOrange,
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.refresh,
+                      size: 16,
+                      color: AppTheme.primaryOrange,
+                    ),
+                    const SizedBox(width: AppTheme.spacingS),
+                    Text(
+                      '다시 시도',
+                      style: AppTheme.bodySmall.copyWith(
+                        color: AppTheme.primaryOrange,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -399,23 +552,52 @@ class _RecipeRecommendationSection extends ConsumerWidget {
     }
 
     if (randomRecipeState.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.restaurant_menu,
+              isApiOnline ? Icons.restaurant_menu : Icons.signal_wifi_off,
               size: 48,
               color: AppTheme.textSecondary,
             ),
-            SizedBox(height: AppTheme.spacingS),
+            const SizedBox(height: AppTheme.spacingS),
             Text(
-              '레시피를 준비하고 있습니다',
-              style: TextStyle(
+              isApiOnline
+                ? '레시피를 준비하고 있습니다'
+                : '오프라인 상태입니다\n네트워크 연결을 확인해주세요',
+              style: const TextStyle(
                 fontSize: 12,
                 color: AppTheme.textSecondary,
               ),
+              textAlign: TextAlign.center,
             ),
+            if (!isApiOnline) ...[
+              const SizedBox(height: AppTheme.spacingM),
+              GestureDetector(
+                onTap: () async {
+                  // 연결 재시도를 위한 랜덤 레시피 새로고침
+                  await ref.read(randomRecipeProvider.notifier).refresh();
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppTheme.spacingM,
+                    vertical: AppTheme.spacingS,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.lightOrange,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                  ),
+                  child: Text(
+                    '연결 재시도',
+                    style: AppTheme.bodySmall.copyWith(
+                      color: AppTheme.primaryOrange,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       );
@@ -433,6 +615,25 @@ class _RecipeRecommendationSection extends ConsumerWidget {
         );
       },
     );
+  }
+
+  /// 에러 메시지 생성 (상황별 맞춤 메시지)
+  String _getErrorMessage(String? error, bool isApiOnline) {
+    if (!isApiOnline) {
+      return '네트워크 연결이 필요합니다\n연결 상태를 확인해주세요';
+    }
+
+    if (error != null) {
+      if (error.contains('timeout')) {
+        return '서버 응답 시간이 초과되었습니다\n잠시 후 다시 시도해주세요';
+      } else if (error.contains('not found') || error.contains('404')) {
+        return '레시피 데이터를 찾을 수 없습니다';
+      } else if (error.contains('server') || error.contains('500')) {
+        return '서버에 일시적인 문제가 있습니다\n잠시 후 다시 시도해주세요';
+      }
+    }
+
+    return error ?? '레시피를 불러올 수 없습니다\n잠시 후 다시 시도해주세요';
   }
 
   /// 맞춤 레시피 목록 위젯 빌드

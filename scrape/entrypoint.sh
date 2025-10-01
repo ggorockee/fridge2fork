@@ -78,17 +78,21 @@ wait_for_postgres() {
 
     log_info "PostgreSQL 서버: $DB_HOST:$DB_PORT"
 
-    # 최대 30초 대기
-    for i in {1..30}; do
+    # 최대 5분 대기 (Kubernetes 환경에서 초기화 시간 고려)
+    MAX_WAIT=${DB_MAX_WAIT:-300}  # 환경변수로 조정 가능, 기본 300초 (5분)
+    WAIT_COUNT=0
+
+    while [ $WAIT_COUNT -lt $MAX_WAIT ]; do
         if pg_isready -h $DB_HOST -p $DB_PORT -t 1 >/dev/null 2>&1; then
             log_info "PostgreSQL 서버 연결 성공!"
             return 0
         fi
         echo -n "."
         sleep 1
+        WAIT_COUNT=$((WAIT_COUNT + 1))
     done
 
-    log_error "PostgreSQL 서버 연결 실패 (30초 타임아웃)"
+    log_error "PostgreSQL 서버 연결 실패 (${MAX_WAIT}초 타임아웃)"
     exit 1
 }
 

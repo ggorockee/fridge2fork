@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/api/api_response.dart';
 import '../../services/api/api_client.dart';
-import '../../services/api/system_api_service.dart';
 
 /// API 연결 상태
 class ApiConnectionState {
@@ -66,16 +65,22 @@ class ApiConnectionNotifier extends StateNotifier<ApiConnectionState> {
     state = state.copyWith(isChecking: true, errorMessage: null);
 
     try {
-      // 간단한 헬스체크 엔드포인트로 연결 확인
-      // 먼저 간단한 health 체크를 시도하고, 실패하면 recipes 엔드포인트로 확인
-      ApiResponse<Map<String, dynamic>> response;
-      try {
-        response = await SystemApiService.getSimpleHealth();
-      } catch (e) {
-        // 간단한 health 체크가 실패하면 recipes 엔드포인트로 연결 확인
-        debugPrint('🔄 Simple health check failed, trying recipes endpoint...');
-        response = await SystemApiService.monitorServerStatus();
-      }
+      // API 클라이언트의 연결 테스트 사용 (더 간단하고 신뢰성 있음)
+      final stopwatch = Stopwatch()..start();
+      final isConnected = await ApiClient.testConnection();
+      stopwatch.stop();
+
+      // 가짜 응답 객체 생성
+      final response = isConnected
+          ? ApiResponse.success(
+              data: {'response_time_ms': stopwatch.elapsedMilliseconds},
+              message: 'Connected',
+              statusCode: 200,
+            )
+          : ApiResponse.error(
+              message: 'Connection failed',
+              statusCode: 500,
+            );
       
       state = state.copyWith(
         isChecking: false,
