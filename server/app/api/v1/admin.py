@@ -78,10 +78,11 @@ async def upload_csv_batch(
     # 4. CSV 파싱 및 PendingIngredient 생성
     header = lines[0].split(',')
 
-    # CSV 헤더 검증
-    required_columns = ['rcp_ttl', 'ckg_mtrl_cn']  # 최소 필수 컬럼
+    # CSV 헤더 정규화 (대소문자 무시)
     header_lower = [col.strip().lower() for col in header]
 
+    # 필수 컬럼 검증
+    required_columns = ['rcp_ttl', 'ckg_mtrl_cn']
     if not all(col in header_lower for col in required_columns):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -96,20 +97,28 @@ async def upload_csv_batch(
     existing_ingredients = [row[0] for row in result.fetchall()]
 
     processed_count = 0
+    success_count = 0
     error_count = 0
     duplicate_count = 0
+    error_log = []  # 오류 기록용
 
     # 5. 각 레시피 라인 처리
     for idx, line in enumerate(lines[1:], start=2):  # 헤더 제외, 라인번호는 2부터
         try:
             values = line.split(',')
-            row_dict = dict(zip(header, values))
+            # 헤더를 소문자로 변환하여 매핑 (대소문자 무시)
+            row_dict = dict(zip(header_lower, values))
 
-            # 재료 컬럼 추출
+            # 재료 컬럼 추출 (소문자 키 사용)
             ckg_mtrl_cn = row_dict.get('ckg_mtrl_cn', '').strip()
 
             if not ckg_mtrl_cn:
                 error_count += 1
+                error_log.append({
+                    "row": idx,
+                    "error": "재료 정보(ckg_mtrl_cn)가 비어있음",
+                    "data": row_dict.get('rcp_ttl', 'N/A')[:50]
+                })
                 continue
 
             # 재료 파싱
@@ -157,6 +166,7 @@ async def upload_csv_batch(
                 )
                 db.add(pending_ingredient)
                 processed_count += 1
+                success_count += 1
 
                 # 기존 재료 목록에 추가 (다음 중복 감지용)
                 if normalized_name:
@@ -164,13 +174,21 @@ async def upload_csv_batch(
 
         except Exception as e:
             error_count += 1
-            print(f"Line {idx} 처리 실패: {str(e)}")
+            error_log.append({
+                "row": idx,
+                "error": str(e),
+                "data": line[:100] if len(line) <= 100 else line[:100] + "..."
+            })
             continue
 
-    # 6. 배치 통계 업데이트
+    # 6. 배치 통계 업데이트 (오류 로그 포함)
     batch.processed_rows = processed_count
-    batch.success_count = processed_count - duplicate_count - error_count
+    batch.success_count = success_count
     batch.error_count = error_count
+
+    # error_log를 JSONB로 저장 (최대 100개만)
+    if error_log:
+        batch.error_log = error_log[:100]  # 너무 많으면 처음 100개만
 
     await db.commit()
     await db.refresh(batch)
