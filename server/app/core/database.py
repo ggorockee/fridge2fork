@@ -41,18 +41,26 @@ def get_database_url():
 database_url = get_database_url()
 logger.info(f"🔗 데이터베이스 연결 URL: {database_url[:50]}...")
 
+# pgbouncer 호환성을 위한 연결 설정
+if "postgresql" in database_url:
+    # asyncpg용 pgbouncer 호환 설정
+    connect_args = {
+        "statement_cache_size": 0,  # pgbouncer transaction/statement 모드 호환
+        "prepared_statement_cache_size": 0,  # prepared statement 캐시 비활성화
+        "server_settings": {
+            "application_name": f"fridge2fork_{str(uuid.uuid4())[:8]}"
+        }
+    }
+    logger.info("🔧 pgbouncer 호환 모드 활성화: prepared statement 캐시 비활성화")
+else:
+    connect_args = {}
+
 engine = create_async_engine(
     database_url,
     echo=settings.DEBUG,
     future=True,
     pool_pre_ping=True,
-    connect_args={
-        "statement_cache_size": 0,
-        "prepared_statement_cache_size": 0,
-        "server_settings": {
-            "application_name": f"fridge2fork_{str(uuid.uuid4())[:8]}"
-        }
-    } if "postgresql" in database_url else {},
+    connect_args=connect_args,
 )
 
 # 세션 팩토리
