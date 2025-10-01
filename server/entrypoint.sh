@@ -90,11 +90,32 @@ asyncio.run(check_db())
     success "Database connection successful"
 
     # Run Alembic migrations automatically
-    log "Running Alembic database migrations..."
-    if alembic upgrade head; then
-        success "Database migrations completed successfully"
+    log "🔄 Running Alembic database migrations..."
+
+    # Show current migration status
+    log "📊 Current migration status:"
+    alembic current || warn "Could not determine current migration version"
+
+    # Show pending migrations
+    log "📋 Checking for pending migrations..."
+    PENDING=$(alembic heads | head -1)
+    log "Target migration: $PENDING"
+
+    # Run migrations with verbose output
+    log "⬆️  Applying migrations..."
+    if alembic upgrade head --verbose; then
+        success "✅ Database migrations completed successfully"
+
+        # Show final migration status
+        log "📊 Final migration status:"
+        alembic current
+
+        # List all applied migrations
+        log "📜 Migration history:"
+        alembic history | head -20
     else
-        error "Database migration failed. Exiting..."
+        error "❌ Database migration failed. Exiting..."
+        error "Please check the migration files in migrations/versions/"
         exit 1
     fi
 else
