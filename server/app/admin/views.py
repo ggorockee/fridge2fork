@@ -147,7 +147,7 @@ class PendingIngredientAdmin(ModelView, model=PendingIngredient):
     can_edit = True
     can_delete = True
 
-    # 편집 가능 필드 (승인 상태는 제외 - 별도 승인 프로세스 사용)
+    # 편집 가능 필드 (부분 승인을 위해 approval_status 포함)
     form_columns = [
         "normalized_name",
         "quantity_from",
@@ -156,6 +156,7 @@ class PendingIngredientAdmin(ModelView, model=PendingIngredient):
         "suggested_specific",
         "abstraction_notes",
         "suggested_category",
+        "approval_status",  # 개별 재료 승인/거부 상태 변경 가능
         "merge_notes",
     ]
 

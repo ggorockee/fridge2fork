@@ -127,12 +127,12 @@ class BatchApprovalService:
     async def _get_approved_pending_ingredients(
         db: AsyncSession, batch_id: str
     ) -> List[PendingIngredient]:
-        """승인 대기 중인 PendingIngredient 조회"""
+        """승인 대기 중인 PendingIngredient 조회 (approval_status='approved'만)"""
         result = await db.execute(
             select(PendingIngredient)
             .where(
                 and_(
-                    PendingIngredient.batch_id == batch_id,
+                    PendingIngredient.import_batch_id == batch_id,
                     PendingIngredient.approval_status == "approved"
                 )
             )
@@ -144,12 +144,12 @@ class BatchApprovalService:
     async def _get_approved_pending_recipes(
         db: AsyncSession, batch_id: str
     ) -> List[PendingRecipe]:
-        """승인 대기 중인 PendingRecipe 조회"""
+        """승인 대기 중인 PendingRecipe 조회 (approval_status='approved'만)"""
         result = await db.execute(
             select(PendingRecipe)
             .where(
                 and_(
-                    PendingRecipe.batch_id == batch_id,
+                    PendingRecipe.import_batch_id == batch_id,
                     PendingRecipe.approval_status == "approved"
                 )
             )
