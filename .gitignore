@@ -265,3 +265,8 @@ mobile/.dart_tool
 mobile/.cursor
 scrape/.claude/settings.local.json
 scrape/.claude/settings.local.json
+
+# Data processing files
+server/prerequsities.ipynb
+server/test_recipes.csv
+myrequest.txt
