@@ -84,7 +84,7 @@ class PendingIngredientAdmin(ModelView, model=PendingIngredient):
     # 컬럼 표시
     column_list = [
         "id",
-        "batch_id",
+        "import_batch_id",  # 수정: batch_id → import_batch_id
         "raw_name",
         "normalized_name",
         "quantity_from",
@@ -107,7 +107,7 @@ class PendingIngredientAdmin(ModelView, model=PendingIngredient):
     # 상세 페이지
     column_details_list = [
         "id",
-        "batch_id",
+        "import_batch_id",  # 수정: batch_id → import_batch_id
         "raw_name",
         "normalized_name",
         "quantity_from",
@@ -119,7 +119,7 @@ class PendingIngredientAdmin(ModelView, model=PendingIngredient):
         "abstraction_notes",
         "suggested_category",
         "approval_status",
-        "admin_notes",
+        "merge_notes",  # 수정: admin_notes → merge_notes
         "created_at",
     ]
 
@@ -138,7 +138,7 @@ class PendingIngredientAdmin(ModelView, model=PendingIngredient):
         "abstraction_notes",
         "suggested_category",
         "approval_status",
-        "admin_notes",
+        "merge_notes",  # 수정: admin_notes → merge_notes
     ]
 
     # 포맷팅

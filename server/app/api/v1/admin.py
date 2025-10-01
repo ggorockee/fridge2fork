@@ -344,7 +344,7 @@ async def get_batch_detail(
                 "name_ko": ingredient.suggested_category.name_ko,
             } if ingredient.suggested_category else None,
             "approval_status": ingredient.approval_status,
-            "admin_notes": ingredient.admin_notes,
+            "merge_notes": ingredient.merge_notes,  # 수정: admin_notes → merge_notes
         }
         ingredient_list.append(ingredient_dict)
 
