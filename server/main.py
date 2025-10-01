@@ -87,6 +87,13 @@ app = FastAPI(
     ]
 )
 
+# Proxy Headers 미들웨어 (HTTPS 인식을 위해 필수)
+from starlette.middleware.trustedhost import TrustedHostMiddleware
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+
+# X-Forwarded-Proto 헤더를 인식하여 올바른 scheme 사용
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
+
 # CORS 미들웨어 설정
 app.add_middleware(
     CORSMiddleware,
@@ -99,50 +106,9 @@ app.add_middleware(
 # API 라우터 포함
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
-# HTTPS Mixed Content 문제 해결을 위한 미들웨어
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import Response
-from starlette.requests import Request as StarletteRequest
-
-class HTTPSStaticRewriteMiddleware(BaseHTTPMiddleware):
-    """SQLAdmin HTML 응답에서 HTTP 정적 파일 URL을 HTTPS로 변환"""
-
-    async def dispatch(self, request: StarletteRequest, call_next):
-        response = await call_next(request)
-
-        # Admin 페이지의 HTML 응답만 처리
-        if (
-            request.url.path.startswith("/fridge2fork/admin")
-            and response.headers.get("content-type", "").startswith("text/html")
-        ):
-            # 응답 본문 읽기
-            body = b""
-            async for chunk in response.body_iterator:
-                body += chunk
-
-            # HTTP를 HTTPS로 변환
-            modified_body = body.decode("utf-8").replace(
-                'http://api-dev.woohalabs.com/fridge2fork/admin/statics/',
-                'https://api-dev.woohalabs.com/fridge2fork/admin/statics/'
-            ).replace(
-                'http://api.woohalabs.com/fridge2fork/admin/statics/',
-                'https://api.woohalabs.com/fridge2fork/admin/statics/'
-            )
-
-            # 새 응답 생성
-            return Response(
-                content=modified_body.encode("utf-8"),
-                status_code=response.status_code,
-                headers=dict(response.headers),
-                media_type=response.media_type
-            )
-
-        return response
-
-# 미들웨어 추가 (CORS 이후, SQLAdmin 이전)
-app.add_middleware(HTTPSStaticRewriteMiddleware)
-
 # SQLAdmin 초기화
+# HTTPS Mixed Content 문제는 Nginx/Ingress에서 X-Forwarded-Proto 헤더 설정으로 해결
+# Starlette는 X-Forwarded-Proto를 자동으로 인식하여 올바른 scheme 생성
 admin = Admin(
     app,
     engine,
