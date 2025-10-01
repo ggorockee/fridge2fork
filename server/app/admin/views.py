@@ -3,9 +3,12 @@ SQLAdmin View 클래스들
 관리자 UI를 통한 데이터 관리
 """
 from typing import Any
-from sqladmin import ModelView
+from sqladmin import ModelView, action
 from sqlalchemy import select, func
-from wtforms import TextAreaField, BooleanField
+from wtforms import TextAreaField, BooleanField, SelectField
+from wtforms.validators import DataRequired
+from starlette.requests import Request
+from starlette.responses import RedirectResponse
 
 from app.models.admin import (
     ImportBatch,
@@ -160,12 +163,98 @@ class PendingIngredientAdmin(ModelView, model=PendingIngredient):
         "merge_notes",
     ]
 
+    # 폼 필드 커스터마이징
+    form_overrides = {
+        "approval_status": SelectField,
+    }
+
+    form_args = {
+        "approval_status": {
+            "label": "승인 상태",
+            "choices": [
+                ("pending", "⏳ 대기중"),
+                ("approved", "✅ 승인"),
+                ("rejected", "❌ 거부"),
+            ],
+            "validators": [DataRequired()],
+            "description": "재료 승인 상태를 선택하세요",
+        }
+    }
+
     # 포맷팅 (목록 및 상세 페이지)
     column_formatters = {
         "suggested_category": lambda m, a: m.suggested_category.name_ko if m.suggested_category else "없음",
         "is_vague": lambda m, a: "✓" if m.is_vague else "",
         "is_abstract": lambda m, a: "✓" if m.is_abstract else "",
+        "approval_status": lambda m, a: {
+            "pending": "⏳ 대기중",
+            "approved": "✅ 승인",
+            "rejected": "❌ 거부",
+        }.get(m.approval_status, m.approval_status),
     }
+
+    # 일괄 작업 액션
+    @action(
+        name="approve_selected",
+        label="선택 항목 승인",
+        confirmation_message="선택한 재료들을 승인하시겠습니까?",
+        add_in_detail=False,
+        add_in_list=True,
+    )
+    async def approve_selected(self, request: Request) -> RedirectResponse:
+        """선택된 재료들을 일괄 승인"""
+        pks = request.query_params.get("pks", "").split(",")
+        if not pks or pks == [""]:
+            return RedirectResponse(
+                url=request.url_for("admin:list", identity=self.identity),
+                status_code=302
+            )
+
+        async with self.session_maker() as session:
+            for pk in pks:
+                result = await session.execute(
+                    select(PendingIngredient).where(PendingIngredient.id == int(pk))
+                )
+                ingredient = result.scalar_one_or_none()
+                if ingredient:
+                    ingredient.approval_status = "approved"
+            await session.commit()
+
+        return RedirectResponse(
+            url=request.url_for("admin:list", identity=self.identity),
+            status_code=302
+        )
+
+    @action(
+        name="reject_selected",
+        label="선택 항목 거부",
+        confirmation_message="선택한 재료들을 거부하시겠습니까?",
+        add_in_detail=False,
+        add_in_list=True,
+    )
+    async def reject_selected(self, request: Request) -> RedirectResponse:
+        """선택된 재료들을 일괄 거부"""
+        pks = request.query_params.get("pks", "").split(",")
+        if not pks or pks == [""]:
+            return RedirectResponse(
+                url=request.url_for("admin:list", identity=self.identity),
+                status_code=302
+            )
+
+        async with self.session_maker() as session:
+            for pk in pks:
+                result = await session.execute(
+                    select(PendingIngredient).where(PendingIngredient.id == int(pk))
+                )
+                ingredient = result.scalar_one_or_none()
+                if ingredient:
+                    ingredient.approval_status = "rejected"
+            await session.commit()
+
+        return RedirectResponse(
+            url=request.url_for("admin:list", identity=self.identity),
+            status_code=302
+        )
 
     page_size = 50
 
