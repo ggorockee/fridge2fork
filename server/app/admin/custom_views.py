@@ -52,11 +52,11 @@ class CSVUploadView(BaseView):
             except Exception as e:
                 error_message = f"오류 발생: {str(e)}"
 
-        # HTML 템플릿 렌더링
+        # HTML 템플릿 렌더링 (SQLAdmin TemplateResponse 형식)
         return await self.templates.TemplateResponse(
+            request,
             "csv_upload.html",
             {
-                "request": request,
                 "upload_result": upload_result,
                 "error_message": error_message,
             }

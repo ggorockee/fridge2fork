@@ -135,14 +135,15 @@ admin = Admin(
     app,
     engine,
     title="냉털레시피 Admin",
-    base_url="/fridge2fork/admin"
+    base_url="/fridge2fork/admin",
+    templates_dir="app/admin/templates"  # 커스텀 템플릿 디렉토리
 )
 
 # Admin View 등록
 logger.info("🔧 SQLAdmin 뷰 등록 시작...")
 
-# 커스텀 뷰 (CSV 업로드)
-admin.add_view(CSVUploadView)
+# 커스텀 베이스 뷰 (CSV 업로드) - add_base_view 사용
+admin.add_base_view(CSVUploadView)
 
 # 모델 뷰
 admin.add_view(ImportBatchAdmin)
