@@ -113,9 +113,9 @@ asyncio.run(check_db())
     PENDING=$(alembic heads | head -1)
     log "Target migration: $PENDING"
 
-    # Run migrations with verbose output
+    # Run migrations
     log "⬆️  Applying migrations..."
-    if alembic upgrade head --verbose; then
+    if alembic upgrade head; then
         success "✅ Database migrations completed successfully"
 
         # Show final migration status
