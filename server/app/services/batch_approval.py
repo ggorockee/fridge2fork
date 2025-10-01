@@ -227,7 +227,7 @@ class BatchApprovalService:
         recipe_mapping = {}
 
         for pending in pending_recipes:
-            # Recipe 생성
+            # Recipe 생성 (PendingRecipe에 존재하는 필드만 사용)
             new_recipe = Recipe(
                 rcp_sno=pending.rcp_sno,
                 rcp_ttl=pending.rcp_ttl,
@@ -235,8 +235,6 @@ class BatchApprovalService:
                 ckg_inbun_nm=pending.ckg_inbun_nm,
                 ckg_dodf_nm=pending.ckg_dodf_nm,
                 ckg_mtrl_cn=pending.ckg_mtrl_cn,
-                ckg_cpcty_cn=pending.ckg_cpcty_cn,
-                ckg_mtrl_cn_desc=pending.ckg_mtrl_cn_desc,
                 rcp_img_url=pending.rcp_img_url,
                 approval_status="approved",
                 import_batch_id=batch_id,
@@ -246,8 +244,8 @@ class BatchApprovalService:
             db.add(new_recipe)
             await db.flush()  # ID 생성
 
-            recipe_mapping[pending.id] = new_recipe.rcp_sno
-            logger.info(f"🆕 레시피 생성: {pending.rcp_ttl} (Recipe#{new_recipe.rcp_sno})")
+            recipe_mapping[pending.rcp_sno] = new_recipe.rcp_sno
+            logger.info(f"새 레시피 생성: {pending.rcp_ttl} (Recipe#{new_recipe.rcp_sno})")
 
         return recipe_mapping
 
