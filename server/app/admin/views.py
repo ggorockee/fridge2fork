@@ -93,7 +93,57 @@ class ImportBatchAdmin(ModelView, model=ImportBatch):
     # 읽기 전용 필드
     can_create = False
     can_edit = False
-    can_delete = True
+    can_delete = True  # 삭제 기능 활성화
+
+    # 삭제 액션
+    @action(
+        name="delete_selected",
+        label="선택 항목 삭제",
+        confirmation_message="",
+        add_in_detail=False,
+        add_in_list=True,
+    )
+    async def delete_selected_action(self, request: Request) -> RedirectResponse:
+        """선택된 배치 삭제 (CASCADE 분석 포함)"""
+        from app.services.deletion_service import DeletionService
+        from app.core.database import get_db
+        import logging
+
+        logger = logging.getLogger(__name__)
+
+        pks = request.query_params.get("pks", "").split(",")
+        if not pks or pks == [""]:
+            return RedirectResponse(
+                url=request.url_for("admin:list", identity=self.identity),
+                status_code=302
+            )
+
+        async for session in get_db():
+            cascade_impact = await DeletionService.analyze_cascade_impact(
+                db=session,
+                table_name="import_batches",
+                record_ids=pks
+            )
+
+            logger.info(f"배치 삭제 CASCADE 분석: {cascade_impact}")
+
+            result = await DeletionService.safe_delete(
+                db=session,
+                table_name="import_batches",
+                record_ids=pks
+            )
+
+            if result["success"]:
+                logger.info(f"✅ 배치 {result['deleted_count']}개 삭제 완료")
+            else:
+                logger.error(f"❌ 배치 삭제 실패: {result.get('error')}")
+
+            break
+
+        return RedirectResponse(
+            url=request.url_for("admin:list", identity=self.identity),
+            status_code=302
+        )
 
     # 배치 승인 액션
     @action(
@@ -274,6 +324,48 @@ class PendingIngredientAdmin(ModelView, model=PendingIngredient):
         }.get(m.approval_status, m.approval_status),
     }
 
+    # 삭제 액션
+    @action(
+        name="delete_selected",
+        label="선택 항목 삭제",
+        confirmation_message="선택한 재료들을 삭제하시겠습니까?",
+        add_in_detail=False,
+        add_in_list=True,
+    )
+    async def delete_selected_action(self, request: Request) -> RedirectResponse:
+        """선택된 대기 재료 삭제"""
+        from app.services.deletion_service import DeletionService
+        from app.core.database import get_db
+        import logging
+
+        logger = logging.getLogger(__name__)
+
+        pks = request.query_params.get("pks", "").split(",")
+        if not pks or pks == [""]:
+            return RedirectResponse(
+                url=request.url_for("admin:list", identity=self.identity),
+                status_code=302
+            )
+
+        async for session in get_db():
+            result = await DeletionService.safe_delete(
+                db=session,
+                table_name="pending_ingredients",
+                record_ids=[int(pk) for pk in pks]
+            )
+
+            if result["success"]:
+                logger.info(f"✅ 대기 재료 {result['deleted_count']}개 삭제 완료")
+            else:
+                logger.error(f"❌ 대기 재료 삭제 실패: {result.get('error')}")
+
+            break
+
+        return RedirectResponse(
+            url=request.url_for("admin:list", identity=self.identity),
+            status_code=302
+        )
+
     # 일괄 작업 액션
     @action(
         name="approve_selected",
@@ -438,6 +530,48 @@ class PendingRecipeAdmin(ModelView, model=PendingRecipe):
             "rejected": "거부",
         }.get(m.approval_status, m.approval_status),
     }
+
+    # 삭제 액션
+    @action(
+        name="delete_selected",
+        label="선택 항목 삭제",
+        confirmation_message="선택한 레시피들을 삭제하시겠습니까?",
+        add_in_detail=False,
+        add_in_list=True,
+    )
+    async def delete_selected_action(self, request: Request) -> RedirectResponse:
+        """선택된 대기 레시피 삭제"""
+        from app.services.deletion_service import DeletionService
+        from app.core.database import get_db
+        import logging
+
+        logger = logging.getLogger(__name__)
+
+        pks = request.query_params.get("pks", "").split(",")
+        if not pks or pks == [""]:
+            return RedirectResponse(
+                url=request.url_for("admin:list", identity=self.identity),
+                status_code=302
+            )
+
+        async for session in get_db():
+            result = await DeletionService.safe_delete(
+                db=session,
+                table_name="pending_recipes",
+                record_ids=[int(pk) for pk in pks]
+            )
+
+            if result["success"]:
+                logger.info(f"✅ 대기 레시피 {result['deleted_count']}개 삭제 완료")
+            else:
+                logger.error(f"❌ 대기 레시피 삭제 실패: {result.get('error')}")
+
+            break
+
+        return RedirectResponse(
+            url=request.url_for("admin:list", identity=self.identity),
+            status_code=302
+        )
 
     # 일괄 작업 액션
     @action(
@@ -710,7 +844,7 @@ class RecipeAdmin(ModelView, model=Recipe):
     # 편집 제한 (승인된 레시피는 수정 주의)
     can_create = False
     can_edit = True
-    can_delete = False
+    can_delete = True  # 삭제 기능 활성화
 
     form_columns = [
         "rcp_ttl",
@@ -724,6 +858,59 @@ class RecipeAdmin(ModelView, model=Recipe):
         "ckg_mtrl_cn": lambda m, a: (m.ckg_mtrl_cn[:50] + "...") if m.ckg_mtrl_cn and len(m.ckg_mtrl_cn) > 50 else m.ckg_mtrl_cn,
         "import_batch_id": lambda m, a: m.import_batch_id if m.import_batch_id else "-",
     }
+
+    # 삭제 액션
+    @action(
+        name="delete_selected",
+        label="선택 항목 삭제",
+        confirmation_message="",  # 동적으로 생성
+        add_in_detail=False,
+        add_in_list=True,
+    )
+    async def delete_selected_action(self, request: Request) -> RedirectResponse:
+        """선택된 레시피 삭제 (CASCADE 분석 포함)"""
+        from app.services.deletion_service import DeletionService
+        from app.core.database import get_db
+        import logging
+
+        logger = logging.getLogger(__name__)
+
+        pks = request.query_params.get("pks", "").split(",")
+        if not pks or pks == [""]:
+            return RedirectResponse(
+                url=request.url_for("admin:list", identity=self.identity),
+                status_code=302
+            )
+
+        # 삭제 실행
+        async for session in get_db():
+            # CASCADE 영향 분석
+            cascade_impact = await DeletionService.analyze_cascade_impact(
+                db=session,
+                table_name="recipes",
+                record_ids=[int(pk) for pk in pks]
+            )
+
+            logger.info(f"레시피 삭제 CASCADE 분석: {cascade_impact}")
+
+            # 삭제 실행
+            result = await DeletionService.safe_delete(
+                db=session,
+                table_name="recipes",
+                record_ids=[int(pk) for pk in pks]
+            )
+
+            if result["success"]:
+                logger.info(f"✅ 레시피 {result['deleted_count']}개 삭제 완료")
+            else:
+                logger.error(f"❌ 레시피 삭제 실패: {result.get('error')}")
+
+            break
+
+        return RedirectResponse(
+            url=request.url_for("admin:list", identity=self.identity),
+            status_code=302
+        )
 
     page_size = 50
 
@@ -776,7 +963,7 @@ class IngredientAdmin(ModelView, model=Ingredient):
     # 편집 제한
     can_create = False
     can_edit = True
-    can_delete = False
+    can_delete = True  # 삭제 기능 활성화
 
     form_columns = [
         "name",
@@ -788,5 +975,55 @@ class IngredientAdmin(ModelView, model=Ingredient):
     column_formatters = {
         "category": lambda m, a: m.category.name_ko if m.category else "없음",
     }
+
+    # 삭제 액션
+    @action(
+        name="delete_selected",
+        label="선택 항목 삭제",
+        confirmation_message="",
+        add_in_detail=False,
+        add_in_list=True,
+    )
+    async def delete_selected_action(self, request: Request) -> RedirectResponse:
+        """선택된 재료 삭제 (CASCADE 분석 포함)"""
+        from app.services.deletion_service import DeletionService
+        from app.core.database import get_db
+        import logging
+
+        logger = logging.getLogger(__name__)
+
+        pks = request.query_params.get("pks", "").split(",")
+        if not pks or pks == [""]:
+            return RedirectResponse(
+                url=request.url_for("admin:list", identity=self.identity),
+                status_code=302
+            )
+
+        async for session in get_db():
+            cascade_impact = await DeletionService.analyze_cascade_impact(
+                db=session,
+                table_name="ingredients",
+                record_ids=[int(pk) for pk in pks]
+            )
+
+            logger.info(f"재료 삭제 CASCADE 분석: {cascade_impact}")
+
+            result = await DeletionService.safe_delete(
+                db=session,
+                table_name="ingredients",
+                record_ids=[int(pk) for pk in pks]
+            )
+
+            if result["success"]:
+                logger.info(f"✅ 재료 {result['deleted_count']}개 삭제 완료")
+            else:
+                logger.error(f"❌ 재료 삭제 실패: {result.get('error')}")
+
+            break
+
+        return RedirectResponse(
+            url=request.url_for("admin:list", identity=self.identity),
+            status_code=302
+        )
 
     page_size = 50
