@@ -415,8 +415,8 @@ class IngredientAdmin(ModelView, model=Ingredient):
     column_sortable_list = ["id", "name", "approval_status", "created_at"]
     column_default_sort = ("created_at", True)
 
-    # 필터 (category_id 추가)
-    column_filters = ["category", "approval_status"]
+    # 필터
+    column_filters = ["approval_status"]
 
     # 상세 페이지
     column_details_list = [
