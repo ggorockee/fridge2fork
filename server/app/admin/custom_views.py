@@ -1,6 +1,7 @@
 """
 SQLAdmin 커스텀 뷰 - CSV 업로드 페이지
 """
+import io
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, RedirectResponse
 from sqladmin import BaseView, expose
@@ -21,7 +22,8 @@ class CSVUploadView(BaseView):
 
         if request.method == "POST":
             try:
-                # 폼 데이터에서 파일 가져오기
+                # multipart/form-data를 max_files 제한으로 처리
+                # 임시 디렉토리 문제 회피: 파일을 메모리에서 직접 읽음
                 form = await request.form()
                 file = form.get("csv_file")
 
@@ -30,24 +32,36 @@ class CSVUploadView(BaseView):
                 elif not file.filename.endswith('.csv'):
                     error_message = "CSV 파일만 업로드 가능합니다"
                 else:
-                    # 파일 내용 읽기
+                    # 파일 내용을 메모리에서 직접 읽기 (임시 파일 회피)
                     file_content = await file.read()
 
-                    # FastAPI 엔드포인트로 파일 전송
-                    async with httpx.AsyncClient() as client:
-                        files = {'file': (file.filename, file_content, 'text/csv')}
+                    # 파일 크기 검증 (10MB 제한)
+                    if len(file_content) > 10 * 1024 * 1024:
+                        error_message = "파일 크기가 10MB를 초과합니다"
+                    else:
+                        # FastAPI 엔드포인트로 파일 전송
+                        async with httpx.AsyncClient() as client:
+                            # BytesIO로 파일 객체 생성하여 전송
+                            import io
+                            files = {
+                                'file': (
+                                    file.filename,
+                                    io.BytesIO(file_content),
+                                    'text/csv'
+                                )
+                            }
 
-                        # 같은 앱 내부 API 호출
-                        response = await client.post(
-                            "http://localhost:8000/fridge2fork/v1/admin/batches/upload",
-                            files=files,
-                            timeout=60.0
-                        )
+                            # 같은 앱 내부 API 호출
+                            response = await client.post(
+                                "http://localhost:8000/fridge2fork/v1/admin/batches/upload",
+                                files=files,
+                                timeout=60.0
+                            )
 
-                        if response.status_code == 200:
-                            upload_result = response.json()
-                        else:
-                            error_message = f"업로드 실패: {response.text}"
+                            if response.status_code == 200:
+                                upload_result = response.json()
+                            else:
+                                error_message = f"업로드 실패: {response.text}"
 
             except Exception as e:
                 error_message = f"오류 발생: {str(e)}"
