@@ -26,6 +26,7 @@ from app.admin.views import (
     RecipeAdmin,
     IngredientAdmin,
 )
+from app.admin.custom_views import CSVUploadView
 
 # 로깅 설정
 logging.basicConfig(
@@ -139,6 +140,11 @@ admin = Admin(
 
 # Admin View 등록
 logger.info("🔧 SQLAdmin 뷰 등록 시작...")
+
+# 커스텀 뷰 (CSV 업로드)
+admin.add_view(CSVUploadView)
+
+# 모델 뷰
 admin.add_view(ImportBatchAdmin)
 admin.add_view(PendingIngredientAdmin)
 admin.add_view(PendingRecipeAdmin)
@@ -148,7 +154,7 @@ admin.add_view(RecipeAdmin)
 admin.add_view(IngredientAdmin)
 
 logger.info("✅ SQLAdmin 마운트 완료: /fridge2fork/admin")
-logger.info("📊 등록된 Admin 뷰: 7개 (ImportBatch, PendingIngredient, PendingRecipe, Category, Config, Recipe, Ingredient)")
+logger.info("📊 등록된 Admin 뷰: 8개 (CSVUpload, ImportBatch, PendingIngredient, PendingRecipe, Category, Config, Recipe, Ingredient)")
 
 # 루트 엔드포인트
 @app.get("/")
