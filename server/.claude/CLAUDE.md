@@ -22,73 +22,79 @@ This is a **FastAPI-based Korean recipe recommendation API** that suggests recip
 
 ## Essential Commands
 
+### Python Execution with UV
+**IMPORTANT**: This project uses **`uv`** for Python execution, NOT conda or system Python.
+
+```bash
+# All Python commands must use uv
+uv run python <script>          # Execute Python script
+uv run <command>                # Execute any command in uv environment
+```
+
 ### Environment Setup
 ```bash
-# Activate conda environment (required)
-conda activate fridge2fork
-
-# Install dependencies
-pip install -r requirements.dev.txt     # Development
-pip install -r requirements.prod.txt    # Production
+# Install dependencies with uv
+uv pip install -r requirements.dev.txt     # Development
+uv pip install -r requirements.prod.txt    # Production
 ```
 
 ### Development Server
 ```bash
 # Preferred method - uses proper environment loading
-python scripts/run_dev.py
+uv run python scripts/run_dev.py
 
 # Alternative - direct execution
-ENVIRONMENT=development python main.py
+ENVIRONMENT=development uv run python main.py
 ```
 
 ### Production Server
 ```bash
-python scripts/run_prod.py
+uv run python scripts/run_prod.py
 # or
-ENVIRONMENT=production python main.py
+ENVIRONMENT=production uv run python main.py
 ```
 
 ### Database Operations
 ```bash
 # Run migrations
-python scripts/migrate.py
+uv run python scripts/migrate.py
 
 # Generate new migration
-alembic revision --autogenerate -m "description"
+uv run alembic revision --autogenerate -m "description"
 
 # Apply migrations manually
-alembic upgrade head
+uv run alembic upgrade head
 ```
 
 ### Testing
 ```bash
 # Run all tests with coverage
-python scripts/run_tests.py
+uv run python scripts/run_tests.py
 
 # Run with coverage report
-python scripts/run_tests.py --coverage
+uv run python scripts/run_tests.py --coverage
 
 # Generate detailed HTML coverage report
-python scripts/test_coverage.py
+uv run python scripts/test_coverage.py
 
 # Run specific test file
-python scripts/run_tests.py --file tests/test_recipes.py
+uv run python scripts/run_tests.py --file tests/test_recipes.py
 
 # Run specific test function
-python scripts/run_tests.py --function test_login_success
+uv run python scripts/run_tests.py --function test_login_success
 ```
 
 ### Code Quality
 ```bash
 # Format code
-black .
-isort .
+uv run black .
+uv run isort .
 
 # Lint code
-flake8
+uv run flake8
 
 # Type checking
-mypy app/
+uv run mypy app/
 ```
 
 ## Configuration System
@@ -162,7 +168,7 @@ tests/
 - **Never modify** `app/api/v1/api.py` without understanding auth dependencies
 - **Check environment files** exist before running (scripts handle this)
 - **Use scripts/** for execution rather than direct commands
-- **Conda environment required** - most dependency issues stem from wrong environment
+- **UV execution required** - always use `uv run` for all Python commands
 
 ### Common Patterns
 - **Async functions**: All database operations use `async`/`await`
@@ -170,19 +176,19 @@ tests/
 - **Error handling**: Return structured JSON errors with appropriate status codes
 - **Logging**: Use structured logging with environment-appropriate levels
 
-### Conda Environment Critical
-This project **requires conda environment `fridge2fork`** to be active. Most import errors, dependency issues, and path problems are caused by running outside the conda environment.
+### UV Execution Critical
+This project **requires `uv run` for all Python execution**. Most import errors, dependency issues, and path problems are caused by running without `uv run` prefix.
 
 ## Troubleshooting
 
 ### Database Connection Issues
 1. Verify PostgreSQL/Redis servers are running
 2. Check environment variables in `.env.dev` or `.env.prod`
-3. Run `python scripts/migrate.py` to ensure schema is current
+3. Run `uv run python scripts/migrate.py` to ensure schema is current
 
 ### Import Errors
-1. Ensure `conda activate fridge2fork` is run
-2. Verify `requirements.dev.txt` is installed in conda environment
+1. Ensure all Python commands use `uv run` prefix
+2. Verify `requirements.dev.txt` is installed with `uv pip install`
 3. Check `PYTHONPATH` includes project root
 
 ### Authentication Disabled

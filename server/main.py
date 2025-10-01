@@ -99,13 +99,56 @@ app.add_middleware(
 # API 라우터 포함
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
-# SQLAdmin 설정 및 마운트
-# 정적 파일 경로 문제 해결을 위해 수동으로 마운트
-sqladmin_static_dir = os.path.join(os.path.dirname(sqladmin.__file__), "statics")
-app.mount("/fridge2fork/admin/statics", StaticFiles(directory=sqladmin_static_dir), name="admin-statics")
+# HTTPS Mixed Content 문제 해결을 위한 미들웨어
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response
+from starlette.requests import Request as StarletteRequest
+
+class HTTPSStaticRewriteMiddleware(BaseHTTPMiddleware):
+    """SQLAdmin HTML 응답에서 HTTP 정적 파일 URL을 HTTPS로 변환"""
+
+    async def dispatch(self, request: StarletteRequest, call_next):
+        response = await call_next(request)
+
+        # Admin 페이지의 HTML 응답만 처리
+        if (
+            request.url.path.startswith("/fridge2fork/admin")
+            and response.headers.get("content-type", "").startswith("text/html")
+        ):
+            # 응답 본문 읽기
+            body = b""
+            async for chunk in response.body_iterator:
+                body += chunk
+
+            # HTTP를 HTTPS로 변환
+            modified_body = body.decode("utf-8").replace(
+                'http://api-dev.woohalabs.com/fridge2fork/admin/statics/',
+                'https://api-dev.woohalabs.com/fridge2fork/admin/statics/'
+            ).replace(
+                'http://api.woohalabs.com/fridge2fork/admin/statics/',
+                'https://api.woohalabs.com/fridge2fork/admin/statics/'
+            )
+
+            # 새 응답 생성
+            return Response(
+                content=modified_body.encode("utf-8"),
+                status_code=response.status_code,
+                headers=dict(response.headers),
+                media_type=response.media_type
+            )
+
+        return response
+
+# 미들웨어 추가 (CORS 이후, SQLAdmin 이전)
+app.add_middleware(HTTPSStaticRewriteMiddleware)
 
 # SQLAdmin 초기화
-admin = Admin(app, engine, title="Fridge2Fork Admin", base_url="/fridge2fork/admin")
+admin = Admin(
+    app,
+    engine,
+    title="Fridge2Fork Admin",
+    base_url="/fridge2fork/admin"
+)
 
 # Admin View 등록
 admin.add_view(ImportBatchAdmin)
