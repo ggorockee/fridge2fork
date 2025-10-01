@@ -78,3 +78,9 @@ dmypy.json
 # 사용자 요청 및 작업 파일
 my_request.txt
 WORK.md
+
+# Jupyter Notebook 파일
+*.ipynb
+
+# 샘플 데이터 파일
+datas/TB_RECIPE_SEARCH_241226_SAMPLE_100.csv
