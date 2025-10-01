@@ -77,14 +77,33 @@ class ImportBatchAdmin(ModelView, model=ImportBatch):
 class PendingIngredientAdmin(ModelView, model=PendingIngredient):
     """승인 대기 재료 관리 (핵심 기능)"""
 
-    name = "Pending Ingredient"
-    name_plural = "Pending Ingredients"
+    name = "대기 재료"
+    name_plural = "대기 재료 목록"
     icon = "fa-solid fa-carrot"
+
+    # 한글 컬럼 레이블 및 설명
+    column_labels = {
+        "id": "ID",
+        "import_batch_id": "배치 ID",
+        "raw_name": "원본 이름",  # CSV에서 추출한 원본 재료 표현 (예: "떡국떡400g")
+        "normalized_name": "정규화 이름",  # 정제된 재료 이름 (예: "떡국떡")
+        "quantity_from": "수량 시작",  # 수량 범위의 최소값 (예: "200-300g"의 200)
+        "quantity_to": "수량 끝",  # 수량 범위의 최대값 (예: "200-300g"의 300)
+        "quantity_unit": "단위",  # 수량 단위 (g, ml, 개, 컵, 큰술 등)
+        "is_vague": "모호함",  # 수량 표현이 모호한 경우 (예: "적당량", "약간")
+        "is_abstract": "추상적",  # 재료명이 추상적인 경우 (예: "고기", "채소")
+        "suggested_specific": "구체적 제안",  # 추상적 재료를 구체적으로 변환한 제안 (예: "고기" → "소고기")
+        "abstraction_notes": "추상화 메모",  # 추상적 표현에 대한 관리자 메모
+        "suggested_category": "제안 카테고리",  # AI가 자동 분류한 재료 카테고리
+        "approval_status": "승인 상태",  # pending/approved/rejected (읽기 전용)
+        "merge_notes": "병합 메모",  # 중복 재료 병합 시 관리자 메모
+        "created_at": "생성일",
+    }
 
     # 컬럼 표시
     column_list = [
         "id",
-        "import_batch_id",  # 수정: batch_id → import_batch_id
+        "import_batch_id",
         "raw_name",
         "normalized_name",
         "quantity_from",
@@ -107,7 +126,7 @@ class PendingIngredientAdmin(ModelView, model=PendingIngredient):
     # 상세 페이지
     column_details_list = [
         "id",
-        "import_batch_id",  # 수정: batch_id → import_batch_id
+        "import_batch_id",
         "raw_name",
         "normalized_name",
         "quantity_from",
@@ -119,7 +138,7 @@ class PendingIngredientAdmin(ModelView, model=PendingIngredient):
         "abstraction_notes",
         "suggested_category",
         "approval_status",
-        "merge_notes",  # 수정: admin_notes → merge_notes
+        "merge_notes",
         "created_at",
     ]
 
@@ -128,7 +147,7 @@ class PendingIngredientAdmin(ModelView, model=PendingIngredient):
     can_edit = True
     can_delete = True
 
-    # 편집 가능 필드 (관리자가 파싱 결과 수정)
+    # 편집 가능 필드 (승인 상태는 제외 - 별도 승인 프로세스 사용)
     form_columns = [
         "normalized_name",
         "quantity_from",
@@ -137,11 +156,10 @@ class PendingIngredientAdmin(ModelView, model=PendingIngredient):
         "suggested_specific",
         "abstraction_notes",
         "suggested_category",
-        "approval_status",
-        "merge_notes",  # 수정: admin_notes → merge_notes
+        "merge_notes",
     ]
 
-    # 포맷팅
+    # 포맷팅 (목록 및 상세 페이지)
     column_formatters = {
         "suggested_category": lambda m, a: m.suggested_category.name_ko if m.suggested_category else "없음",
         "is_vague": lambda m, a: "✓" if m.is_vague else "",

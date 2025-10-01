@@ -28,6 +28,10 @@ class IngredientCategory(Base):
     # 관계 정의
     pending_ingredients = relationship("PendingIngredient", back_populates="suggested_category")
 
+    def __str__(self):
+        """SQLAdmin 드롭다운에서 표시될 문자열"""
+        return f"{self.name_ko} ({self.code})"
+
 
 class SystemConfig(Base):
     """시스템 설정 모델 (관리자 제어 파라미터)"""
