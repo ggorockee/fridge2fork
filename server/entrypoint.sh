@@ -148,6 +148,7 @@ if [ "$APP_ENV" = "prod" ] || [ "$APP_ENV" = "production" ]; then
     log "Keep-alive: $KEEPALIVE seconds"
     log "Max requests: $MAX_REQUESTS (jitter: $MAX_REQUESTS_JITTER)"
 
+    export PYTHONDONTWRITEBYTECODE=1
     exec gunicorn main:app \
         -c gunicorn.conf.py \
         --bind $HOST:$PORT \
@@ -158,6 +159,7 @@ if [ "$APP_ENV" = "prod" ] || [ "$APP_ENV" = "production" ]; then
         --max-requests-jitter $MAX_REQUESTS_JITTER
 elif [ "$APP_ENV" = "dev" ] || [ "$APP_ENV" = "development" ] || [ "$APP_ENV" = "develop" ]; then
     log "🔧 Running Uvicorn for development environment..."
+    export PYTHONDONTWRITEBYTECODE=1
     exec uvicorn main:app \
         --host $HOST \
         --port $PORT \
