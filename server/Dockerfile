@@ -13,10 +13,10 @@ WORKDIR /app
 
 # Install uv (modern Python package manager)
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-ENV PATH="/root/.cargo/bin:$PATH"
+ENV PATH="/root/.local/bin:$PATH"
 
-# Copy all requirements files for better caching
-COPY requirements.common.txt requirements.prod.txt requirements.dev.txt pyproject.toml ./
+# Copy dependency files for better caching
+COPY requirements.common.txt requirements.prod.txt requirements.dev.txt ./
 
 # Build argument to determine environment-specific dependencies
 ARG BUILD_MODE=prod
@@ -47,7 +47,7 @@ RUN useradd --create-home --shell /bin/bash appuser
 
 # Install uv in final stage (for consistent package management)
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-ENV PATH="/root/.cargo/bin:$PATH"
+ENV PATH="/root/.local/bin:$PATH"
 
 # Copy installed Python packages from builder stage
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
