@@ -39,11 +39,12 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-# SQLAlchemy 엔진 로깅 비활성화 (불필요한 SQL 쿼리 로그 제거)
-logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
-logging.getLogger('sqlalchemy.pool').setLevel(logging.WARNING)
-logging.getLogger('sqlalchemy.dialects').setLevel(logging.WARNING)
-logging.getLogger('sqlalchemy.orm').setLevel(logging.WARNING)
+# SQLAlchemy 엔진 로깅 완전 비활성화 (불필요한 SQL 쿼리 로그 제거)
+logging.getLogger('sqlalchemy.engine').setLevel(logging.ERROR)
+logging.getLogger('sqlalchemy.engine').propagate = False
+logging.getLogger('sqlalchemy.pool').setLevel(logging.ERROR)
+logging.getLogger('sqlalchemy.dialects').setLevel(logging.ERROR)
+logging.getLogger('sqlalchemy.orm').setLevel(logging.ERROR)
 
 
 @asynccontextmanager

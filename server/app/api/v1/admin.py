@@ -96,6 +96,11 @@ async def upload_csv_batch(
     result = await db.execute(existing_ingredients_query)
     existing_ingredients = [row[0] for row in result.fetchall()]
 
+    # 카테고리 ID 맵 미리 로드 (N+1 쿼리 방지)
+    category_map_query = select(IngredientCategory.code, IngredientCategory.id)
+    category_result = await db.execute(category_map_query)
+    category_id_map = {code: cat_id for code, cat_id in category_result.fetchall()}
+
     processed_count = 0
     success_count = 0
     error_count = 0
@@ -137,18 +142,13 @@ async def upload_csv_batch(
                     duplicate_count += 1
                     # 중복이지만 일단 저장 (관리자가 나중에 확인)
 
-                # 카테고리 자동 분류
+                # 카테고리 자동 분류 (미리 로드한 맵 사용)
                 suggested_category_code = classify_ingredient_category(normalized_name)
                 suggested_category_id = None
 
                 if suggested_category_code:
-                    category_query = select(IngredientCategory.id).where(
-                        IngredientCategory.code == suggested_category_code
-                    )
-                    category_result = await db.execute(category_query)
-                    category_row = category_result.first()
-                    if category_row:
-                        suggested_category_id = category_row[0]
+                    # N+1 쿼리 방지: 미리 로드한 category_id_map 사용
+                    suggested_category_id = category_id_map.get(suggested_category_code)
 
                 # PendingIngredient 생성
                 pending_ingredient = PendingIngredient(
