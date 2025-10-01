@@ -42,8 +42,8 @@ class ImportBatchAdmin(ModelView, model=ImportBatch):
     column_sortable_list = ["created_at", "status", "total_rows"]
     column_default_sort = ("created_at", True)  # 최신순
 
-    # 필터 (관계 필드 제외, 단순 컬럼만 사용)
-    column_filters = ["status"]
+    # 필터 비활성화 (SQLAdmin 호환성 문제)
+    # column_filters = []
 
     # 상세 페이지 표시 컬럼
     column_details_list = [
@@ -101,12 +101,8 @@ class PendingIngredientAdmin(ModelView, model=PendingIngredient):
     column_sortable_list = ["id", "normalized_name", "approval_status", "is_vague", "is_abstract"]
     column_default_sort = ("id", False)
 
-    # 필터 (관계 필드 제외, SQLAdmin 오류 방지)
-    column_filters = [
-        "approval_status",
-        "is_vague",
-        "is_abstract",
-    ]
+    # 필터 비활성화 (SQLAdmin 호환성 문제)
+    # column_filters = []
 
     # 상세 페이지
     column_details_list = [
@@ -176,8 +172,8 @@ class PendingRecipeAdmin(ModelView, model=PendingRecipe):
     column_sortable_list = ["id", "rcp_ttl", "approval_status", "created_at"]
     column_default_sort = ("id", False)
 
-    # 필터 (관계 필드 제외)
-    column_filters = ["approval_status", "ckg_nm"]
+    # 필터 비활성화 (SQLAdmin 호환성 문제)
+    # column_filters = []
 
     # 상세 페이지
     column_details_list = [
@@ -237,8 +233,8 @@ class IngredientCategoryAdmin(ModelView, model=IngredientCategory):
     column_sortable_list = ["display_order", "code", "name_ko"]
     column_default_sort = ("display_order", False)
 
-    # 필터
-    column_filters = ["is_active"]
+    # 필터 비활성화 (SQLAdmin 호환성 문제)
+    # column_filters = []
 
     # 상세 페이지
     column_details_list = [
@@ -297,8 +293,8 @@ class SystemConfigAdmin(ModelView, model=SystemConfig):
     column_sortable_list = ["config_key", "category", "updated_at"]
     column_default_sort = ("category", False)
 
-    # 필터
-    column_filters = ["category", "value_type", "is_editable"]
+    # 필터 비활성화 (SQLAdmin 호환성 문제)
+    # column_filters = []
 
     # 상세 페이지
     column_details_list = [
@@ -352,8 +348,8 @@ class RecipeAdmin(ModelView, model=Recipe):
     column_sortable_list = ["rcp_sno", "rcp_ttl", "approval_status", "created_at"]
     column_default_sort = ("created_at", True)
 
-    # 필터 (관계 필드 제외)
-    column_filters = ["approval_status", "ckg_nm"]
+    # 필터 비활성화 (SQLAdmin 호환성 문제)
+    # column_filters = []
 
     # 상세 페이지
     column_details_list = [
@@ -413,8 +409,8 @@ class IngredientAdmin(ModelView, model=Ingredient):
     column_sortable_list = ["id", "name", "approval_status", "created_at"]
     column_default_sort = ("created_at", True)
 
-    # 필터
-    column_filters = ["approval_status"]
+    # 필터 비활성화 (SQLAdmin 호환성 문제)
+    # column_filters = []
 
     # 상세 페이지
     column_details_list = [
