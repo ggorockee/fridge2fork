@@ -105,7 +105,9 @@ async def upload_csv_batch(
     success_count = 0
     error_count = 0
     duplicate_count = 0
+    recipe_count = 0
     error_log = []  # 오류 기록용
+    processed_recipes = set()  # 중복 레시피 방지
 
     # 5. 각 레시피 라인 처리
     for idx, line in enumerate(lines[1:], start=2):  # 헤더 제외, 라인번호는 2부터
@@ -117,6 +119,7 @@ async def upload_csv_batch(
             # 재료 및 레시피 정보 추출 (소문자 키 사용)
             ckg_mtrl_cn = row_dict.get('ckg_mtrl_cn', '').strip()
             rcp_ttl = row_dict.get('rcp_ttl', '').strip()  # 레시피 이름 추출
+            rcp_sno = row_dict.get('rcp_sno', '').strip()  # 레시피 ID
 
             if not ckg_mtrl_cn:
                 error_count += 1
@@ -126,6 +129,24 @@ async def upload_csv_batch(
                     "data": row_dict.get('rcp_ttl', 'N/A')[:50]
                 })
                 continue
+
+            # PendingRecipe 생성 (레시피별 1번만)
+            if rcp_ttl and rcp_ttl not in processed_recipes:
+                pending_recipe = PendingRecipe(
+                    import_batch_id=batch.id,
+                    rcp_sno=int(rcp_sno) if rcp_sno.isdigit() else idx,  # rcp_sno 없으면 라인번호 사용
+                    rcp_ttl=rcp_ttl[:200],
+                    ckg_nm=row_dict.get('ckg_nm', '')[:40] if row_dict.get('ckg_nm') else None,
+                    ckg_mtrl_cn=ckg_mtrl_cn,
+                    ckg_inbun_nm=row_dict.get('ckg_inbun_nm', '')[:200] if row_dict.get('ckg_inbun_nm') else None,
+                    ckg_dodf_nm=row_dict.get('ckg_dodf_nm', '')[:200] if row_dict.get('ckg_dodf_nm') else None,
+                    rcp_img_url=row_dict.get('rcp_img_url', '') if row_dict.get('rcp_img_url') else None,
+                    approval_status='pending',
+                    source_type='csv_import',
+                )
+                db.add(pending_recipe)
+                processed_recipes.add(rcp_ttl)
+                recipe_count += 1
 
             # 재료 파싱
             ingredients = parse_recipe_ingredients(ckg_mtrl_cn)
@@ -199,10 +220,11 @@ async def upload_csv_batch(
         "batch_id": batch.id,
         "filename": batch.filename,
         "total_rows": batch.total_rows,
-        "processed_rows": batch.processed_rows,
-        "success_count": batch.success_count,
-        "error_count": batch.error_count,
+        "processed_rows": processed_count,
+        "success_count": success_count,
+        "error_count": error_count,
         "duplicate_count": duplicate_count,  # 참고용 (모델에는 없음)
+        "recipe_count": recipe_count,  # 생성된 PendingRecipe 개수
         "status": batch.status,
         "created_at": batch.created_at,
     }
