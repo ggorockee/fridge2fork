@@ -68,9 +68,9 @@ class ImportBatchAdmin(ModelView, model=ImportBatch):
     column_formatters = {
         "error_log": lambda m, a: str(m.error_log) if m.error_log else "None",
         "status": lambda m, a: {
-            "pending": "⏳ 대기중",
-            "approved": "✅ 승인됨",
-            "rejected": "❌ 거부됨",
+            "pending": "대기중",
+            "approved": "승인됨",
+            "rejected": "거부됨",
         }.get(m.status, m.status),
     }
 
@@ -90,6 +90,10 @@ class ImportBatchAdmin(ModelView, model=ImportBatch):
     async def approve_batch_action(self, request: Request) -> RedirectResponse:
         """배치 승인 실행 - PendingIngredient/Recipe → Production 테이블로 이동"""
         from app.services.batch_approval import BatchApprovalService
+        from app.core.database import get_db
+        import logging
+
+        logger = logging.getLogger(__name__)
 
         # URL에서 batch_id 추출
         pks = request.query_params.get("pks", "").split(",")
@@ -102,14 +106,18 @@ class ImportBatchAdmin(ModelView, model=ImportBatch):
                 pks = [batch_id]
 
         if not pks or pks == [""]:
+            logger.warning("배치 ID를 찾을 수 없습니다")
             return RedirectResponse(
                 url=request.url_for("admin:list", identity=self.identity),
                 status_code=302
             )
 
-        async with self.session_maker() as session:
+        # get_db 제너레이터를 사용하여 세션 획득
+        async for session in get_db():
             for batch_id in pks:
                 try:
+                    logger.info(f"배치 승인 시작: {batch_id}")
+
                     # 배치 승인 서비스 호출
                     stats = await BatchApprovalService.approve_batch(
                         db=session,
@@ -117,16 +125,14 @@ class ImportBatchAdmin(ModelView, model=ImportBatch):
                         admin_user="admin"  # TODO: 실제 인증 사용자
                     )
 
-                    # 성공 로그 (실제로는 flash message 사용)
-                    print(f"✅ 배치 {batch_id} 승인 완료: {stats}")
+                    logger.info(f"배치 {batch_id} 승인 완료: {stats}")
 
                 except ValueError as e:
                     # 이미 승인됨 또는 존재하지 않는 배치
-                    print(f"⚠️ 배치 {batch_id} 승인 실패: {e}")
+                    logger.warning(f"배치 {batch_id} 승인 실패: {e}")
                 except Exception as e:
                     # 기타 오류
-                    print(f"❌ 배치 {batch_id} 승인 오류: {e}")
-                    await session.rollback()
+                    logger.error(f"배치 {batch_id} 승인 오류: {e}", exc_info=True)
 
         return RedirectResponse(
             url=request.url_for("admin:list", identity=self.identity),
@@ -231,9 +237,9 @@ class PendingIngredientAdmin(ModelView, model=PendingIngredient):
         "approval_status": {
             "label": "승인 상태",
             "choices": [
-                ("pending", "⏳ 대기중"),
-                ("approved", "✅ 승인"),
-                ("rejected", "❌ 거부"),
+                ("pending", "대기중"),
+                ("approved", "승인"),
+                ("rejected", "거부"),
             ],
             "validators": [DataRequired()],
             "description": "재료 승인 상태를 선택하세요",
@@ -243,12 +249,12 @@ class PendingIngredientAdmin(ModelView, model=PendingIngredient):
     # 포맷팅 (목록 및 상세 페이지)
     column_formatters = {
         "suggested_category": lambda m, a: m.suggested_category.name_ko if m.suggested_category else "없음",
-        "is_vague": lambda m, a: "✓" if m.is_vague else "",
-        "is_abstract": lambda m, a: "✓" if m.is_abstract else "",
+        "is_vague": lambda m, a: "Y" if m.is_vague else "",
+        "is_abstract": lambda m, a: "Y" if m.is_abstract else "",
         "approval_status": lambda m, a: {
-            "pending": "⏳ 대기중",
-            "approved": "✅ 승인",
-            "rejected": "❌ 거부",
+            "pending": "대기중",
+            "approved": "승인",
+            "rejected": "거부",
         }.get(m.approval_status, m.approval_status),
     }
 
@@ -372,10 +378,96 @@ class PendingRecipeAdmin(ModelView, model=PendingRecipe):
         "rejection_reason",
     ]
 
-    # 포맷팅 (긴 텍스트 줄이기)
+    # 폼 필드 커스터마이징
+    form_overrides = {
+        "approval_status": SelectField,
+    }
+
+    form_args = {
+        "approval_status": {
+            "label": "승인 상태",
+            "choices": [
+                ("pending", "대기중"),
+                ("approved", "승인"),
+                ("rejected", "거부"),
+            ],
+            "validators": [DataRequired()],
+            "description": "레시피 승인 상태를 선택하세요",
+        }
+    }
+
+    # 포맷팅 (긴 텍스트 줄이기, 이모지 제거)
     column_formatters = {
         "ckg_mtrl_cn": lambda m, a: (m.ckg_mtrl_cn[:50] + "...") if m.ckg_mtrl_cn and len(m.ckg_mtrl_cn) > 50 else m.ckg_mtrl_cn,
+        "approval_status": lambda m, a: {
+            "pending": "대기중",
+            "approved": "승인",
+            "rejected": "거부",
+        }.get(m.approval_status, m.approval_status),
     }
+
+    # 일괄 작업 액션
+    @action(
+        name="approve_selected",
+        label="선택 항목 승인",
+        confirmation_message="선택한 레시피들을 승인하시겠습니까?",
+        add_in_detail=False,
+        add_in_list=True,
+    )
+    async def approve_selected(self, request: Request) -> RedirectResponse:
+        """선택된 레시피들을 일괄 승인"""
+        pks = request.query_params.get("pks", "").split(",")
+        if not pks or pks == [""]:
+            return RedirectResponse(
+                url=request.url_for("admin:list", identity=self.identity),
+                status_code=302
+            )
+
+        async with self.session_maker() as session:
+            for pk in pks:
+                result = await session.execute(
+                    select(PendingRecipe).where(PendingRecipe.rcp_sno == int(pk))
+                )
+                recipe = result.scalar_one_or_none()
+                if recipe:
+                    recipe.approval_status = "approved"
+            await session.commit()
+
+        return RedirectResponse(
+            url=request.url_for("admin:list", identity=self.identity),
+            status_code=302
+        )
+
+    @action(
+        name="reject_selected",
+        label="선택 항목 거부",
+        confirmation_message="선택한 레시피들을 거부하시겠습니까?",
+        add_in_detail=False,
+        add_in_list=True,
+    )
+    async def reject_selected(self, request: Request) -> RedirectResponse:
+        """선택된 레시피들을 일괄 거부"""
+        pks = request.query_params.get("pks", "").split(",")
+        if not pks or pks == [""]:
+            return RedirectResponse(
+                url=request.url_for("admin:list", identity=self.identity),
+                status_code=302
+            )
+
+        async with self.session_maker() as session:
+            for pk in pks:
+                result = await session.execute(
+                    select(PendingRecipe).where(PendingRecipe.rcp_sno == int(pk))
+                )
+                recipe = result.scalar_one_or_none()
+                if recipe:
+                    recipe.approval_status = "rejected"
+            await session.commit()
+
+        return RedirectResponse(
+            url=request.url_for("admin:list", identity=self.identity),
+            status_code=302
+        )
 
     page_size = 50
 
