@@ -4,15 +4,18 @@ Fridge2Fork API 메인 애플리케이션
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 import logging
 import sys
+import os
 
 from app.core.config import settings
 from app.core.database import close_db_connection, close_redis_connection, engine
 from app.api.v1.api import api_router
 
 # SQLAdmin import
+import sqladmin
 from sqladmin import Admin
 from app.admin.views import (
     ImportBatchAdmin,
@@ -96,7 +99,12 @@ app.add_middleware(
 # API 라우터 포함
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
-# SQLAdmin 설정 및 마운트 (Kubernetes Ingress와 호환되도록 /fridge2fork/admin 경로 사용)
+# SQLAdmin 설정 및 마운트
+# 정적 파일 경로 문제 해결을 위해 수동으로 마운트
+sqladmin_static_dir = os.path.join(os.path.dirname(sqladmin.__file__), "statics")
+app.mount("/fridge2fork/admin/statics", StaticFiles(directory=sqladmin_static_dir), name="admin-statics")
+
+# SQLAdmin 초기화
 admin = Admin(app, engine, title="Fridge2Fork Admin", base_url="/fridge2fork/admin")
 
 # Admin View 등록
