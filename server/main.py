@@ -38,14 +38,24 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+# SQLAlchemy 엔진 로깅 비활성화 (불필요한 SQL 쿼리 로그 제거)
+logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
+logging.getLogger('sqlalchemy.pool').setLevel(logging.WARNING)
+logging.getLogger('sqlalchemy.dialects').setLevel(logging.WARNING)
+logging.getLogger('sqlalchemy.orm').setLevel(logging.WARNING)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """애플리케이션 생명주기 관리"""
     # 시작 시
+    logger.info("=" * 60)
     logger.info(f"🚀 {settings.PROJECT_NAME} v{settings.PROJECT_VERSION} 시작")
-    logger.info(f"환경: {settings.ENVIRONMENT}")
-    logger.info(f"디버그 모드: {settings.DEBUG}")
+    logger.info(f"📍 환경: {settings.ENVIRONMENT}")
+    logger.info(f"🐛 디버그 모드: {settings.DEBUG}")
+    logger.info(f"🌐 API 경로: {settings.API_V1_STR}")
+    logger.info(f"🔧 Admin 경로: /fridge2fork/admin")
+    logger.info("=" * 60)
 
     # 데이터베이스 연결 테스트
     from app.core.database import test_database_connection
@@ -53,21 +63,32 @@ async def lifespan(app: FastAPI):
 
     logger.info("🔍 데이터베이스 연결 테스트 중...")
     db_connected = await test_database_connection()
-    if not db_connected:
-        logger.warning("⚠️ 데이터베이스 연결 실패. 일부 기능이 제한될 수 있습니다.")
+    if db_connected:
+        logger.info("✅ 데이터베이스 연결 성공")
+    else:
+        logger.error("❌ 데이터베이스 연결 실패 - 일부 기능이 제한됩니다")
 
     # OpenAPI 스키마 로딩을 위한 지연
-    logger.info("OpenAPI 스키마 초기화 중...")
-    await asyncio.sleep(2)  # 2초 지연으로 스키마 로딩 시간 확보
-    logger.info("OpenAPI 스키마 초기화 완료")
+    if settings.DEBUG:
+        logger.info("📚 OpenAPI 스키마 초기화 중...")
+        await asyncio.sleep(2)  # 2초 지연으로 스키마 로딩 시간 확보
+        logger.info("✅ OpenAPI 스키마 초기화 완료")
+        logger.info(f"📖 API 문서: {settings.API_V1_STR}/docs")
+
+    logger.info("🎉 애플리케이션 시작 완료!")
+    logger.info("=" * 60)
 
     yield
 
     # 종료 시
-    logger.info("애플리케이션 종료 중...")
+    logger.info("=" * 60)
+    logger.info("🛑 애플리케이션 종료 시작...")
     await close_db_connection()
+    logger.info("✅ 데이터베이스 연결 종료")
     await close_redis_connection()
-    logger.info("애플리케이션 종료 완료")
+    logger.info("✅ Redis 연결 종료")
+    logger.info("👋 애플리케이션 종료 완료")
+    logger.info("=" * 60)
 
 
 # FastAPI 앱 생성
@@ -112,11 +133,12 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 admin = Admin(
     app,
     engine,
-    title="Fridge2Fork Admin",
+    title="냉털레시피 Admin",
     base_url="/fridge2fork/admin"
 )
 
 # Admin View 등록
+logger.info("🔧 SQLAdmin 뷰 등록 시작...")
 admin.add_view(ImportBatchAdmin)
 admin.add_view(PendingIngredientAdmin)
 admin.add_view(PendingRecipeAdmin)
@@ -126,6 +148,7 @@ admin.add_view(RecipeAdmin)
 admin.add_view(IngredientAdmin)
 
 logger.info("✅ SQLAdmin 마운트 완료: /fridge2fork/admin")
+logger.info("📊 등록된 Admin 뷰: 7개 (ImportBatch, PendingIngredient, PendingRecipe, Category, Config, Recipe, Ingredient)")
 
 # 루트 엔드포인트
 @app.get("/")

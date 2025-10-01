@@ -42,8 +42,8 @@ class ImportBatchAdmin(ModelView, model=ImportBatch):
     column_sortable_list = ["created_at", "status", "total_rows"]
     column_default_sort = ("created_at", True)  # 최신순
 
-    # 필터
-    column_filters = ["status", "created_at"]
+    # 필터 (관계 필드 제외, 단순 컬럼만 사용)
+    column_filters = ["status"]
 
     # 상세 페이지 표시 컬럼
     column_details_list = [
@@ -101,11 +101,9 @@ class PendingIngredientAdmin(ModelView, model=PendingIngredient):
     column_sortable_list = ["id", "normalized_name", "approval_status", "is_vague", "is_abstract"]
     column_default_sort = ("id", False)
 
-    # 필터 (워크플로우 최적화)
+    # 필터 (관계 필드 제외, SQLAdmin 오류 방지)
     column_filters = [
         "approval_status",
-        "batch_id",
-        "suggested_category",
         "is_vague",
         "is_abstract",
     ]
@@ -178,8 +176,8 @@ class PendingRecipeAdmin(ModelView, model=PendingRecipe):
     column_sortable_list = ["id", "rcp_ttl", "approval_status", "created_at"]
     column_default_sort = ("id", False)
 
-    # 필터
-    column_filters = ["approval_status", "batch_id", "ckg_nm"]
+    # 필터 (관계 필드 제외)
+    column_filters = ["approval_status", "ckg_nm"]
 
     # 상세 페이지
     column_details_list = [
@@ -354,8 +352,8 @@ class RecipeAdmin(ModelView, model=Recipe):
     column_sortable_list = ["rcp_sno", "rcp_ttl", "approval_status", "created_at"]
     column_default_sort = ("created_at", True)
 
-    # 필터 (approval_status 추가)
-    column_filters = ["approval_status", "import_batch_id", "ckg_nm"]
+    # 필터 (관계 필드 제외)
+    column_filters = ["approval_status", "ckg_nm"]
 
     # 상세 페이지
     column_details_list = [
