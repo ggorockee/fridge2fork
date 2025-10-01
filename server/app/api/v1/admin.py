@@ -114,8 +114,9 @@ async def upload_csv_batch(
             # 헤더를 소문자로 변환하여 매핑 (대소문자 무시)
             row_dict = dict(zip(header_lower, values))
 
-            # 재료 컬럼 추출 (소문자 키 사용)
+            # 재료 및 레시피 정보 추출 (소문자 키 사용)
             ckg_mtrl_cn = row_dict.get('ckg_mtrl_cn', '').strip()
+            rcp_ttl = row_dict.get('rcp_ttl', '').strip()  # 레시피 이름 추출
 
             if not ckg_mtrl_cn:
                 error_count += 1
@@ -152,7 +153,8 @@ async def upload_csv_batch(
 
                 # PendingIngredient 생성
                 pending_ingredient = PendingIngredient(
-                    import_batch_id=batch.id,  # 수정: batch_id → import_batch_id
+                    import_batch_id=batch.id,
+                    recipe_name=rcp_ttl[:200] if rcp_ttl else None,  # 레시피 이름 저장 (200자 제한)
                     raw_name=ingredient_data['raw_name'],
                     normalized_name=ingredient_data['normalized_name'],
                     quantity_from=ingredient_data['quantity_from'],
@@ -330,6 +332,7 @@ async def get_batch_detail(
     for ingredient in ingredients:
         ingredient_dict = {
             "id": ingredient.id,
+            "recipe_name": ingredient.recipe_name,
             "raw_name": ingredient.raw_name,
             "normalized_name": ingredient.normalized_name,
             "quantity_from": float(ingredient.quantity_from) if ingredient.quantity_from else None,
@@ -344,7 +347,7 @@ async def get_batch_detail(
                 "name_ko": ingredient.suggested_category.name_ko,
             } if ingredient.suggested_category else None,
             "approval_status": ingredient.approval_status,
-            "merge_notes": ingredient.merge_notes,  # 수정: admin_notes → merge_notes
+            "merge_notes": ingredient.merge_notes,
         }
         ingredient_list.append(ingredient_dict)
 

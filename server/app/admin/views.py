@@ -85,6 +85,7 @@ class PendingIngredientAdmin(ModelView, model=PendingIngredient):
     column_labels = {
         "id": "ID",
         "import_batch_id": "배치 ID",
+        "recipe_name": "레시피 이름",  # 해당 재료가 속한 레시피 이름
         "raw_name": "원본 이름",  # CSV에서 추출한 원본 재료 표현 (예: "떡국떡400g")
         "normalized_name": "정규화 이름",  # 정제된 재료 이름 (예: "떡국떡")
         "quantity_from": "수량 시작",  # 수량 범위의 최소값 (예: "200-300g"의 200)
@@ -103,21 +104,19 @@ class PendingIngredientAdmin(ModelView, model=PendingIngredient):
     # 컬럼 표시
     column_list = [
         "id",
-        "import_batch_id",
-        "raw_name",
+        "recipe_name",  # 레시피 이름 추가
         "normalized_name",
         "quantity_from",
         "quantity_to",
         "quantity_unit",
+        "suggested_category",
         "is_vague",
         "is_abstract",
-        "suggested_specific",
-        "suggested_category",
         "approval_status",
     ]
 
-    column_searchable_list = ["raw_name", "normalized_name", "suggested_specific"]
-    column_sortable_list = ["id", "normalized_name", "approval_status", "is_vague", "is_abstract"]
+    column_searchable_list = ["recipe_name", "raw_name", "normalized_name", "suggested_specific"]
+    column_sortable_list = ["id", "recipe_name", "normalized_name", "approval_status", "is_vague", "is_abstract"]
     column_default_sort = ("id", False)
 
     # 필터 비활성화 (SQLAdmin 호환성 문제)
@@ -127,6 +126,7 @@ class PendingIngredientAdmin(ModelView, model=PendingIngredient):
     column_details_list = [
         "id",
         "import_batch_id",
+        "recipe_name",
         "raw_name",
         "normalized_name",
         "quantity_from",

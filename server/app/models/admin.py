@@ -115,6 +115,7 @@ class PendingIngredient(Base):
     __tablename__ = "pending_ingredients"
 
     id = Column(Integer, primary_key=True, index=True)
+    recipe_name = Column(String(200), nullable=True, index=True)  # 레시피 이름 (rcp_ttl)
     raw_name = Column(String(200), nullable=False)  # 원본 CSV 값 (떡국떡400g)
     normalized_name = Column(String(100), nullable=True, index=True)  # 정규화된 이름 (떡국떡)
 
