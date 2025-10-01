@@ -3,10 +3,15 @@ import sys
 from logging.config import fileConfig
 from pathlib import Path
 
+from dotenv import load_dotenv
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
+
+# .env 파일 로드 (로컬 개발 환경용)
+# Docker/K8s 환경에서는 이미 환경변수가 주입되어 있으므로 영향 없음
+load_dotenv()
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
