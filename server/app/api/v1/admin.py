@@ -152,7 +152,7 @@ async def upload_csv_batch(
 
                 # PendingIngredient 생성
                 pending_ingredient = PendingIngredient(
-                    batch_id=batch.id,
+                    import_batch_id=batch.id,  # 수정: batch_id → import_batch_id
                     raw_name=ingredient_data['raw_name'],
                     normalized_name=ingredient_data['normalized_name'],
                     quantity_from=ingredient_data['quantity_from'],
@@ -306,12 +306,12 @@ async def get_batch_detail(
     ingredients_query = (
         select(PendingIngredient)
         .options(selectinload(PendingIngredient.suggested_category))
-        .where(PendingIngredient.batch_id == batch_id)
+        .where(PendingIngredient.import_batch_id == batch_id)
         .order_by(PendingIngredient.id)
     )
 
     count_query = select(func.count(PendingIngredient.id)).where(
-        PendingIngredient.batch_id == batch_id
+        PendingIngredient.import_batch_id == batch_id
     )
 
     # 페이지네이션
@@ -353,7 +353,7 @@ async def get_batch_detail(
         func.count(PendingIngredient.id).label('total'),
         func.sum(func.cast(PendingIngredient.is_vague, db.bind.dialect.INTEGER)).label('vague_count'),
         func.sum(func.cast(PendingIngredient.is_abstract, db.bind.dialect.INTEGER)).label('abstract_count'),
-    ).where(PendingIngredient.batch_id == batch_id)
+    ).where(PendingIngredient.import_batch_id == batch_id)
 
     stats_result = await db.execute(stats_query)
     stats = stats_result.first()
