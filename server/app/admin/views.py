@@ -67,12 +67,71 @@ class ImportBatchAdmin(ModelView, model=ImportBatch):
     # 포맷팅
     column_formatters = {
         "error_log": lambda m, a: str(m.error_log) if m.error_log else "None",
+        "status": lambda m, a: {
+            "pending": "⏳ 대기중",
+            "approved": "✅ 승인됨",
+            "rejected": "❌ 거부됨",
+        }.get(m.status, m.status),
     }
 
     # 읽기 전용 필드
     can_create = False
     can_edit = False
     can_delete = True
+
+    # 배치 승인 액션
+    @action(
+        name="approve_batch",
+        label="배치 승인 (Production DB로 이동)",
+        confirmation_message="이 배치를 승인하여 Production 테이블로 이동하시겠습니까? (approval_status='approved'인 항목만 이동됩니다)",
+        add_in_detail=True,
+        add_in_list=True,
+    )
+    async def approve_batch_action(self, request: Request) -> RedirectResponse:
+        """배치 승인 실행 - PendingIngredient/Recipe → Production 테이블로 이동"""
+        from app.services.batch_approval import BatchApprovalService
+
+        # URL에서 batch_id 추출
+        pks = request.query_params.get("pks", "").split(",")
+
+        # 단일 배치 승인 (상세 페이지에서 호출 시)
+        if not pks or pks == [""]:
+            # Detail 페이지에서는 URL path에서 ID 추출
+            batch_id = request.path_params.get("pk")
+            if batch_id:
+                pks = [batch_id]
+
+        if not pks or pks == [""]:
+            return RedirectResponse(
+                url=request.url_for("admin:list", identity=self.identity),
+                status_code=302
+            )
+
+        async with self.session_maker() as session:
+            for batch_id in pks:
+                try:
+                    # 배치 승인 서비스 호출
+                    stats = await BatchApprovalService.approve_batch(
+                        db=session,
+                        batch_id=batch_id,
+                        admin_user="admin"  # TODO: 실제 인증 사용자
+                    )
+
+                    # 성공 로그 (실제로는 flash message 사용)
+                    print(f"✅ 배치 {batch_id} 승인 완료: {stats}")
+
+                except ValueError as e:
+                    # 이미 승인됨 또는 존재하지 않는 배치
+                    print(f"⚠️ 배치 {batch_id} 승인 실패: {e}")
+                except Exception as e:
+                    # 기타 오류
+                    print(f"❌ 배치 {batch_id} 승인 오류: {e}")
+                    await session.rollback()
+
+        return RedirectResponse(
+            url=request.url_for("admin:list", identity=self.identity),
+            status_code=302
+        )
 
     page_size = 20
 
