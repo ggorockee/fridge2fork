@@ -160,8 +160,8 @@ class PendingRecipeAdmin(ModelView, model=PendingRecipe):
 
     # 컬럼 표시
     column_list = [
-        "id",
-        "batch_id",
+        "rcp_sno",
+        "import_batch_id",
         "rcp_ttl",
         "ckg_nm",
         "approval_status",
@@ -169,16 +169,16 @@ class PendingRecipeAdmin(ModelView, model=PendingRecipe):
     ]
 
     column_searchable_list = ["rcp_ttl", "ckg_nm"]
-    column_sortable_list = ["id", "rcp_ttl", "approval_status", "created_at"]
-    column_default_sort = ("id", False)
+    column_sortable_list = ["rcp_sno", "rcp_ttl", "approval_status", "created_at"]
+    column_default_sort = ("rcp_sno", False)
 
     # 필터 비활성화 (SQLAdmin 호환성 문제)
     # column_filters = []
 
     # 상세 페이지
     column_details_list = [
-        "id",
-        "batch_id",
+        "rcp_sno",
+        "import_batch_id",
         "rcp_ttl",
         "ckg_nm",
         "ckg_mtrl_cn",
@@ -186,7 +186,9 @@ class PendingRecipeAdmin(ModelView, model=PendingRecipe):
         "ckg_dodf_nm",
         "rcp_img_url",
         "approval_status",
-        "admin_notes",
+        "rejection_reason",
+        "approved_by",
+        "approved_at",
         "created_at",
     ]
 
@@ -200,7 +202,7 @@ class PendingRecipeAdmin(ModelView, model=PendingRecipe):
         "ckg_nm",
         "ckg_mtrl_cn",
         "approval_status",
-        "admin_notes",
+        "rejection_reason",
     ]
 
     # 포맷팅 (긴 텍스트 줄이기)
