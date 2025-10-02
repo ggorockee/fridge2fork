@@ -47,7 +47,7 @@ export default function RecipesPage() {
   const fetchRecipes = async (page: number = 1) => {
     try {
       setLoading(true);
-      const response = await serverApiClient.get(`/fridge2fork/admin/recipes`, {
+      const response = await serverApiClient.get(`/fridge2fork/v1/admin/recipes`, {
         params: {
           page,
           size: 20,
@@ -68,7 +68,7 @@ export default function RecipesPage() {
   const fetchRecipeDetail = async (rcp_sno: number) => {
     try {
       const response = await serverApiClient.get(
-        `/fridge2fork/admin/recipes/${rcp_sno}`
+        `/fridge2fork/v1/admin/recipes/${rcp_sno}`
       );
       setSelectedRecipe(response.data);
       setIsEditModalOpen(true);
@@ -82,7 +82,7 @@ export default function RecipesPage() {
   const updateRecipe = async (rcp_sno: number, data: any) => {
     try {
       await serverApiClient.patch(
-        `/fridge2fork/admin/recipes/${rcp_sno}`,
+        `/fridge2fork/v1/admin/recipes/${rcp_sno}`,
         data
       );
       alert("레시피가 성공적으로 수정되었습니다");
