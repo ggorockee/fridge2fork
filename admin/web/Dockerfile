@@ -50,6 +50,16 @@ COPY --from=build-deps /app/node_modules ./node_modules
 # Copy all source files
 COPY . .
 
+# DEBUG: Check if files are copied
+RUN echo "=== Checking copied files ===" && \
+    ls -la && \
+    echo "=== src directory ===" && \
+    ls -la src/ && \
+    echo "=== src/lib directory ===" && \
+    ls -la src/lib/ && \
+    echo "=== src/lib/api directory ===" && \
+    ls -la src/lib/api/ || echo "src/lib/api NOT FOUND"
+
 # Set environment variables for build
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
