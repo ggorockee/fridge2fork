@@ -129,15 +129,15 @@ jobs:
 
           # Production branches: main, prod, production
           if [[ "$BRANCH_NAME" == "main" ]] || [[ "$BRANCH_NAME" == "prod" ]] || [[ "$BRANCH_NAME" == "production" ]]; then
-            BUILD_MODE="prod"
+            BUILD_MODE="production"
             echo "🔥 Detected PRODUCTION environment"
           # Development branches: dev, develop, development
           elif [[ "$BRANCH_NAME" == "dev" ]] || [[ "$BRANCH_NAME" == "develop" ]] || [[ "$BRANCH_NAME" == "development" ]]; then
-            BUILD_MODE="dev"
+            BUILD_MODE="development"
             echo "🔧 Detected DEVELOPMENT environment"
           else
-            echo "⚠️ Unknown branch: $BRANCH_NAME, defaulting to dev"
-            BUILD_MODE="dev"
+            echo "⚠️ Unknown branch: $BRANCH_NAME, defaulting to development"
+            BUILD_MODE="development"
           fi
 
           echo "build_mode=$BUILD_MODE" >> $GITHUB_OUTPUT
@@ -164,11 +164,10 @@ jobs:
         with:
           context: ./server
           push: true
+          target: ${{ steps.determine_env.outputs.build_mode }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/fridge2fork-${{ steps.vars.outputs.environment }}-server:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/fridge2fork-${{ steps.vars.outputs.environment }}-server:sha-${{ steps.vars.outputs.sha }}
-          build-args: |
-            BUILD_MODE=${{ steps.determine_env.outputs.build_mode }}
           cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/fridge2fork-${{ steps.vars.outputs.environment }}-server:latest
           cache-to: type=inline
 
