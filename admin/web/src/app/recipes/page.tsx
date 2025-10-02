@@ -327,8 +327,11 @@ function RecipeEditModal({
           )}
 
           {/* 편집 가능 필드 */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-lg">편집 가능 정보</h3>
+          <div className="space-y-4 border-2 border-blue-500 p-4 rounded-lg bg-blue-50">
+            <h3 className="font-semibold text-lg text-blue-700 flex items-center gap-2">
+              <span className="material-icons">edit</span>
+              편집 가능 정보
+            </h3>
 
             <div>
               <label htmlFor="ckg_time_nm" className="block text-sm font-medium mb-1">
