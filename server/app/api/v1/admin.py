@@ -603,7 +603,7 @@ async def update_pending_recipe(
     # 수정 가능한 필드만 업데이트
     allowed_fields = {
         'ckg_time_nm', 'ckg_dodf_nm', 'rcp_img_url', 'ckg_inbun_nm',
-        'ckg_nm', 'rcp_ttl', 'ckg_mtrl_cn'
+        'ckg_nm', 'rcp_ttl', 'ckg_mtrl_cn', 'approval_status', 'rejection_reason'
     }
 
     for field, value in update_data.items():
@@ -622,6 +622,8 @@ async def update_pending_recipe(
         "ckg_dodf_nm": recipe.ckg_dodf_nm,
         "ckg_inbun_nm": recipe.ckg_inbun_nm,
         "rcp_img_url": recipe.rcp_img_url,
+        "approval_status": recipe.approval_status,
+        "rejection_reason": recipe.rejection_reason,
         "updated_at": recipe.updated_at,
     }
 

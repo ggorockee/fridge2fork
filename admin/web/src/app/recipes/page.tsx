@@ -263,6 +263,8 @@ function RecipeEditModal({
     ckg_dodf_nm: recipe.ckg_dodf_nm || "",
     ckg_inbun_nm: recipe.ckg_inbun_nm || "",
     rcp_img_url: recipe.rcp_img_url || "",
+    approval_status: recipe.approval_status || "pending",
+    rejection_reason: recipe.rejection_reason || "",
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -299,6 +301,12 @@ function RecipeEditModal({
               <label className="block text-sm font-medium mb-1">요리명</label>
               <div className="p-3 bg-gray-100 rounded-md text-gray-700">
                 {recipe.ckg_nm || "없음"}
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">재료 목록</label>
+              <div className="p-3 bg-gray-100 rounded-md text-gray-700 max-h-32 overflow-y-auto text-sm">
+                {recipe.ckg_mtrl_cn || "없음"}
               </div>
             </div>
           </div>
@@ -386,6 +394,41 @@ function RecipeEditModal({
                 placeholder="https://..."
               />
             </div>
+
+            <div>
+              <label htmlFor="approval_status" className="block text-sm font-medium mb-1">
+                승인 상태
+              </label>
+              <select
+                id="approval_status"
+                value={formData.approval_status}
+                onChange={(e) =>
+                  setFormData({ ...formData, approval_status: e.target.value })
+                }
+                className="w-full p-2 border rounded-md"
+              >
+                <option value="pending">대기중</option>
+                <option value="approved">승인됨</option>
+                <option value="rejected">거부됨</option>
+              </select>
+            </div>
+
+            {formData.approval_status === "rejected" && (
+              <div>
+                <label htmlFor="rejection_reason" className="block text-sm font-medium mb-1">
+                  거부 사유
+                </label>
+                <Input
+                  id="rejection_reason"
+                  type="text"
+                  value={formData.rejection_reason}
+                  onChange={(e) =>
+                    setFormData({ ...formData, rejection_reason: e.target.value })
+                  }
+                  placeholder="거부 사유를 입력하세요"
+                />
+              </div>
+            )}
           </div>
 
           {/* 버튼 */}
