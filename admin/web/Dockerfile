@@ -5,7 +5,7 @@
 # ============================================
 
 # ============================================
-# Stage 1: Dependencies
+# Stage 1: Dependencies (Production only)
 # ============================================
 FROM node:20-alpine AS deps
 
@@ -17,8 +17,24 @@ WORKDIR /app
 # Copy package files
 COPY package.json package-lock.json* ./
 
-# Install dependencies with clean install
+# Install production dependencies only
 RUN npm ci --only=production && \
+    npm cache clean --force
+
+# ============================================
+# Stage 1.5: Build Dependencies (All dependencies)
+# ============================================
+FROM node:20-alpine AS build-deps
+
+RUN apk add --no-cache libc6-compat
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json package-lock.json* ./
+
+# Install ALL dependencies (including devDependencies for build)
+RUN npm ci && \
     npm cache clean --force
 
 # ============================================
@@ -28,8 +44,8 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy dependencies from deps stage
-COPY --from=deps /app/node_modules ./node_modules
+# Copy ALL dependencies from build-deps stage (includes devDependencies)
+COPY --from=build-deps /app/node_modules ./node_modules
 
 # Copy all source files
 COPY . .
