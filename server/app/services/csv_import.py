@@ -285,33 +285,35 @@ def parse_recipe_ingredients(ckg_mtrl_cn: str) -> list[dict]:
     레시피의 CKG_MTRL_CN 컬럼 전체를 파싱하여 재료 리스트 반환
 
     Args:
-        ckg_mtrl_cn: 재료 컬럼 텍스트 (예: "떡국떡400g|국물용멸치50g|대파1대")
+        ckg_mtrl_cn: 재료 컬럼 텍스트
+            형식 1: "떡국떡400g|국물용멸치50g|대파1대" (파이프 구분자)
+            형식 2: "[재료] 소갈비 찜용1kg, 무우1토막(250g), 양파1/2개" (콤마 구분자)
 
     Returns:
         재료 딕셔너리 리스트
 
     Example:
-        >>> parse_recipe_ingredients("떡국떡400g|고기 적당히|배추 200-300g")
+        >>> parse_recipe_ingredients("[재료] 대패 삼겹살150~200g, 숙주나물200g, 청경채25g")
         [
             {
-                'raw_name': '떡국떡400g',
-                'normalized_name': '떡국떡',
-                'quantity_from': Decimal('400'),
-                'quantity_to': None,
+                'raw_name': '대패 삼겹살150~200g',
+                'normalized_name': '대패삼겹살',
+                'quantity_from': Decimal('150'),
+                'quantity_to': Decimal('200'),
                 'quantity_unit': 'g',
                 'is_vague': False,
                 'is_abstract': False,
                 'suggested_specific': None
             },
             {
-                'raw_name': '고기 적당히',
-                'normalized_name': '고기',
-                'quantity_from': None,
+                'raw_name': '숙주나물200g',
+                'normalized_name': '숙주나물',
+                'quantity_from': Decimal('200'),
                 'quantity_to': None,
-                'quantity_unit': None,
-                'is_vague': True,
-                'is_abstract': True,
-                'suggested_specific': '소고기'
+                'quantity_unit': 'g',
+                'is_vague': False,
+                'is_abstract': False,
+                'suggested_specific': None
             },
             ...
         ]
@@ -319,15 +321,29 @@ def parse_recipe_ingredients(ckg_mtrl_cn: str) -> list[dict]:
     if not ckg_mtrl_cn or not ckg_mtrl_cn.strip():
         return []
 
-    # "|" 구분자로 분리
-    ingredient_texts = ckg_mtrl_cn.split('|')
+    text = ckg_mtrl_cn.strip()
+
+    # 구분자 자동 감지 (콤마 우선, 없으면 파이프)
+    if ',' in text:
+        # 콤마 구분자인 경우 - [재료], [양념재료] 등의 섹션 헤더를 콤마로 대체
+        # 이렇게 하면 섹션 구분도 재료 구분처럼 처리됨
+        text = re.sub(r'\[[^\]]+\]', ',', text)
+        # 연속된 콤마 제거 및 앞뒤 콤마 제거
+        text = re.sub(r',+', ',', text).strip(',')
+        ingredient_texts = text.split(',')
+    elif '|' in text:
+        # 기존 파이프 구분자 지원
+        ingredient_texts = text.split('|')
+    else:
+        # 구분자가 없으면 단일 재료로 처리
+        ingredient_texts = [text]
 
     # 각 재료 라인 파싱
     ingredients = []
-    for text in ingredient_texts:
-        text = text.strip()
-        if text:
-            parsed = parse_ingredient_line(text)
+    for item_text in ingredient_texts:
+        item_text = item_text.strip()
+        if item_text:
+            parsed = parse_ingredient_line(item_text)
             ingredients.append(parsed)
 
     return ingredients
