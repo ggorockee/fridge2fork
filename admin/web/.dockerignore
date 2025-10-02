@@ -1,0 +1,98 @@
+# ============================================
+# Docker Ignore File - Optimized for Next.js Build
+# Only exclude files that are NOT needed for build
+# ============================================
+
+# Dependencies (will be installed during build)
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build outputs (will be generated during build)
+.next/
+out/
+build/
+dist/
+
+# Testing files (not needed in production image)
+coverage/
+.nyc_output
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+
+# Environment files (will be injected at runtime)
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env*.local
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Git files
+.git/
+.gitignore
+.gitattributes
+
+# Documentation files
+README.md
+CHANGELOG.md
+LICENSE
+
+# Development configuration files
+.eslintrc*
+.prettierrc*
+jest.config.*
+.babelrc*
+
+# Claude Code specific
+CLAUDE.md
+claudedocs/
+.claude/
+
+# Logs
+logs/
+*.log
+
+# OS files
+Thumbs.db
+Desktop.ini
+
+# Docker files
+Dockerfile
+.dockerignore
+.dockerignore.tmp
+docker-compose*.yml
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.circleci/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Project specific
+myrequest.txt
+
+# ============================================
+# IMPORTANT: Keep these files for build
+# ============================================
+# - src/ directory (all source code)
+# - tsconfig.json (path aliases configuration)
+# - next.config.ts (Next.js configuration)
+# - package.json, package-lock.json (dependencies)
+# - public/ directory (static assets)
