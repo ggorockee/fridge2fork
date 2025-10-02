@@ -22,7 +22,7 @@ WORKDIR /app
 COPY pyproject.toml uv.lock* ./
 
 # Development stage
-FROM base AS development
+FROM base AS dev
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -52,7 +52,7 @@ CMD ["uv", "run", "python", "app/manage.py", "runserver", "0.0.0.0:8000"]
 
 
 # Production stage
-FROM base AS production
+FROM base AS prod
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \

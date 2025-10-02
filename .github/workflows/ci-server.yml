@@ -129,15 +129,15 @@ jobs:
 
           # Production branches: main, prod, production
           if [[ "$BRANCH_NAME" == "main" ]] || [[ "$BRANCH_NAME" == "prod" ]] || [[ "$BRANCH_NAME" == "production" ]]; then
-            BUILD_MODE="production"
+            BUILD_MODE="prod"
             echo "🔥 Detected PRODUCTION environment"
           # Development branches: dev, develop, development
           elif [[ "$BRANCH_NAME" == "dev" ]] || [[ "$BRANCH_NAME" == "develop" ]] || [[ "$BRANCH_NAME" == "development" ]]; then
-            BUILD_MODE="development"
+            BUILD_MODE="dev"
             echo "🔧 Detected DEVELOPMENT environment"
           else
-            echo "⚠️ Unknown branch: $BRANCH_NAME, defaulting to development"
-            BUILD_MODE="development"
+            echo "⚠️ Unknown branch: $BRANCH_NAME, defaulting to dev"
+            BUILD_MODE="dev"
           fi
 
           echo "build_mode=$BUILD_MODE" >> $GITHUB_OUTPUT
