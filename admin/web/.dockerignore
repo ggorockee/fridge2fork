@@ -52,8 +52,8 @@ reference/
 # Development files
 .eslintrc*
 .prettierrc*
-tsconfig.json
-tsconfig.*.json
+# tsconfig.json - KEEP: Required for path aliases (@/*)
+# tsconfig.*.json - KEEP: Required for build
 jest.config.*
 .babelrc*
 
