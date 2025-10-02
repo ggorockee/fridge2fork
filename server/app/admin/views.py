@@ -152,13 +152,13 @@ class ImportBatchAdmin(ModelView, model=ImportBatch):
     # 배치 승인 액션
     @action(
         name="approve_batch",
-        label="배치 승인 (Production DB로 이동)",
-        confirmation_message="이 배치를 승인하여 Production 테이블로 이동하시겠습니까? (approval_status='approved'인 항목만 이동됩니다)",
+        label="배치 승인 (개발 DB로 이동)",
+        confirmation_message="이 배치를 승인하여 개발 테이블로 이동하시겠습니까? (approval_status='approved'인 항목만 이동됩니다)",
         add_in_detail=True,
         add_in_list=True,
     )
     async def approve_batch_action(self, request: Request) -> RedirectResponse:
-        """배치 승인 실행 - PendingIngredient/Recipe → Production 테이블로 이동"""
+        """배치 승인 실행 - PendingIngredient/Recipe → 개발 테이블로 이동"""
         from app.services.batch_approval import BatchApprovalService
         from app.core.database import get_db
         import logging
@@ -281,7 +281,7 @@ class PendingIngredientAdmin(ModelView, model=PendingIngredient):
     ]
 
     # 인라인 편집 활성화
-    can_create = False
+    can_create = True  # 재료 추가 기능 활성화
     can_edit = True
     can_delete = True
 
@@ -291,6 +291,9 @@ class PendingIngredientAdmin(ModelView, model=PendingIngredient):
 
     # 편집 가능 필드 (부분 승인을 위해 approval_status 포함)
     form_columns = [
+        "import_batch_id",  # 재료 추가 시 배치 ID 필요
+        "recipe_name",      # 레시피 이름
+        "raw_name",         # 원본 이름
         "normalized_name",
         "quantity_from",
         "quantity_to",
