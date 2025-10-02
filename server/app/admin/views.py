@@ -466,84 +466,16 @@ class PendingIngredientAdmin(ModelView, model=PendingIngredient):
         )
 
     @action(
-        name="view_ingredient_warehouse",
-        label="식재료 창고 (고유 재료 목록)",
+        name="ingredient_warehouse",
+        label="🏪 식재료 창고",
         add_in_detail=False,
         add_in_list=True,
     )
-    async def view_ingredient_warehouse(self, request: Request):
-        """고유 재료 목록을 쉼표로 구분하여 표시"""
+    async def ingredient_warehouse(self, request: Request):
+        """식재료 창고 - 탭 기반 통합 페이지 (재료 목록 + 일괄 수정)"""
         from starlette.responses import HTMLResponse
 
-        async with self.session_maker() as session:
-            # 고유 재료 이름 조회 (중복 제거)
-            result = await session.execute(
-                select(PendingIngredient.normalized_name).distinct().order_by(PendingIngredient.normalized_name)
-            )
-            unique_ingredients = [row[0] for row in result.fetchall() if row[0]]
-
-        # 쉼표로 구분된 문자열 생성
-        ingredients_text = ", ".join(unique_ingredients)
-
-        # 간단한 HTML 페이지
-        html_content = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="utf-8">
-            <title>식재료 창고 - 고유 재료 목록</title>
-            <style>
-                body {{ font-family: Arial, sans-serif; padding: 20px; }}
-                .container {{ max-width: 1200px; margin: 0 auto; }}
-                h1 {{ color: #333; }}
-                .stats {{ background: #f0f0f0; padding: 10px; margin: 20px 0; border-radius: 5px; }}
-                .content {{ background: white; border: 1px solid #ddd; padding: 20px; border-radius: 5px; }}
-                textarea {{ width: 100%; height: 400px; font-family: monospace; padding: 10px; }}
-                button {{ background: #007bff; color: white; border: none; padding: 10px 20px;
-                         cursor: pointer; border-radius: 5px; font-size: 16px; margin: 10px 5px; }}
-                button:hover {{ background: #0056b3; }}
-                .back-btn {{ background: #6c757d; }}
-                .back-btn:hover {{ background: #545b62; }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h1>🏪 식재료 창고 - 고유 재료 목록</h1>
-                <div class="stats">
-                    <strong>총 고유 재료 개수:</strong> {len(unique_ingredients)}개
-                </div>
-                <div class="content">
-                    <h3>쉼표로 구분된 목록 (복사 가능)</h3>
-                    <textarea id="ingredientsText" readonly>{ingredients_text}</textarea>
-                    <button onclick="copyToClipboard()">📋 클립보드에 복사</button>
-                    <button class="back-btn" onclick="window.history.back()">← 돌아가기</button>
-                </div>
-            </div>
-            <script>
-                function copyToClipboard() {{
-                    const text = document.getElementById('ingredientsText');
-                    text.select();
-                    document.execCommand('copy');
-                    alert('클립보드에 복사되었습니다!');
-                }}
-            </script>
-        </body>
-        </html>
-        """
-
-        return HTMLResponse(content=html_content)
-
-    @action(
-        name="bulk_rename_ingredient",
-        label="재료 이름 일괄 수정",
-        add_in_detail=False,
-        add_in_list=True,
-    )
-    async def bulk_rename_ingredient(self, request: Request):
-        """재료 이름을 일괄 수정하는 폼 제공"""
-        from starlette.responses import HTMLResponse
-
-        # POST 요청 처리 (실제 수정)
+        # POST 요청 처리 (일괄 수정 실행)
         if request.method == "POST":
             form = await request.form()
             old_name = form.get("old_name", "").strip()
@@ -551,7 +483,6 @@ class PendingIngredientAdmin(ModelView, model=PendingIngredient):
 
             if old_name and new_name:
                 async with self.session_maker() as session:
-                    # 재료 조회 및 업데이트
                     result = await session.execute(
                         select(PendingIngredient).where(PendingIngredient.normalized_name == old_name)
                     )
@@ -563,21 +494,30 @@ class PendingIngredientAdmin(ModelView, model=PendingIngredient):
 
                     await session.commit()
 
-                # 성공 메시지와 함께 리다이렉트
-                return RedirectResponse(
-                    url=request.url_for("admin:list", identity=self.identity) + f"?msg=Updated {updated_count} ingredients",
-                    status_code=302
-                )
+                # 성공 메시지와 함께 수정 탭으로 리다이렉트
+                return HTMLResponse(content=f"""
+                    <!DOCTYPE html>
+                    <html>
+                    <head><meta charset="utf-8"></head>
+                    <body>
+                        <script>
+                            alert('✅ {updated_count}개 재료를 "{old_name}" → "{new_name}"로 수정했습니다!');
+                            window.location.href = '{request.url.path}?tab=edit';
+                        </script>
+                    </body>
+                    </html>
+                """)
 
-        # GET 요청 처리 (폼 표시)
+        # GET 요청 처리 (탭 페이지 표시)
+        active_tab = request.query_params.get("tab", "list")
+
         async with self.session_maker() as session:
-            # 고유 재료 이름 조회
             result = await session.execute(
                 select(PendingIngredient.normalized_name).distinct().order_by(PendingIngredient.normalized_name)
             )
             unique_ingredients = [row[0] for row in result.fetchall() if row[0]]
 
-        # 드롭다운 옵션 생성
+        ingredients_text = ", ".join(unique_ingredients)
         options_html = "".join([f'<option value="{ing}">{ing}</option>' for ing in unique_ingredients])
 
         html_content = f"""
@@ -585,61 +525,176 @@ class PendingIngredientAdmin(ModelView, model=PendingIngredient):
         <html>
         <head>
             <meta charset="utf-8">
-            <title>재료 이름 일괄 수정</title>
+            <title>🏪 식재료 창고</title>
             <style>
-                body {{ font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }}
-                .container {{ max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }}
-                h1 {{ color: #333; margin-bottom: 30px; }}
-                .form-group {{ margin-bottom: 20px; }}
-                label {{ display: block; font-weight: bold; margin-bottom: 8px; color: #555; }}
-                select, input {{ width: 100%; padding: 10px; font-size: 16px; border: 1px solid #ddd; border-radius: 5px; }}
-                select {{ background: white; }}
-                .button-group {{ margin-top: 30px; display: flex; gap: 10px; }}
-                button {{ flex: 1; padding: 12px; font-size: 16px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }}
-                .submit-btn {{ background: #28a745; color: white; }}
-                .submit-btn:hover {{ background: #218838; }}
+                * {{ box-sizing: border-box; }}
+                body {{ font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; background: #f5f7fa; margin: 0; }}
+                .container {{ max-width: 1200px; margin: 0 auto; background: white; border-radius: 12px;
+                            box-shadow: 0 4px 20px rgba(0,0,0,0.1); overflow: hidden; }}
+
+                /* Header */
+                .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                          color: white; padding: 30px; text-align: center; }}
+                .header h1 {{ margin: 0; font-size: 32px; font-weight: 600; }}
+                .header .stats {{ margin-top: 10px; opacity: 0.9; font-size: 16px; }}
+
+                /* Tabs */
+                .tabs {{ display: flex; border-bottom: 2px solid #e2e8f0; background: #f8fafc; }}
+                .tab {{ flex: 1; padding: 18px 24px; cursor: pointer; border: none; background: transparent;
+                       font-size: 16px; font-weight: 600; color: #64748b; transition: all 0.3s;
+                       border-bottom: 3px solid transparent; }}
+                .tab:hover {{ background: #f1f5f9; color: #475569; }}
+                .tab.active {{ color: #667eea; border-bottom-color: #667eea; background: white; }}
+
+                /* Tab Content */
+                .tab-content {{ display: none; padding: 40px; }}
+                .tab-content.active {{ display: block; }}
+
+                /* List Tab */
+                .copy-area {{ background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 8px; padding: 20px; }}
+                .copy-area textarea {{ width: 100%; height: 400px; font-family: 'Courier New', monospace;
+                                      padding: 16px; border: none; background: white; border-radius: 6px;
+                                      font-size: 14px; line-height: 1.6; resize: vertical; }}
+                .button-group {{ margin-top: 20px; display: flex; gap: 12px; }}
+                button {{ padding: 14px 28px; font-size: 16px; border: none; border-radius: 8px;
+                         cursor: pointer; font-weight: 600; transition: all 0.3s; }}
+                .copy-btn {{ background: #667eea; color: white; flex: 1; }}
+                .copy-btn:hover {{ background: #5568d3; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102,126,234,0.4); }}
                 .back-btn {{ background: #6c757d; color: white; }}
-                .back-btn:hover {{ background: #545b62; }}
-                .info {{ background: #e7f3ff; padding: 15px; border-left: 4px solid #007bff; margin-bottom: 20px; }}
-                .warning {{ background: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin-bottom: 20px; }}
+                .back-btn:hover {{ background: #5a6268; }}
+
+                /* Edit Tab */
+                .edit-form {{ max-width: 700px; margin: 0 auto; }}
+                .info-box {{ background: #e0e7ff; padding: 16px; border-left: 4px solid #667eea;
+                           border-radius: 6px; margin-bottom: 24px; }}
+                .warning-box {{ background: #fef3c7; padding: 16px; border-left: 4px solid #f59e0b;
+                              border-radius: 6px; margin-bottom: 24px; }}
+                .form-group {{ margin-bottom: 24px; }}
+                .form-group label {{ display: block; font-weight: 600; margin-bottom: 10px;
+                                    color: #1e293b; font-size: 15px; }}
+                .form-group select,
+                .form-group input {{ width: 100%; padding: 14px; font-size: 16px; border: 2px solid #e2e8f0;
+                                    border-radius: 8px; transition: all 0.3s; }}
+                .form-group select:focus,
+                .form-group input:focus {{ outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.1); }}
+                .submit-btn {{ background: #10b981; color: white; width: 100%; }}
+                .submit-btn:hover {{ background: #059669; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(16,185,129,0.4); }}
+
+                /* Success Animation */
+                @keyframes fadeIn {{ from {{ opacity: 0; transform: translateY(-10px); }} to {{ opacity: 1; transform: translateY(0); }} }}
+                .fade-in {{ animation: fadeIn 0.4s ease-out; }}
             </style>
         </head>
         <body>
-            <div class="container">
-                <h1>✏️ 재료 이름 일괄 수정</h1>
-
-                <div class="info">
-                    <strong>💡 사용 방법:</strong> 변경할 재료 이름을 선택하고, 새로운 이름을 입력한 후 수정 버튼을 누르세요.
+            <div class="container fade-in">
+                <div class="header">
+                    <h1>🏪 식재료 창고</h1>
+                    <div class="stats">총 고유 재료 개수: <strong>{len(unique_ingredients)}개</strong></div>
                 </div>
 
-                <div class="warning">
-                    <strong>⚠️ 주의:</strong> 이 작업은 되돌릴 수 없습니다. 신중하게 진행하세요.
+                <div class="tabs">
+                    <button class="tab {'active' if active_tab == 'list' else ''}" onclick="switchTab('list')">
+                        📋 재료 목록 보기
+                    </button>
+                    <button class="tab {'active' if active_tab == 'edit' else ''}" onclick="switchTab('edit')">
+                        ✏️ 재료 이름 수정
+                    </button>
                 </div>
 
-                <form method="POST">
-                    <div class="form-group">
-                        <label for="old_name">변경할 재료 이름 선택:</label>
-                        <select id="old_name" name="old_name" required>
-                            <option value="">-- 재료를 선택하세요 --</option>
-                            {options_html}
-                        </select>
+                <!-- Tab 1: 재료 목록 -->
+                <div id="listTab" class="tab-content {'active' if active_tab == 'list' else ''}">
+                    <h2 style="margin-top: 0; color: #1e293b;">📋 쉼표로 구분된 재료 목록</h2>
+                    <p style="color: #64748b; margin-bottom: 20px;">
+                        아래 텍스트 영역의 내용을 복사하여 다른 곳에 붙여넣을 수 있습니다.
+                    </p>
+                    <div class="copy-area">
+                        <textarea id="ingredientsText" readonly>{ingredients_text}</textarea>
                     </div>
-
-                    <div class="form-group">
-                        <label for="new_name">새로운 재료 이름:</label>
-                        <input type="text" id="new_name" name="new_name" placeholder="예: 후추" required>
-                    </div>
-
                     <div class="button-group">
-                        <button type="submit" class="submit-btn">✅ 일괄 수정 실행</button>
-                        <button type="button" class="back-btn" onclick="window.history.back()">← 취소</button>
+                        <button class="copy-btn" onclick="copyToClipboard()">
+                            📋 클립보드에 복사
+                        </button>
+                        <button class="back-btn" onclick="window.history.back()">
+                            ← 돌아가기
+                        </button>
                     </div>
-                </form>
+                </div>
 
-                <div style="margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 5px;">
-                    <strong>현재 고유 재료 개수:</strong> {len(unique_ingredients)}개
+                <!-- Tab 2: 일괄 수정 -->
+                <div id="editTab" class="tab-content {'active' if active_tab == 'edit' else ''}">
+                    <div class="edit-form">
+                        <h2 style="margin-top: 0; color: #1e293b;">✏️ 재료 이름 일괄 수정</h2>
+
+                        <div class="info-box">
+                            <strong>💡 사용 방법</strong><br>
+                            변경할 재료 이름을 선택하고, 새로운 이름을 입력한 후 수정 버튼을 누르세요.
+                        </div>
+
+                        <div class="warning-box">
+                            <strong>⚠️ 주의사항</strong><br>
+                            이 작업은 되돌릴 수 없습니다. 신중하게 진행하세요.
+                        </div>
+
+                        <form method="POST">
+                            <div class="form-group">
+                                <label for="old_name">변경할 재료 이름 선택:</label>
+                                <select id="old_name" name="old_name" required>
+                                    <option value="">-- 재료를 선택하세요 --</option>
+                                    {options_html}
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="new_name">새로운 재료 이름:</label>
+                                <input type="text" id="new_name" name="new_name"
+                                       placeholder="예: 후추" required>
+                            </div>
+
+                            <div class="button-group">
+                                <button type="submit" class="submit-btn">
+                                    ✅ 일괄 수정 실행
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
+
+            <script>
+                function switchTab(tabName) {{
+                    // Hide all tabs
+                    document.querySelectorAll('.tab-content').forEach(tab => {{
+                        tab.classList.remove('active');
+                    }});
+                    document.querySelectorAll('.tab').forEach(tab => {{
+                        tab.classList.remove('active');
+                    }});
+
+                    // Show selected tab
+                    if (tabName === 'list') {{
+                        document.getElementById('listTab').classList.add('active');
+                        document.querySelector('.tab:nth-child(1)').classList.add('active');
+                        window.history.replaceState(null, null, '?tab=list');
+                    }} else {{
+                        document.getElementById('editTab').classList.add('active');
+                        document.querySelector('.tab:nth-child(2)').classList.add('active');
+                        window.history.replaceState(null, null, '?tab=edit');
+                    }}
+                }}
+
+                function copyToClipboard() {{
+                    const text = document.getElementById('ingredientsText');
+                    text.select();
+                    text.setSelectionRange(0, 99999); // For mobile devices
+
+                    try {{
+                        document.execCommand('copy');
+                        alert('✅ 클립보드에 복사되었습니다!');
+                    }} catch (err) {{
+                        alert('❌ 복사 실패: ' + err);
+                    }}
+                }}
+            </script>
         </body>
         </html>
         """
