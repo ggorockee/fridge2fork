@@ -48,7 +48,7 @@ EXPOSE 8000
 ENTRYPOINT ["/entrypoint.sh"]
 
 # Default command for development
-CMD ["uv", "run", "python", "app/manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["/root/.local/bin/uv", "run", "python", "app/manage.py", "runserver", "0.0.0.0:8000"]
 
 
 # Production stage
@@ -81,4 +81,4 @@ EXPOSE 8000
 ENTRYPOINT ["/entrypoint.sh"]
 
 # Default command for production (gunicorn)
-CMD ["uv", "run", "gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--chdir", "app", "settings.wsgi:application"]
+CMD ["/root/.local/bin/uv", "run", "gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--chdir", "app", "settings.wsgi:application"]
