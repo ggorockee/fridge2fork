@@ -436,6 +436,196 @@ async def get_batch_detail(
     }
 
 
+@router.get("/recipes", response_model=Dict[str, Any])
+async def get_pending_recipes(
+    db: AsyncSession = Depends(get_db),
+    page: int = Query(1, ge=1, description="페이지 번호"),
+    size: int = Query(20, ge=1, le=100, description="페이지 크기"),
+    batch_id: Optional[str] = Query(None, description="배치 ID 필터"),
+    status: Optional[str] = Query(None, description="승인 상태 필터 (pending/approved/rejected)"),
+):
+    """
+    PendingRecipe 목록 조회
+
+    Args:
+        db: 데이터베이스 세션
+        page: 페이지 번호
+        size: 페이지 크기
+        batch_id: 배치 ID 필터 (선택)
+        status: 승인 상태 필터 (선택)
+
+    Returns:
+        dict: 레시피 목록 및 페이지네이션 정보
+    """
+    # 기본 쿼리
+    query = select(PendingRecipe)
+    count_query = select(func.count(PendingRecipe.rcp_sno))
+
+    # 필터 적용
+    if batch_id:
+        query = query.where(PendingRecipe.import_batch_id == batch_id)
+        count_query = count_query.where(PendingRecipe.import_batch_id == batch_id)
+
+    if status:
+        query = query.where(PendingRecipe.approval_status == status)
+        count_query = count_query.where(PendingRecipe.approval_status == status)
+
+    # 정렬 (최신순)
+    query = query.order_by(PendingRecipe.created_at.desc())
+
+    # 페이지네이션
+    offset = (page - 1) * size
+    query = query.offset(offset).limit(size)
+
+    # 쿼리 실행
+    total_result = await db.execute(count_query)
+    total = total_result.scalar()
+
+    result = await db.execute(query)
+    recipes = result.scalars().all()
+
+    # 응답 데이터 구성
+    recipe_list = []
+    for recipe in recipes:
+        recipe_dict = {
+            "rcp_sno": recipe.rcp_sno,
+            "rcp_ttl": recipe.rcp_ttl,
+            "ckg_nm": recipe.ckg_nm,
+            "ckg_mtrl_cn": recipe.ckg_mtrl_cn,
+            "ckg_inbun_nm": recipe.ckg_inbun_nm,
+            "ckg_dodf_nm": recipe.ckg_dodf_nm,
+            "ckg_time_nm": recipe.ckg_time_nm,
+            "rcp_img_url": recipe.rcp_img_url,
+            "import_batch_id": recipe.import_batch_id,
+            "approval_status": recipe.approval_status,
+            "created_at": recipe.created_at,
+            "updated_at": recipe.updated_at,
+        }
+        recipe_list.append(recipe_dict)
+
+    # 페이지네이션 메타데이터
+    total_pages = math.ceil(total / size) if total > 0 else 1
+
+    return {
+        "recipes": recipe_list,
+        "pagination": {
+            "page": page,
+            "size": size,
+            "total": total,
+            "total_pages": total_pages,
+        }
+    }
+
+
+@router.get("/recipes/{rcp_sno}", response_model=Dict[str, Any])
+async def get_pending_recipe_detail(
+    rcp_sno: int,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    PendingRecipe 상세 조회
+
+    Args:
+        rcp_sno: 레시피 ID
+        db: 데이터베이스 세션
+
+    Returns:
+        dict: 레시피 상세 정보
+    """
+    query = select(PendingRecipe).where(PendingRecipe.rcp_sno == rcp_sno)
+    result = await db.execute(query)
+    recipe = result.scalar_one_or_none()
+
+    if not recipe:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"레시피 ID {rcp_sno}를 찾을 수 없습니다"
+        )
+
+    return {
+        "rcp_sno": recipe.rcp_sno,
+        "rcp_ttl": recipe.rcp_ttl,
+        "ckg_nm": recipe.ckg_nm,
+        "rgtr_id": recipe.rgtr_id,
+        "rgtr_nm": recipe.rgtr_nm,
+        "inq_cnt": recipe.inq_cnt,
+        "rcmm_cnt": recipe.rcmm_cnt,
+        "srap_cnt": recipe.srap_cnt,
+        "ckg_mth_acto_nm": recipe.ckg_mth_acto_nm,
+        "ckg_sta_acto_nm": recipe.ckg_sta_acto_nm,
+        "ckg_mtrl_acto_nm": recipe.ckg_mtrl_acto_nm,
+        "ckg_knd_acto_nm": recipe.ckg_knd_acto_nm,
+        "ckg_ipdc": recipe.ckg_ipdc,
+        "ckg_mtrl_cn": recipe.ckg_mtrl_cn,
+        "ckg_inbun_nm": recipe.ckg_inbun_nm,
+        "ckg_dodf_nm": recipe.ckg_dodf_nm,
+        "ckg_time_nm": recipe.ckg_time_nm,
+        "first_reg_dt": recipe.first_reg_dt,
+        "rcp_img_url": recipe.rcp_img_url,
+        "import_batch_id": recipe.import_batch_id,
+        "approval_status": recipe.approval_status,
+        "rejection_reason": recipe.rejection_reason,
+        "approved_by": recipe.approved_by,
+        "approved_at": recipe.approved_at,
+        "source_type": recipe.source_type,
+        "created_at": recipe.created_at,
+        "updated_at": recipe.updated_at,
+    }
+
+
+@router.patch("/recipes/{rcp_sno}", response_model=Dict[str, Any])
+async def update_pending_recipe(
+    rcp_sno: int,
+    update_data: Dict[str, Any],
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    PendingRecipe 수정
+
+    Args:
+        rcp_sno: 레시피 ID
+        update_data: 수정할 데이터
+        db: 데이터베이스 세션
+
+    Returns:
+        dict: 수정된 레시피 정보
+    """
+    query = select(PendingRecipe).where(PendingRecipe.rcp_sno == rcp_sno)
+    result = await db.execute(query)
+    recipe = result.scalar_one_or_none()
+
+    if not recipe:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"레시피 ID {rcp_sno}를 찾을 수 없습니다"
+        )
+
+    # 수정 가능한 필드만 업데이트
+    allowed_fields = {
+        'ckg_time_nm', 'ckg_dodf_nm', 'rcp_img_url', 'ckg_inbun_nm',
+        'ckg_nm', 'rcp_ttl', 'ckg_mtrl_cn'
+    }
+
+    for field, value in update_data.items():
+        if field in allowed_fields and hasattr(recipe, field):
+            setattr(recipe, field, value)
+
+    await db.commit()
+    await db.refresh(recipe)
+
+    return {
+        "message": "레시피가 성공적으로 수정되었습니다",
+        "rcp_sno": recipe.rcp_sno,
+        "rcp_ttl": recipe.rcp_ttl,
+        "ckg_nm": recipe.ckg_nm,
+        "ckg_time_nm": recipe.ckg_time_nm,
+        "ckg_dodf_nm": recipe.ckg_dodf_nm,
+        "ckg_inbun_nm": recipe.ckg_inbun_nm,
+        "rcp_img_url": recipe.rcp_img_url,
+        "updated_at": recipe.updated_at,
+    }
+
+
 @router.post("/batches/{batch_id}/approve")
 async def approve_batch(
     batch_id: str,
