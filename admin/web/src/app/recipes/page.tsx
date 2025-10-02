@@ -267,6 +267,18 @@ function RecipeEditModal({
     rejection_reason: recipe.rejection_reason || "",
   });
 
+  // recipe prop이 변경될 때마다 formData 업데이트
+  useEffect(() => {
+    setFormData({
+      ckg_time_nm: recipe.ckg_time_nm || "",
+      ckg_dodf_nm: recipe.ckg_dodf_nm || "",
+      ckg_inbun_nm: recipe.ckg_inbun_nm || "",
+      rcp_img_url: recipe.rcp_img_url || "",
+      approval_status: recipe.approval_status || "pending",
+      rejection_reason: recipe.rejection_reason || "",
+    });
+  }, [recipe]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave(formData);
