@@ -27,6 +27,10 @@ router = APIRouter()
 @router.post("/batches/upload", response_model=Dict[str, Any])
 async def upload_csv_batch(
     file: UploadFile = File(...),
+    conflict_strategy: str = Query(
+        "error",
+        description="중복 레시피 처리 전략: skip(건너뛰기), update(업데이트), error(오류)"
+    ),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -36,6 +40,7 @@ async def upload_csv_batch(
     - CSV 파일 검증
     - 배치 레코드 생성
     - 재료 파싱 및 PendingIngredient 저장
+    - 중복 레시피 처리 전략 지원
     """
     # 1. 파일 검증
     if not file.filename.endswith('.csv'):
@@ -124,8 +129,15 @@ async def upload_csv_batch(
     error_count = 0
     duplicate_count = 0
     recipe_count = 0
+    skipped_count = 0
+    updated_count = 0
     error_log = []  # 오류 기록용
     processed_recipe_ids = set()  # 중복 레시피 방지 (rcp_sno 기준)
+
+    # 기존 레시피 조회 (중복 감지용)
+    existing_recipes_query = select(PendingRecipe.rcp_sno)
+    existing_result = await db.execute(existing_recipes_query)
+    existing_recipe_ids = {row[0] for row in existing_result.fetchall()}
 
     # 5. 각 레시피 라인 처리
     for idx, row in enumerate(rows, start=2):  # 라인번호는 2부터 (헤더=1, 데이터=2...)
@@ -151,7 +163,52 @@ async def upload_csv_batch(
             # PendingRecipe 생성 (rcp_sno 기준으로 중복 방지)
             recipe_id = int(rcp_sno) if rcp_sno.isdigit() else idx
 
-            if recipe_id not in processed_recipe_ids:
+            # 중복 레시피 감지 및 처리
+            is_duplicate = recipe_id in existing_recipe_ids or recipe_id in processed_recipe_ids
+
+            if is_duplicate:
+                duplicate_count += 1
+
+                if conflict_strategy == "skip":
+                    # 건너뛰기
+                    skipped_count += 1
+                    continue
+
+                elif conflict_strategy == "update":
+                    # 기존 레시피 업데이트
+                    existing_recipe_query = select(PendingRecipe).where(
+                        PendingRecipe.rcp_sno == recipe_id
+                    )
+                    existing_recipe_result = await db.execute(existing_recipe_query)
+                    existing_recipe = existing_recipe_result.scalar_one_or_none()
+
+                    if existing_recipe:
+                        # 기존 레시피 업데이트
+                        existing_recipe.rcp_ttl = rcp_ttl[:200]
+                        existing_recipe.ckg_nm = row_dict.get('ckg_nm', '')[:40] if row_dict.get('ckg_nm') else None
+                        existing_recipe.ckg_mtrl_cn = ckg_mtrl_cn
+                        existing_recipe.ckg_inbun_nm = row_dict.get('ckg_inbun_nm', '')[:200] if row_dict.get('ckg_inbun_nm') else None
+                        existing_recipe.ckg_dodf_nm = row_dict.get('ckg_dodf_nm', '')[:200] if row_dict.get('ckg_dodf_nm') else None
+                        existing_recipe.ckg_time_nm = row_dict.get('ckg_time_nm', '')[:200] if row_dict.get('ckg_time_nm') else None
+                        existing_recipe.rcp_img_url = row_dict.get('rcp_img_url', '') if row_dict.get('rcp_img_url') else None
+                        updated_count += 1
+                    else:
+                        # 배치 내 중복이면 스킵
+                        skipped_count += 1
+                        continue
+
+                elif conflict_strategy == "error":
+                    # 오류 발생
+                    error_count += 1
+                    error_log.append({
+                        "row": idx,
+                        "error": f"중복된 레시피 번호: {recipe_id}",
+                        "data": rcp_ttl[:50]
+                    })
+                    continue
+
+            else:
+                # 새 레시피 생성
                 pending_recipe = PendingRecipe(
                     import_batch_id=batch.id,
                     rcp_sno=recipe_id,
@@ -244,8 +301,11 @@ async def upload_csv_batch(
         "processed_rows": processed_count,
         "success_count": success_count,
         "error_count": error_count,
-        "duplicate_count": duplicate_count,  # 참고용 (모델에는 없음)
+        "duplicate_count": duplicate_count,  # 중복 감지된 레시피 수
+        "skipped_count": skipped_count,  # 건너뛴 레시피 수
+        "updated_count": updated_count,  # 업데이트된 레시피 수
         "recipe_count": recipe_count,  # 생성된 PendingRecipe 개수
+        "conflict_strategy": conflict_strategy,  # 사용된 중복 처리 전략
         "status": batch.status,
         "created_at": batch.created_at,
     }

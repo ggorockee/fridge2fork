@@ -95,6 +95,10 @@ class ImportBatchAdmin(ModelView, model=ImportBatch):
     can_edit = False
     can_delete = True  # 삭제 기능 활성화
 
+    # 삭제 확인 메시지
+    delete_modal = True
+    delete_modal_template = "sqladmin/modals/delete.html"
+
     # 삭제 액션
     @action(
         name="delete_selected",
@@ -280,6 +284,10 @@ class PendingIngredientAdmin(ModelView, model=PendingIngredient):
     can_create = False
     can_edit = True
     can_delete = True
+
+    # 삭제 확인 메시지
+    delete_modal = True
+    delete_modal_template = "sqladmin/modals/delete.html"
 
     # 편집 가능 필드 (부분 승인을 위해 approval_status 포함)
     form_columns = [
@@ -495,6 +503,10 @@ class PendingRecipeAdmin(ModelView, model=PendingRecipe):
     can_create = False
     can_edit = True
     can_delete = True
+
+    # 삭제 확인 메시지 커스터마이징
+    delete_modal = True  # 삭제 모달 활성화
+    delete_modal_template = "sqladmin/modals/delete.html"  # 기본 삭제 모달 템플릿
 
     form_columns = [
         "rcp_ttl",
@@ -851,6 +863,10 @@ class RecipeAdmin(ModelView, model=Recipe):
     can_edit = True
     can_delete = True  # 삭제 기능 활성화
 
+    # 삭제 확인 메시지
+    delete_modal = True
+    delete_modal_template = "sqladmin/modals/delete.html"
+
     form_columns = [
         "rcp_ttl",
         "ckg_nm",
@@ -969,6 +985,10 @@ class IngredientAdmin(ModelView, model=Ingredient):
     can_create = False
     can_edit = True
     can_delete = True  # 삭제 기능 활성화
+
+    # 삭제 확인 메시지
+    delete_modal = True
+    delete_modal_template = "sqladmin/modals/delete.html"
 
     form_columns = [
         "name",
