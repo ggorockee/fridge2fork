@@ -30,6 +30,7 @@ spec:
           command: ["/bin/bash", "-c"]
           args:
             - |
+              export PATH="/root/.local/bin:$PATH"
               set -e
               echo "🔧 Running database migrations..."
               cd /app/app
