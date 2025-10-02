@@ -2,6 +2,7 @@
 관리자 API 엔드포인트 - CSV 임포트 및 승인 워크플로우
 """
 import io
+import csv
 import math
 from datetime import datetime
 from typing import Optional, List, Dict, Any
@@ -43,18 +44,29 @@ async def upload_csv_batch(
             detail="CSV 파일만 업로드 가능합니다"
         )
 
-    # 2. CSV 파일 읽기
+    # 2. CSV 파일 읽기 (RFC 4180 표준 파싱)
     try:
         contents = await file.read()
         csv_text = contents.decode('utf-8')
-        lines = csv_text.strip().split('\n')
 
-        if len(lines) < 2:  # 헤더 + 최소 1개 데이터
+        # csv.DictReader로 RFC 4180 표준 파싱
+        csv_file = io.StringIO(csv_text)
+        csv_reader = csv.DictReader(csv_file)
+
+        # 리스트로 변환
+        rows = list(csv_reader)
+
+        if len(rows) < 1:  # 최소 1개 데이터
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="CSV 파일이 비어있거나 유효하지 않습니다"
             )
 
+    except UnicodeDecodeError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="CSV 파일 인코딩 오류: UTF-8 인코딩을 사용해주세요"
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -68,21 +80,27 @@ async def upload_csv_batch(
     batch = ImportBatch(
         id=batch_id,
         filename=file.filename,
-        total_rows=len(lines) - 1,  # 헤더 제외
+        total_rows=len(rows),
         created_by="admin",  # TODO: 실제 인증 정보에서 가져오기
         status="pending",
     )
     db.add(batch)
     await db.flush()  # batch.id 생성을 위해 flush
 
-    # 4. CSV 파싱 및 PendingIngredient 생성
-    header = lines[0].split(',')
+    # 4. CSV 헤더 검증
+    if not rows:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="CSV 파일에 데이터가 없습니다"
+        )
 
-    # CSV 헤더 정규화 (대소문자 무시)
-    header_lower = [col.strip().lower() for col in header]
+    # 첫 번째 행의 키로 헤더 확인 (DictReader는 자동으로 헤더 처리)
+    header_keys = list(rows[0].keys())
 
-    # 필수 컬럼 검증
+    # 필수 컬럼 검증 (대소문자 무시)
+    header_lower = [col.strip().lower() for col in header_keys]
     required_columns = ['rcp_ttl', 'ckg_mtrl_cn']
+
     if not all(col in header_lower for col in required_columns):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -107,14 +125,14 @@ async def upload_csv_batch(
     duplicate_count = 0
     recipe_count = 0
     error_log = []  # 오류 기록용
-    processed_recipes = set()  # 중복 레시피 방지
+    processed_recipe_ids = set()  # 중복 레시피 방지 (rcp_sno 기준)
 
     # 5. 각 레시피 라인 처리
-    for idx, line in enumerate(lines[1:], start=2):  # 헤더 제외, 라인번호는 2부터
+    for idx, row in enumerate(rows, start=2):  # 라인번호는 2부터 (헤더=1, 데이터=2...)
         try:
-            values = line.split(',')
-            # 헤더를 소문자로 변환하여 매핑 (대소문자 무시)
-            row_dict = dict(zip(header_lower, values))
+            # DictReader로 파싱된 row는 이미 딕셔너리
+            # 헤더를 소문자로 정규화 (대소문자 무시)
+            row_dict = {key.strip().lower(): value.strip() if value else '' for key, value in row.items()}
 
             # 재료 및 레시피 정보 추출 (소문자 키 사용)
             ckg_mtrl_cn = row_dict.get('ckg_mtrl_cn', '').strip()
@@ -130,11 +148,13 @@ async def upload_csv_batch(
                 })
                 continue
 
-            # PendingRecipe 생성 (레시피별 1번만)
-            if rcp_ttl and rcp_ttl not in processed_recipes:
+            # PendingRecipe 생성 (rcp_sno 기준으로 중복 방지)
+            recipe_id = int(rcp_sno) if rcp_sno.isdigit() else idx
+
+            if recipe_id not in processed_recipe_ids:
                 pending_recipe = PendingRecipe(
                     import_batch_id=batch.id,
-                    rcp_sno=int(rcp_sno) if rcp_sno.isdigit() else idx,  # rcp_sno 없으면 라인번호 사용
+                    rcp_sno=recipe_id,
                     rcp_ttl=rcp_ttl[:200],
                     ckg_nm=row_dict.get('ckg_nm', '')[:40] if row_dict.get('ckg_nm') else None,
                     ckg_mtrl_cn=ckg_mtrl_cn,
@@ -146,7 +166,7 @@ async def upload_csv_batch(
                     source_type='csv_import',
                 )
                 db.add(pending_recipe)
-                processed_recipes.add(rcp_ttl)
+                processed_recipe_ids.add(recipe_id)
                 recipe_count += 1
 
             # 재료 파싱
@@ -201,7 +221,7 @@ async def upload_csv_batch(
             error_log.append({
                 "row": idx,
                 "error": str(e),
-                "data": line[:100] if len(line) <= 100 else line[:100] + "..."
+                "data": row_dict.get('rcp_ttl', 'N/A')[:100] if row_dict else 'N/A'
             })
             continue
 
