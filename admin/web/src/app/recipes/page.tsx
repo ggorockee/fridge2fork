@@ -70,6 +70,13 @@ export default function RecipesPage() {
       const response = await serverApiClient.get(
         `/fridge2fork/v1/admin/recipes/${rcp_sno}`
       );
+      console.log("📦 서버 응답 데이터:", response.data);
+      console.log("📊 필드 확인:", {
+        ckg_time_nm: response.data.ckg_time_nm,
+        ckg_dodf_nm: response.data.ckg_dodf_nm,
+        ckg_inbun_nm: response.data.ckg_inbun_nm,
+        rcp_img_url: response.data.rcp_img_url,
+      });
       setSelectedRecipe(response.data);
       setIsEditModalOpen(true);
     } catch (error: any) {
@@ -269,6 +276,13 @@ function RecipeEditModal({
 
   // recipe prop이 변경될 때마다 formData 업데이트
   useEffect(() => {
+    console.log("🔄 useEffect - recipe prop 변경 감지:", recipe);
+    console.log("📝 설정할 formData:", {
+      ckg_time_nm: recipe.ckg_time_nm,
+      ckg_dodf_nm: recipe.ckg_dodf_nm,
+      ckg_inbun_nm: recipe.ckg_inbun_nm,
+      rcp_img_url: recipe.rcp_img_url,
+    });
     setFormData({
       ckg_time_nm: recipe.ckg_time_nm || "",
       ckg_dodf_nm: recipe.ckg_dodf_nm || "",
@@ -347,7 +361,7 @@ function RecipeEditModal({
 
             <div>
               <label htmlFor="ckg_time_nm" className="block text-sm font-medium mb-1">
-                조리 시간
+                조리 시간 (현재값: {formData.ckg_time_nm || "비어있음"})
               </label>
               <Input
                 id="ckg_time_nm"
@@ -382,7 +396,7 @@ function RecipeEditModal({
 
             <div>
               <label htmlFor="ckg_inbun_nm" className="block text-sm font-medium mb-1">
-                인분
+                인분 (현재값: {formData.ckg_inbun_nm || "비어있음"})
               </label>
               <Input
                 id="ckg_inbun_nm"
@@ -397,7 +411,7 @@ function RecipeEditModal({
 
             <div>
               <label htmlFor="rcp_img_url" className="block text-sm font-medium mb-1">
-                이미지 URL
+                이미지 URL (현재값: {formData.rcp_img_url ? "있음" : "비어있음"})
               </label>
               <Input
                 id="rcp_img_url"
@@ -408,6 +422,11 @@ function RecipeEditModal({
                 }
                 placeholder="https://..."
               />
+              {formData.rcp_img_url && (
+                <div className="text-xs text-gray-600 mt-1 truncate">
+                  {formData.rcp_img_url}
+                </div>
+              )}
             </div>
 
             <div>
