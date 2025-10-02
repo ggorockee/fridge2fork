@@ -445,9 +445,10 @@ class PendingRecipeAdmin(ModelView, model=PendingRecipe):
         "rcp_ttl": "레시피 제목",
         "ckg_nm": "요리명",
         "ckg_mtrl_cn": "재료 목록",
-        "ckg_inbun_nm": "재료 분량",
+        "ckg_inbun_nm": "인분",
         "ckg_dodf_nm": "난이도",
-        "rcp_img_url": "레시피 이미지",
+        "ckg_time_nm": "조리 시간",
+        "rcp_img_url": "레시피 이미지 URL",
         "approval_status": "승인 상태",
         "rejection_reason": "거부 사유",
         "import_batch_id": "배치 ID",
@@ -499,6 +500,10 @@ class PendingRecipeAdmin(ModelView, model=PendingRecipe):
         "rcp_ttl",
         "ckg_nm",
         "ckg_mtrl_cn",
+        "ckg_inbun_nm",  # 인분
+        "ckg_dodf_nm",   # 난이도
+        "ckg_time_nm",   # 조리 시간
+        "rcp_img_url",   # 이미지 URL
         "approval_status",
         "rejection_reason",
     ]
