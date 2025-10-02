@@ -2,194 +2,221 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Architecture Overview
+## Project Overview
 
-This is a **FastAPI-based Korean recipe recommendation API** that suggests recipes based on fridge ingredients. The system uses **PostgreSQL** for persistent data storage and **Redis** for session management.
+**Django-based backend for Fridge2Fork (냉털레시피)** - Korean recipe recommendation service based on refrigerator ingredients.
 
-### Core Architecture
-- **FastAPI Application**: Async web framework with automatic OpenAPI documentation
-- **Session-Based System**: Uses Redis sessions for both registered and guest users
-- **Environment-Aware Configuration**: Dynamic settings based on ENVIRONMENT variable (dev/prod/test)
-- **Authentication**: JWT tokens for registered users, session IDs for guests
-- **Database**: PostgreSQL with SQLAlchemy async ORM and Alembic migrations
+This is a fresh Django 5.2.7 project with Django Ninja for API development, currently in initial setup phase.
 
-### Key Architectural Patterns
-- **Modular Structure**: Separated into `api`, `core`, `models`, and `schemas` packages
-- **Dependency Injection**: FastAPI dependencies for database and Redis connections
-- **Pydantic Models**: Type-safe request/response validation with schemas
-- **Environment Isolation**: Separate configurations for development, production, and testing
-- **Async Throughout**: Full async/await pattern for database and Redis operations
+## Technology Stack
 
-## Essential Commands
+- **Framework**: Django 5.2.7
+- **API Layer**: Django Ninja (REST API framework)
+- **Database**: PostgreSQL (configured via `.env`, currently using SQLite default)
+- **Python Version**: 3.12+
+- **Package Manager**: uv
 
-### Python Execution with UV
-**IMPORTANT**: This project uses **`uv`** for Python execution, NOT conda or system Python.
+## Project Structure
 
-```bash
-# All Python commands must use uv
-uv run python <script>          # Execute Python script
-uv run <command>                # Execute any command in uv environment
 ```
+server/
+├── app/                      # Django project root
+│   ├── settings/             # Settings module
+│   │   ├── settings.py       # Main Django settings
+│   │   ├── urls.py           # Root URL configuration
+│   │   ├── wsgi.py           # WSGI entry point
+│   │   └── asgi.py           # ASGI entry point
+│   ├── core/                 # Core app (utilities, base models)
+│   ├── recipes/              # Recipes app
+│   ├── users/                # Users app
+│   ├── manage.py             # Django management script
+│   └── db.sqlite3            # SQLite database (temporary)
+├── .env                      # Environment variables (PostgreSQL config)
+├── pyproject.toml            # Project dependencies
+└── uv.lock                   # Dependency lock file
+```
+
+## Development Commands
 
 ### Environment Setup
-```bash
-# Install dependencies with uv
-uv pip install -r requirements.dev.txt     # Development
-uv pip install -r requirements.prod.txt    # Production
-```
 
-### Development Server
 ```bash
-# Preferred method - uses proper environment loading
-uv run python scripts/run_dev.py
+# Activate virtual environment
+source .venv/bin/activate
 
-# Alternative - direct execution
-ENVIRONMENT=development uv run python main.py
-```
+# Install dependencies
+uv pip install -e .
 
-### Production Server
-```bash
-uv run python scripts/run_prod.py
-# or
-ENVIRONMENT=production uv run python main.py
+# Or sync from lock file
+uv pip sync uv.lock
 ```
 
 ### Database Operations
+
 ```bash
 # Run migrations
-uv run python scripts/migrate.py
+python app/manage.py migrate
 
-# Generate new migration
-uv run alembic revision --autogenerate -m "description"
+# Create new migration
+python app/manage.py makemigrations
 
-# Apply migrations manually
-uv run alembic upgrade head
+# Create superuser for admin
+python app/manage.py createsuperuser
+
+# Database shell
+python app/manage.py dbshell
+```
+
+### Development Server
+
+```bash
+# Run development server (default port 8000)
+python app/manage.py runserver
+
+# Run on specific port
+python app/manage.py runserver 8080
+
+# Access Django admin
+# http://localhost:8000/admin/
 ```
 
 ### Testing
+
 ```bash
-# Run all tests with coverage
-uv run python scripts/run_tests.py
+# Run all tests
+python app/manage.py test
 
-# Run with coverage report
-uv run python scripts/run_tests.py --coverage
+# Run tests for specific app
+python app/manage.py test app.recipes
 
-# Generate detailed HTML coverage report
-uv run python scripts/test_coverage.py
-
-# Run specific test file
-uv run python scripts/run_tests.py --file tests/test_recipes.py
-
-# Run specific test function
-uv run python scripts/run_tests.py --function test_login_success
+# Run tests with coverage (requires coverage package)
+coverage run app/manage.py test
+coverage report
 ```
 
-### Code Quality
+### Django Shell
+
 ```bash
-# Format code
-uv run black .
-uv run isort .
+# Django shell with auto-imports
+python app/manage.py shell
 
-# Lint code
-uv run flake8
-
-# Type checking
-uv run mypy app/
+# IPython shell (if installed)
+python app/manage.py shell -i ipython
 ```
 
-## Configuration System
+## Architecture Decisions
 
-### Environment Variables Priority
-1. **Kubernetes Secrets** → Environment variables (POSTGRES_*)
-2. **Environment-specific files** (.env.dev, .env.prod)
-3. **Common configuration** (.env.common)
-4. **Defaults** in Settings class
+### Settings Module Pattern
 
-### Critical Environment Variables
-- `ENVIRONMENT`: Controls which settings class and env files are loaded
-- `POSTGRES_*`: Database connection (injected by Kubernetes in production)
-- `JWT_SECRET_KEY`: Must be changed in production
-- `REDIS_URL`: Session storage connection
+The project uses `settings/` directory instead of single `settings.py`:
+- Enables environment-specific settings (dev, prod, test)
+- `DJANGO_SETTINGS_MODULE` is set to `settings.settings`
+- Future expansion: Create `settings/dev.py`, `settings/prod.py` inheriting from base
 
-### Environment Behavior
-- **dev**: Debug enabled, docs available, local database expected
-- **prod**: Debug disabled, no docs, Kubernetes secrets expected
-- **test**: SQLite in-memory database, isolated Redis DB
+### App Organization
 
-## API Structure
+Three Django apps with specific responsibilities:
+- **core**: Shared utilities, base models, common functionality
+- **recipes**: Recipe models, views, API endpoints
+- **users**: User authentication, profiles, preferences
 
-### Current Active Endpoints
-- `/fridge2fork/v1/recipes/*` - Recipe management and search
-- `/fridge2fork/v1/fridge/*` - User ingredient management
-- `/fridge2fork/v1/system/*` - Health checks and platform info
+### Database Configuration
 
-### Authentication Architecture
-- **Current State**: Auth and User modules are disabled (commented out in api.py:7-8, 16)
-- **Planned Migration**: Moving to Supabase authentication
-- **Session Management**: Redis-based sessions work independently of authentication
-
-### Session vs Authentication
-- **Sessions**: Used for fridge management (works for guests and users)
-- **JWT Tokens**: Will be used for user-specific features when auth is re-enabled
-- **Current Operation**: System functions without authentication using sessions only
-
-## Database Schema
-
-### Models Location
-- `app/models/` - SQLAlchemy ORM models
-- `app/schemas/` - Pydantic request/response schemas
-
-### Key Models
-- **Recipe**: Core recipe data with ingredients and instructions
-- **User**: User accounts (disabled but schema exists)
-- **System**: Platform and version information
-
-## Testing Strategy
-
-### Test Configuration
-- **Isolated Database**: SQLite in-memory for tests
-- **Redis Separation**: Uses DB 15 for test isolation
-- **Auto Fixtures**: Test users and recipes auto-generated
-- **Coverage Target**: 80% minimum (enforced by pytest config)
-
-### Test Structure
+PostgreSQL credentials in `.env`:
 ```
-tests/
-├── conftest.py          # Shared fixtures and test configuration
-├── test_recipes.py      # Recipe API tests
-├── test_fridge.py       # Fridge management tests
-├── test_system.py       # System endpoint tests
-└── test_main.py         # Application startup tests
+POSTGRES_SERVER=localhost
+POSTGRES_PORT=5432
+POSTGRES_USER=f2f
+POSTGRES_PASSWORD=<password>
+POSTGRES_DB=f2f
 ```
 
-## Development Guidelines
+**Current state**: Using SQLite (Django default)
+**Next step**: Update `settings/settings.py` to use PostgreSQL via environment variables
 
-### File Organization
-- **Never modify** `app/api/v1/api.py` without understanding auth dependencies
-- **Check environment files** exist before running (scripts handle this)
-- **Use scripts/** for execution rather than direct commands
-- **UV execution required** - always use `uv run` for all Python commands
+### Django Ninja Integration
 
-### Common Patterns
-- **Async functions**: All database operations use `async`/`await`
-- **Dependency injection**: Use FastAPI `Depends()` for database sessions
-- **Error handling**: Return structured JSON errors with appropriate status codes
-- **Logging**: Use structured logging with environment-appropriate levels
+Django Ninja is included in dependencies for API development:
+- Provides FastAPI-like experience in Django
+- Type hints and automatic OpenAPI schema
+- Better performance than Django REST Framework
 
-### UV Execution Critical
-This project **requires `uv run` for all Python execution**. Most import errors, dependency issues, and path problems are caused by running without `uv run` prefix.
+## Development Workflow
 
-## Troubleshooting
+### Adding New Features
 
-### Database Connection Issues
-1. Verify PostgreSQL/Redis servers are running
-2. Check environment variables in `.env.dev` or `.env.prod`
-3. Run `uv run python scripts/migrate.py` to ensure schema is current
+1. **Create or update models** in appropriate app (`recipes/models.py`, `users/models.py`)
+2. **Generate migrations**: `python app/manage.py makemigrations`
+3. **Review migration files** in `app/<appname>/migrations/`
+4. **Apply migrations**: `python app/manage.py migrate`
+5. **Register models** in `admin.py` for Django admin access
+6. **Create API endpoints** using Django Ninja
+
+### Database Migrations Best Practices
+
+- Always review auto-generated migrations before applying
+- Use descriptive migration names: `python app/manage.py makemigrations --name add_recipe_difficulty`
+- Test migrations in development before production
+- Keep migrations reversible when possible
+
+### Testing Guidelines
+
+- Write tests in `app/<appname>/tests/` or `app/<appname>/tests.py`
+- Use Django's `TestCase` for database-dependent tests
+- Use `SimpleTestCase` for tests without database
+- Test models, views, and API endpoints separately
+
+## Environment Variables
+
+The `.env` file is git-ignored and contains:
+- Database connection settings (PostgreSQL)
+- Secret keys (will be needed when configured)
+- Environment-specific configuration
+
+**Security Note**: Never commit `.env` files. Use `.env.example` template for documentation.
+
+## Integration with Monorepo
+
+This server is part of the Fridge2Fork monorepo:
+- **Monorepo root**: `../` (contains mobile, admin, scrape, docs)
+- **Shared documentation**: `../.claude/CLAUDE.md` (monorepo-level guide)
+- **Deployment**: Kubernetes configurations in `k8s/` (to be added)
+
+## Next Steps
+
+This is a fresh Django project. Expected next development steps:
+
+1. **Database Migration**: Switch from SQLite to PostgreSQL
+2. **Model Definition**: Define Recipe, Ingredient, User models
+3. **API Layer**: Implement Django Ninja endpoints
+4. **Authentication**: JWT or session-based auth for API
+5. **Admin Interface**: Configure Django admin for data management
+
+## Common Issues
 
 ### Import Errors
-1. Ensure all Python commands use `uv run` prefix
-2. Verify `requirements.dev.txt` is installed with `uv pip install`
-3. Check `PYTHONPATH` includes project root
 
-### Authentication Disabled
-Current authentication modules are intentionally disabled pending Supabase migration. Do not re-enable without updating all dependent user functionality.
+If you see "Couldn't import Django" error:
+```bash
+# Ensure virtual environment is activated
+source .venv/bin/activate
+
+# Verify Django installation
+python -c "import django; print(django.get_version())"
+```
+
+### Database Connection Issues
+
+Currently using SQLite by default. To switch to PostgreSQL:
+1. Update `DATABASES` in `settings/settings.py`
+2. Install `psycopg2-binary`: `uv pip install psycopg2-binary`
+3. Ensure PostgreSQL server is running
+4. Run migrations: `python app/manage.py migrate`
+
+### Secret Key Security
+
+The current `SECRET_KEY` in `settings.py` is marked as insecure (development-only).
+For production:
+1. Generate new secret key: `python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"`
+2. Store in environment variable or `.env` file
+3. Update settings to read from environment

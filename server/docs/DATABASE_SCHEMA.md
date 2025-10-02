@@ -1,316 +1,340 @@
-# 데이터베이스 스키마 정의서
+# 데이터베이스 스키마 설계
 
-## 기본 정보
-- **DB Engine**: PostgreSQL 13+
-- **Migration Tool**: Alembic
-- **Base Migration**: `/scrape/migrations/versions/001_create_recipes_tables.py`
+## 개요
 
-## 기존 테이블 (scrape 마이그레이션 기준)
+Fridge2Fork 프로젝트의 PostgreSQL 데이터베이스 스키마 설계 문서입니다.
 
-### 1. recipes 테이블
-한식 레시피의 기본 정보를 저장하는 메인 테이블
+### 설계 원칙
+- **정규화 우선**: 데이터 중복 최소화
+- **재료 정규화**: 원본 재료명과 정규화된 재료명 분리
+- **확장 가능성**: 향후 기능 추가를 고려한 설계
+- **TDD**: 모든 모델은 테스트 주도 개발
 
-```sql
-CREATE TABLE recipes (
-    rcp_sno BIGINT PRIMARY KEY,           -- 레시피 일련번호
-    rcp_ttl VARCHAR(200) NOT NULL,        -- 레시피 제목
-    ckg_nm VARCHAR(40),                   -- 요리명
-    rgtr_id VARCHAR(32),                  -- 등록자 ID
-    rgtr_nm VARCHAR(64),                  -- 등록자 이름
-    inq_cnt INTEGER DEFAULT 0,            -- 조회수
-    rcmm_cnt INTEGER DEFAULT 0,           -- 추천수
-    srap_cnt INTEGER DEFAULT 0,           -- 스크랩수
-    ckg_mth_acto_nm VARCHAR(200),         -- 조리방법
-    ckg_sta_acto_nm VARCHAR(200),         -- 조리상황
-    ckg_mtrl_acto_nm VARCHAR(200),        -- 조리재료
-    ckg_knd_acto_nm VARCHAR(200),         -- 요리종류 (카테고리)
-    ckg_ipdc TEXT,                        -- 요리소개 (조리법 설명)
-    ckg_mtrl_cn TEXT,                     -- 요리재료내용
-    ckg_inbun_nm VARCHAR(200),            -- 요리인분
-    ckg_dodf_nm VARCHAR(200),             -- 요리난이도
-    ckg_time_nm VARCHAR(200),             -- 요리시간
-    first_reg_dt CHAR(14),                -- 최초등록일시
-    rcp_img_url TEXT,                     -- 레시피 이미지 URL
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+## ERD (Entity-Relationship Diagram)
 
--- 인덱스
-CREATE INDEX ix_recipes_title ON recipes (rcp_ttl);
-CREATE INDEX ix_recipes_method ON recipes (ckg_mth_acto_nm);
-CREATE INDEX ix_recipes_difficulty ON recipes (ckg_dodf_nm);
-CREATE INDEX ix_recipes_time ON recipes (ckg_time_nm);
-CREATE INDEX ix_recipes_category ON recipes (ckg_knd_acto_nm);
-CREATE INDEX ix_recipes_popularity ON recipes (inq_cnt, rcmm_cnt);
-CREATE INDEX ix_recipes_reg_date ON recipes (first_reg_dt);
-CREATE INDEX ix_recipes_created_at ON recipes (created_at);
-CREATE INDEX ix_recipes_updated_at ON recipes (updated_at);
+```
+┌─────────────────┐
+│      User       │
+├─────────────────┤
+│ id (PK)         │
+│ email (UNIQUE)  │
+│ password        │
+│ username        │
+│ is_active       │
+│ is_staff        │
+│ date_joined     │
+└─────────────────┘
+         │ 1
+         │
+         │ 0..1
+         ▼
+┌─────────────────┐
+│     Fridge      │
+├─────────────────┤
+│ id (PK)         │
+│ user_id (FK)    │── nullable (비회원 지원)
+│ session_key     │── nullable (비회원용)
+│ created_at      │
+│ updated_at      │
+└─────────────────┘
+         │ 1
+         │
+         │ N
+         ▼
+┌──────────────────────┐
+│  FridgeIngredient    │
+├──────────────────────┤
+│ id (PK)              │
+│ fridge_id (FK)       │
+│ normalized_ingredient_id (FK)
+│ added_at             │
+└──────────────────────┘
+         │ N
+         │
+         │ 1
+         ▼
+┌──────────────────────┐         ┌─────────────────┐
+│ NormalizedIngredient │         │     Recipe      │
+├──────────────────────┤         ├─────────────────┤
+│ id (PK)              │         │ id (PK)         │
+│ name (UNIQUE)        │         │ recipe_sno      │
+│ category             │         │ title           │
+│ is_common_seasoning  │         │ name            │
+│ description          │         │ introduction    │
+│ created_at           │         │ servings        │
+└──────────────────────┘         │ difficulty      │
+         │ 1                     │ cooking_time    │
+         │                       │ method          │
+         │ N                     │ situation       │
+         ▼                       │ ingredient_type │
+┌──────────────────────┐         │ recipe_type     │
+│     Ingredient       │         │ image_url       │
+├──────────────────────┤         │ views           │
+│ id (PK)              │         │ recommendations │
+│ recipe_id (FK)       │◄────┐   │ scraps          │
+│ normalized_ingredient_id (FK) │ created_at      │
+│ original_name        │     └───│ updated_at      │
+│ quantity             │         └─────────────────┘
+│ is_essential         │                 │ 1
+└──────────────────────┘                 │
+                                         │ N
+                                         ▼
+                              (Ingredient 테이블)
 ```
 
-### 2. ingredients 테이블
-전체 재료 마스터 테이블
+## 테이블 상세 설계
 
-```sql
-CREATE TABLE ingredients (
-    id INTEGER PRIMARY KEY,
-    name VARCHAR(100) NOT NULL UNIQUE,    -- 재료명
-    original_name VARCHAR(100),           -- 원본 재료명
-    category VARCHAR(50),                 -- 재료 카테고리
-    is_common BOOLEAN DEFAULT FALSE,      -- 공통 재료 여부
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+### 1. User (사용자)
 
--- 인덱스
-CREATE INDEX ix_ingredients_name ON ingredients (name);
-CREATE INDEX ix_ingredients_category ON ingredients (category);
-CREATE INDEX ix_ingredients_common ON ingredients (is_common);
-CREATE INDEX ix_ingredients_created_at ON ingredients (created_at);
-CREATE INDEX ix_ingredients_category_common ON ingredients (category, is_common);
+**용도**: Custom User 모델 (email 기반 인증)
+
+| 컬럼명 | 타입 | 제약조건 | 설명 |
+|--------|------|----------|------|
+| id | BigAutoField | PK | 자동 증가 ID |
+| email | EmailField(255) | UNIQUE, NOT NULL | 이메일 (로그인 ID) |
+| password | CharField(128) | NOT NULL | 해시된 비밀번호 |
+| username | CharField(150) | NULL, 중복 허용 | 닉네임 (optional) |
+| is_active | BooleanField | DEFAULT TRUE | 활성 상태 |
+| is_staff | BooleanField | DEFAULT FALSE | 관리자 여부 |
+| is_superuser | BooleanField | DEFAULT FALSE | 슈퍼유저 여부 |
+| date_joined | DateTimeField | AUTO NOW ADD | 가입일 |
+
+**인덱스**:
+- `email` (UNIQUE 인덱스)
+
+**비즈니스 로직**:
+- username이 없으면 email의 "@" 앞부분 사용
+- username 중복 허용
+
+### 2. Recipe (레시피)
+
+**용도**: 레시피 정보 저장
+
+| 컬럼명 | 타입 | 제약조건 | 설명 |
+|--------|------|----------|------|
+| id | BigAutoField | PK | 자동 증가 ID |
+| recipe_sno | CharField(50) | UNIQUE, NOT NULL | 원본 레시피 일련번호 |
+| title | CharField(500) | NOT NULL | 레시피 제목 |
+| name | CharField(200) | NOT NULL | 요리명 |
+| introduction | TextField | NULL | 요리 소개 |
+| servings | CharField(20) | NULL | 인분 (예: "4.0") |
+| difficulty | CharField(50) | NULL | 난이도 (예: "아무나") |
+| cooking_time | CharField(20) | NULL | 조리 시간 (예: "30.0") |
+| method | CharField(100) | NULL | 조리 방법 (예: "볶음") |
+| situation | CharField(100) | NULL | 조리 상황 (예: "일상") |
+| ingredient_type | CharField(100) | NULL | 재료 유형 (예: "육류") |
+| recipe_type | CharField(100) | NULL | 요리 종류 (예: "메인반찬") |
+| image_url | URLField | NULL | 이미지 URL |
+| views | IntegerField | DEFAULT 0 | 조회수 |
+| recommendations | IntegerField | DEFAULT 0 | 추천수 |
+| scraps | IntegerField | DEFAULT 0 | 스크랩수 |
+| created_at | DateTimeField | AUTO NOW ADD | 생성일 |
+| updated_at | DateTimeField | AUTO NOW | 수정일 |
+
+**인덱스**:
+- `recipe_sno` (UNIQUE 인덱스)
+- `difficulty, cooking_time` (복합 인덱스 - 필터링용)
+- `name` (검색용)
+
+**정렬 기본값**: `-created_at` (최신순)
+
+### 3. NormalizedIngredient (정규화 재료)
+
+**용도**: 정규화된 재료명 관리
+
+| 컬럼명 | 타입 | 제약조건 | 설명 |
+|--------|------|----------|------|
+| id | BigAutoField | PK | 자동 증가 ID |
+| name | CharField(100) | UNIQUE, NOT NULL | 정규화된 재료명 |
+| category | CharField(50) | NOT NULL | 카테고리 |
+| is_common_seasoning | BooleanField | DEFAULT FALSE | 범용 조미료 여부 |
+| description | TextField | NULL | 관리자용 메모 |
+| created_at | DateTimeField | AUTO NOW ADD | 생성일 |
+
+**카테고리 선택지**:
+- `meat`: 육류
+- `vegetable`: 채소류
+- `seafood`: 해산물
+- `seasoning`: 조미료
+- `grain`: 곡물
+- `dairy`: 유제품
+- `etc`: 기타
+
+**인덱스**:
+- `name` (UNIQUE, 검색용)
+- `category` (필터링용)
+
+**비즈니스 로직**:
+- 사용자 검색 시 이 테이블 기준
+- `is_common_seasoning=True`: 소금, 후추 등 범용 조미료 (추천 알고리즘에서 낮은 가중치)
+
+### 4. Ingredient (레시피별 재료)
+
+**용도**: 레시피에 포함된 개별 재료
+
+| 컬럼명 | 타입 | 제약조건 | 설명 |
+|--------|------|----------|------|
+| id | BigAutoField | PK | 자동 증가 ID |
+| recipe_id | BigIntegerField | FK (Recipe), NOT NULL | 레시피 ID |
+| normalized_ingredient_id | BigIntegerField | FK (NormalizedIngredient), NULL | 정규화 재료 ID |
+| original_name | CharField(200) | NOT NULL | 원본 재료명 |
+| quantity | CharField(100) | NULL | 수량 (예: "300g") |
+| is_essential | BooleanField | DEFAULT TRUE | 필수 재료 여부 |
+
+**관계**:
+- `recipe`: Recipe.ingredients (역참조)
+- `normalized_ingredient`: NormalizedIngredient (정규화 매핑)
+
+**인덱스**:
+- `recipe_id, normalized_ingredient_id` (복합 인덱스)
+- `normalized_ingredient_id` (검색용)
+
+**비즈니스 로직**:
+- `original_name`: CSV에서 파싱된 원본 재료명 (레시피 표시용)
+- `normalized_ingredient`: 정규화 매핑 (검색용)
+- `is_essential`: 필수 재료 (추천 알고리즘에서 높은 가중치)
+
+### 5. Fridge (냉장고)
+
+**용도**: 사용자별/세션별 냉장고 관리
+
+| 컬럼명 | 타입 | 제약조건 | 설명 |
+|--------|------|----------|------|
+| id | BigAutoField | PK | 자동 증가 ID |
+| user_id | BigIntegerField | FK (User), NULL | 회원 ID |
+| session_key | CharField(40) | NULL | 비회원 세션 키 |
+| created_at | DateTimeField | AUTO NOW ADD | 생성일 |
+| updated_at | DateTimeField | AUTO NOW | 수정일 |
+
+**제약조건**:
+- `user_id`와 `session_key` 중 하나는 필수 (체크 제약)
+- 회원: `user_id` NOT NULL, `session_key` NULL
+- 비회원: `user_id` NULL, `session_key` NOT NULL
+
+**인덱스**:
+- `user_id` (회원 냉장고 조회)
+- `session_key` (비회원 냉장고 조회)
+
+### 6. FridgeIngredient (냉장고-재료 중간 테이블)
+
+**용도**: 냉장고에 담긴 재료 관리
+
+| 컬럼명 | 타입 | 제약조건 | 설명 |
+|--------|------|----------|------|
+| id | BigAutoField | PK | 자동 증가 ID |
+| fridge_id | BigIntegerField | FK (Fridge), NOT NULL | 냉장고 ID |
+| normalized_ingredient_id | BigIntegerField | FK (NormalizedIngredient), NOT NULL | 재료 ID |
+| added_at | DateTimeField | AUTO NOW ADD | 추가일 |
+
+**제약조건**:
+- `(fridge_id, normalized_ingredient_id)` UNIQUE (중복 방지)
+
+**인덱스**:
+- `fridge_id` (냉장고별 재료 조회)
+- `normalized_ingredient_id` (재료별 사용 통계)
+
+## 데이터 흐름
+
+### 1. 레시피 등록 (관리자)
+
+```
+1. CSV 파일 업로드
+2. Recipe 생성 (recipe_sno, name, title, ...)
+3. 재료 파싱 (CKG_MTRL_CN 필드)
+4. Ingredient 생성 (original_name만)
+5. (관리자) 정규화 분석 실행
+6. NormalizedIngredient 생성
+7. Ingredient.normalized_ingredient 연결
 ```
 
-### 3. recipe_ingredients 테이블
-레시피와 재료의 다대다 관계 테이블
+### 2. 냉장고 재료 추가 (사용자)
 
-```sql
-CREATE TABLE recipe_ingredients (
-    id INTEGER PRIMARY KEY,
-    rcp_sno BIGINT NOT NULL REFERENCES recipes(rcp_sno),
-    ingredient_id INTEGER NOT NULL REFERENCES ingredients(id),
-    quantity_text TEXT,                   -- 수량 텍스트 (원본)
-    quantity_from FLOAT,                  -- 수량 범위 시작
-    quantity_to FLOAT,                    -- 수량 범위 끝
-    unit VARCHAR(20),                     -- 단위
-    is_vague BOOLEAN DEFAULT FALSE,       -- 애매한 수량 여부
-    display_order INTEGER DEFAULT 0,     -- 표시 순서
-    importance VARCHAR(20) DEFAULT 'normal' -- 중요도 (essential, normal, optional)
-);
-
--- 인덱스
-CREATE INDEX ix_recipe_ingredients_rcp_sno ON recipe_ingredients (rcp_sno);
-CREATE INDEX ix_recipe_ingredients_ingredient_id ON recipe_ingredients (ingredient_id);
-CREATE INDEX ix_recipe_ingredients_importance ON recipe_ingredients (importance);
-CREATE INDEX ix_recipe_ingredients_compound ON recipe_ingredients (ingredient_id, rcp_sno, importance);
-CREATE INDEX ix_recipe_ingredients_display_order ON recipe_ingredients (rcp_sno, display_order);
-CREATE UNIQUE INDEX uk_recipe_ingredient ON recipe_ingredients (rcp_sno, ingredient_id);
+```
+1. 사용자가 "돼지고기" 검색
+2. NormalizedIngredient.name으로 검색 (ILIKE)
+3. 선택한 재료의 id를 FridgeIngredient에 추가
+4. Fridge.updated_at 업데이트
 ```
 
-## 추가 필요 테이블 (Phase별 구현)
+### 3. 레시피 추천
 
-### 4. user_fridge_sessions 테이블 (Phase 2)
-세션 기반 사용자 냉장고 관리
-
-```sql
-CREATE TABLE user_fridge_sessions (
-    session_id VARCHAR(50) PRIMARY KEY,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    expires_at TIMESTAMP WITH TIME ZONE DEFAULT (NOW() + INTERVAL '24 hours'),
-    last_accessed TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- 인덱스
-CREATE INDEX ix_sessions_expires ON user_fridge_sessions (expires_at);
-CREATE INDEX ix_sessions_created ON user_fridge_sessions (created_at);
 ```
-
-### 5. user_fridge_ingredients 테이블 (Phase 2)
-세션별 냉장고 재료 목록
-
-```sql
-CREATE TABLE user_fridge_ingredients (
-    id SERIAL PRIMARY KEY,
-    session_id VARCHAR(50) NOT NULL REFERENCES user_fridge_sessions(session_id) ON DELETE CASCADE,
-    ingredient_id INTEGER NOT NULL REFERENCES ingredients(id),
-    added_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    UNIQUE(session_id, ingredient_id)
-);
-
--- 인덱스
-CREATE INDEX ix_fridge_session ON user_fridge_ingredients (session_id);
-CREATE INDEX ix_fridge_ingredient ON user_fridge_ingredients (ingredient_id);
-CREATE INDEX ix_fridge_added_at ON user_fridge_ingredients (added_at);
+1. 사용자의 Fridge 조회
+2. FridgeIngredient 목록 조회 (정규화 재료 ID)
+3. Recipe별 매칭 점수 계산:
+   - Recipe의 Ingredient 조회
+   - 필수 재료 (is_essential=True, is_common_seasoning=False) 추출
+   - 매칭된 필수 재료 수 / 전체 필수 재료 수 = 점수
+4. 점수순 정렬 및 반환
 ```
-
-### 6. feedback 테이블 (Phase 4)
-사용자 피드백 관리
-
-```sql
-CREATE TABLE feedback (
-    id VARCHAR(50) PRIMARY KEY,
-    type VARCHAR(20) NOT NULL,            -- ingredient_request, recipe_request, general
-    title VARCHAR(200) NOT NULL,
-    content TEXT NOT NULL,
-    rating INTEGER CHECK (rating >= 1 AND rating <= 5),
-    contact_email VARCHAR(255),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    status VARCHAR(20) DEFAULT 'pending'  -- pending, reviewed, resolved
-);
-
--- 인덱스
-CREATE INDEX ix_feedback_type ON feedback (type);
-CREATE INDEX ix_feedback_status ON feedback (status);
-CREATE INDEX ix_feedback_created ON feedback (created_at);
-```
-
-## 주요 쿼리 패턴
-
-### 1. 재료 기반 레시피 매칭
-```sql
--- 사용자 냉장고 재료로 만들 수 있는 레시피 조회 (매칭률 포함)
-SELECT
-    r.rcp_sno,
-    r.rcp_ttl,
-    r.rcp_img_url,
-    r.ckg_time_nm,
-    r.ckg_dodf_nm,
-    r.ckg_knd_acto_nm,
-    COUNT(ri.ingredient_id) as total_ingredients,
-    COUNT(CASE WHEN ri.ingredient_id IN (
-        SELECT ingredient_id
-        FROM user_fridge_ingredients
-        WHERE session_id = :session_id
-    ) THEN 1 END) as matched_ingredients,
-    ROUND(
-        COUNT(CASE WHEN ri.ingredient_id IN (
-            SELECT ingredient_id
-            FROM user_fridge_ingredients
-            WHERE session_id = :session_id
-        ) THEN 1 END) * 100.0 / COUNT(ri.ingredient_id), 1
-    ) as match_percentage
-FROM recipes r
-JOIN recipe_ingredients ri ON r.rcp_sno = ri.rcp_sno
-GROUP BY r.rcp_sno, r.rcp_ttl, r.rcp_img_url, r.ckg_time_nm, r.ckg_dodf_nm, r.ckg_knd_acto_nm
-HAVING COUNT(CASE WHEN ri.ingredient_id IN (
-    SELECT ingredient_id
-    FROM user_fridge_ingredients
-    WHERE session_id = :session_id
-) THEN 1 END) > 0
-ORDER BY match_percentage DESC, matched_ingredients DESC;
-```
-
-### 2. 랜덤 추천 레시피
-```sql
--- 매칭률 상위 30개 중 랜덤 10개 선택
-WITH top_matches AS (
-    SELECT r.rcp_sno, match_percentage
-    FROM (위의 매칭 쿼리)
-    WHERE match_percentage >= 20.0
-    ORDER BY match_percentage DESC
-    LIMIT 30
-)
-SELECT r.*, tm.match_percentage
-FROM recipes r
-JOIN top_matches tm ON r.rcp_sno = tm.rcp_sno
-ORDER BY RANDOM()
-LIMIT 10;
-```
-
-### 3. 카테고리별 재료 통계
-```sql
--- 사용자 냉장고의 카테고리별 재료 수
-SELECT
-    i.category,
-    COUNT(*) as ingredient_count
-FROM user_fridge_ingredients ufi
-JOIN ingredients i ON ufi.ingredient_id = i.id
-WHERE ufi.session_id = :session_id
-GROUP BY i.category
-ORDER BY ingredient_count DESC;
-```
-
-### 4. 레시피 상세 정보 (재료 포함)
-```sql
--- 특정 레시피의 모든 재료 정보
-SELECT
-    r.*,
-    ri.quantity_text,
-    ri.quantity_from,
-    ri.quantity_to,
-    ri.unit,
-    ri.importance,
-    i.name as ingredient_name,
-    i.category as ingredient_category
-FROM recipes r
-LEFT JOIN recipe_ingredients ri ON r.rcp_sno = ri.rcp_sno
-LEFT JOIN ingredients i ON ri.ingredient_id = i.id
-WHERE r.rcp_sno = :recipe_id
-ORDER BY ri.display_order;
-```
-
-## 데이터 타입 매핑
-
-### SQLAlchemy 모델 예시
-```python
-from sqlalchemy import Column, BigInteger, String, Text, Integer, Boolean, Float, DateTime, ForeignKey
-from sqlalchemy.sql import func
-
-class Recipe(Base):
-    __tablename__ = "recipes"
-
-    rcp_sno = Column(BigInteger, primary_key=True)
-    rcp_ttl = Column(String(200), nullable=False, index=True)
-    ckg_nm = Column(String(40))
-    ckg_ipdc = Column(Text)
-    ckg_mtrl_cn = Column(Text)
-    ckg_knd_acto_nm = Column(String(200), index=True)
-    ckg_time_nm = Column(String(200), index=True)
-    ckg_dodf_nm = Column(String(200), index=True)
-    rcp_img_url = Column(Text)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now())
-
-class Ingredient(Base):
-    __tablename__ = "ingredients"
-
-    id = Column(Integer, primary_key=True)
-    name = Column(String(100), nullable=False, unique=True, index=True)
-    category = Column(String(50), index=True)
-    is_common = Column(Boolean, default=False, index=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-
-class RecipeIngredient(Base):
-    __tablename__ = "recipe_ingredients"
-
-    id = Column(Integer, primary_key=True)
-    rcp_sno = Column(BigInteger, ForeignKey("recipes.rcp_sno"), nullable=False, index=True)
-    ingredient_id = Column(Integer, ForeignKey("ingredients.id"), nullable=False, index=True)
-    quantity_text = Column(Text)
-    quantity_from = Column(Float)
-    quantity_to = Column(Float)
-    unit = Column(String(20))
-    importance = Column(String(20), default="normal", index=True)
-```
-
-## 성능 고려사항
-
-### 1. 인덱스 최적화
-- 매칭 쿼리의 핵심: `recipe_ingredients(ingredient_id, rcp_sno, importance)` 복합 인덱스
-- 세션 조회: `user_fridge_ingredients(session_id)` 인덱스
-- 카테고리 필터: `ingredients(category, is_common)` 복합 인덱스
-
-### 2. 쿼리 최적화
-- 매칭률 계산은 DB 레벨에서 수행 (애플리케이션 로직 최소화)
-- 서브쿼리보다 JOIN 사용 권장
-- 필요시 materialized view 고려
-
-### 3. 세션 관리
-- 만료된 세션 자동 정리 (cron job 또는 background task)
-- Redis 캐싱으로 세션 조회 성능 향상 가능
 
 ## 마이그레이션 순서
 
-1. **001_create_recipes_tables.py** (이미 존재)
-   - recipes, ingredients, recipe_ingredients 테이블 생성
+```
+1. 0001_initial_user: User 모델
+2. 0002_recipe: Recipe 모델
+3. 0003_normalized_ingredient: NormalizedIngredient 모델
+4. 0004_ingredient: Ingredient 모델 (Recipe, NormalizedIngredient FK)
+5. 0005_fridge: Fridge, FridgeIngredient 모델
+6. 0006_add_indexes: 인덱스 추가
+```
 
-2. **002_add_user_fridge_tables.py** (Phase 2에서 생성)
-   - user_fridge_sessions, user_fridge_ingredients 테이블 추가
+## 데이터 크기 추정
 
-3. **003_add_feedback_table.py** (Phase 4에서 생성)
-   - feedback 테이블 추가
+**100개 레시피 기준** (MVP):
+- Recipe: 100 rows
+- Ingredient: ~500 rows (평균 5개/레시피)
+- NormalizedIngredient: ~150 rows (정규화 후)
+- User: ~100 rows (테스트)
+- Fridge: ~100 rows
+- FridgeIngredient: ~500 rows (평균 5개/냉장고)
 
-4. **004_add_indexes_optimization.py** (성능 최적화 시)
-   - 추가 복합 인덱스 생성
+**1000개 레시피 기준** (확장):
+- Recipe: 1,000 rows
+- Ingredient: ~5,000 rows
+- NormalizedIngredient: ~500 rows
+- User: ~10,000 rows
+- Fridge: ~10,000 rows
+- FridgeIngredient: ~50,000 rows
 
-## 백업 및 복구
-- 정기 백업: recipes, ingredients, recipe_ingredients (마스터 데이터)
-- 세션 데이터: 임시 데이터로 백업 불필요
-- 피드백 데이터: 중요도에 따라 백업 주기 결정
+## 성능 최적화 전략
+
+### 쿼리 최적화
+- `select_related`: Recipe → Ingredient (FK)
+- `prefetch_related`: Recipe → Ingredients (역참조)
+- `annotate`: 재료 수, 매칭 수 계산
+
+### 인덱스 전략
+- 검색 필드: `NormalizedIngredient.name`
+- 필터링 필드: `Recipe.difficulty`, `Recipe.cooking_time`
+- FK 필드: 자동 인덱스
+
+### 캐싱 전략
+- 추천 결과: 1시간 캐시
+- 레시피 상세: 24시간 캐시
+- 정규화 재료 목록: 6시간 캐시
+
+## 데이터 무결성
+
+### 제약조건
+- User.email: UNIQUE
+- Recipe.recipe_sno: UNIQUE
+- NormalizedIngredient.name: UNIQUE
+- (Fridge.user_id, Fridge.session_key): 하나는 필수
+- (FridgeIngredient.fridge_id, normalized_ingredient_id): UNIQUE
+
+### Cascade 규칙
+- Recipe 삭제 → Ingredient CASCADE (재료도 삭제)
+- Fridge 삭제 → FridgeIngredient CASCADE
+- NormalizedIngredient 삭제 → Ingredient SET NULL (원본은 유지)
+- User 삭제 → Fridge CASCADE
+
+## 확장 고려사항
+
+### 향후 추가 가능한 필드
+- Recipe.steps: JSON (조리 단계)
+- Recipe.nutrition: JSON (영양 정보)
+- Ingredient.quantity_value, quantity_unit: 수량 파싱
+- User.profile_image, User.bio: 프로필 확장
+- FavoriteRecipe: 즐겨찾기 테이블
+- RecipeRating: 평점 테이블

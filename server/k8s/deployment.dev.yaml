@@ -1,0 +1,159 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fridge2fork-server
+  namespace: fridge2fork-dev
+  labels:
+    app: fridge2fork-server
+    environment: development
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: fridge2fork-server
+  template:
+    metadata:
+      labels:
+        app: fridge2fork-server
+        environment: development
+    spec:
+      # Init Container: 마이그레이션 실행
+      initContainers:
+        - name: migrate
+          image: ${DOCKER_IMAGE}:${IMAGE_TAG}
+          imagePullPolicy: Always
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              set -e
+              echo "🔧 Running database migrations..."
+              cd /app/app
+              uv run python manage.py makemigrations --noinput || true
+              uv run python manage.py migrate --noinput
+              echo "✅ Migrations completed successfully"
+          env:
+            - name: ENVIRONMENT
+              value: "development"
+            - name: DATABASE_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: fridge2fork-secrets
+                  key: database-host
+            - name: DATABASE_PORT
+              value: "5432"
+            - name: DATABASE_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: fridge2fork-secrets
+                  key: database-name
+            - name: DATABASE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: fridge2fork-secrets
+                  key: database-user
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: fridge2fork-secrets
+                  key: database-password
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: fridge2fork-secrets
+                  key: django-secret-key
+            - name: DEBUG
+              value: "True"
+            - name: ALLOWED_HOSTS
+              value: "api-dev.woohalabs.com,localhost,127.0.0.1"
+            - name: RUN_MIGRATIONS
+              value: "true"
+            - name: AUTO_MIGRATE
+              value: "false"
+
+      # Main Container: Django 서버
+      containers:
+        - name: server
+          image: ${DOCKER_IMAGE}:${IMAGE_TAG}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+              name: http
+          env:
+            - name: ENVIRONMENT
+              value: "development"
+            - name: DATABASE_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: fridge2fork-secrets
+                  key: database-host
+            - name: DATABASE_PORT
+              value: "5432"
+            - name: DATABASE_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: fridge2fork-secrets
+                  key: database-name
+            - name: DATABASE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: fridge2fork-secrets
+                  key: database-user
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: fridge2fork-secrets
+                  key: database-password
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: fridge2fork-secrets
+                  key: django-secret-key
+            - name: DEBUG
+              value: "True"
+            - name: ALLOWED_HOSTS
+              value: "api-dev.woohalabs.com,localhost,127.0.0.1"
+            - name: RUN_MIGRATIONS
+              value: "false"
+            - name: CREATE_SUPERUSER
+              value: "false"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /health/
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health/
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fridge2fork-server
+  namespace: fridge2fork-dev
+  labels:
+    app: fridge2fork-server
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8000
+      targetPort: 8000
+      protocol: TCP
+      name: http
+  selector:
+    app: fridge2fork-server

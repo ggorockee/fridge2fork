@@ -1,0 +1,71 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# Django
+*.log
+db.sqlite3
+db.sqlite3-journal
+/staticfiles/
+/media/
+
+# Development
+.env
+.env.local
+.env.*.local
+*.bak
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+
+# Documentation
+docs/_build/
+
+# macOS
+.DS_Store
+
+# Git
+.git/
+.gitignore
+
+# Kubernetes
+k8s/
+
+# CI/CD
+.github/
+
+# Misc
+README.md
+*.md
+!pyproject.toml
+!uv.lock
+
+# Test data
+tests/
+*.json
+validation_report.json
+suggestions.json
+common_seasonings.json

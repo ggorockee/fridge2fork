@@ -1,93 +1,52 @@
-.env*
-test.db
+my-request.txt
 
-# Python 캐시 및 컴파일 파일
+.claude
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
 *.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+dist/
+build/
 
-# 테스트 및 커버리지
-.pytest_cache/
+# Django
+*.log
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+aaa.ipynb
+# k8s/ 폴더는 버전 관리에 포함 (배포 매니페스트)
+.claude
+app/suggestions.json
+app/validation_report.json
+app/common_seasonings.json
+
+# Testing
 .coverage
 htmlcov/
+.pytest_cache/
 .tox/
-.nox/
-coverage.xml
-*.cover
-.hypothesis/
 
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-.python-version
-
-# pipenv
-Pipfile.lock
-
-# PEP 582
-__pypackages__/
-
-# Celery
-celerybeat-schedule
-celerybeat.pid
-
-# SageMath parsed files
-*.sage.py
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
-
-# 사용자 요청 및 작업 파일
-my_request.txt
-WORK.md
-
-# Jupyter Notebook 파일
-*.ipynb
-
-# 샘플 데이터 파일
-datas/TB_RECIPE_SEARCH_241226_SAMPLE_100.csv
-datas/TB_RECIPE_SEARCH_241226_SAMPLE_10.csv
-datas/TB_RECIPE_SEARCH_241226_SAMPLE1.csv
-datas/TB_RECIPE_SEARCH_241226_SAMPLE*.csv
-datas/*.csv
-
-
-venv/
+# uv
+.venv/
+uv.lock
