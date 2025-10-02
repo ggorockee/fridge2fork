@@ -475,39 +475,6 @@ class PendingIngredientAdmin(ModelView, model=PendingIngredient):
         """식재료 창고 - 탭 기반 통합 페이지 (재료 목록 + 일괄 수정)"""
         from starlette.responses import HTMLResponse
 
-        # POST 요청 처리 (일괄 수정 실행)
-        if request.method == "POST":
-            form = await request.form()
-            old_name = form.get("old_name", "").strip()
-            new_name = form.get("new_name", "").strip()
-
-            if old_name and new_name:
-                async with self.session_maker() as session:
-                    result = await session.execute(
-                        select(PendingIngredient).where(PendingIngredient.normalized_name == old_name)
-                    )
-                    ingredients = result.scalars().all()
-
-                    updated_count = len(ingredients)
-                    for ingredient in ingredients:
-                        ingredient.normalized_name = new_name
-
-                    await session.commit()
-
-                # 성공 메시지와 함께 수정 탭으로 리다이렉트
-                return HTMLResponse(content=f"""
-                    <!DOCTYPE html>
-                    <html>
-                    <head><meta charset="utf-8"></head>
-                    <body>
-                        <script>
-                            alert('✅ {updated_count}개 재료를 "{old_name}" → "{new_name}"로 수정했습니다!');
-                            window.location.href = '{request.url.path}?tab=edit';
-                        </script>
-                    </body>
-                    </html>
-                """)
-
         # GET 요청 처리 (탭 페이지 표시)
         active_tab = request.query_params.get("tab", "list")
 
@@ -635,7 +602,7 @@ class PendingIngredientAdmin(ModelView, model=PendingIngredient):
                             이 작업은 되돌릴 수 없습니다. 신중하게 진행하세요.
                         </div>
 
-                        <form method="POST">
+                        <form id="bulkEditForm">
                             <div class="form-group">
                                 <label for="old_name">변경할 재료 이름 선택:</label>
                                 <select id="old_name" name="old_name" required>
@@ -694,6 +661,49 @@ class PendingIngredientAdmin(ModelView, model=PendingIngredient):
                         alert('❌ 복사 실패: ' + err);
                     }}
                 }}
+
+                // 일괄 수정 폼 제출 처리
+                document.getElementById('bulkEditForm').addEventListener('submit', async function(e) {{
+                    e.preventDefault();
+
+                    const oldName = document.getElementById('old_name').value;
+                    const newName = document.getElementById('new_name').value;
+
+                    if (!oldName || !newName) {{
+                        alert('⚠️ 모든 필드를 입력해주세요.');
+                        return;
+                    }}
+
+                    const submitBtn = this.querySelector('.submit-btn');
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = '⏳ 처리 중...';
+
+                    try {{
+                        const response = await fetch(
+                            `/fridge2fork/v1/admin/ingredients/bulk-rename?old_name=${{encodeURIComponent(oldName)}}&new_name=${{encodeURIComponent(newName)}}`,
+                            {{
+                                method: 'POST',
+                                headers: {{
+                                    'Content-Type': 'application/json'
+                                }}
+                            }}
+                        );
+
+                        const data = await response.json();
+
+                        if (response.ok) {{
+                            alert(`✅ ${{data.updated_count}}개 재료를 "${{oldName}}" → "${{newName}}"로 수정했습니다!`);
+                            window.location.reload();
+                        }} else {{
+                            alert(`❌ 오류: ${{data.detail || '알 수 없는 오류'}}`);
+                        }}
+                    }} catch (error) {{
+                        alert(`❌ 네트워크 오류: ${{error.message}}`);
+                    }} finally {{
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = '✅ 일괄 수정 실행';
+                    }}
+                }});
             </script>
         </body>
         </html>
