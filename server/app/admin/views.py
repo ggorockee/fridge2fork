@@ -440,6 +440,212 @@ class PendingIngredientAdmin(ModelView, model=PendingIngredient):
             status_code=302
         )
 
+    @action(
+        name="approve_all_pending",
+        label="대기중 항목 전체 승인",
+        confirmation_message="현재 대기중인 모든 재료를 승인하시겠습니까?",
+        add_in_detail=False,
+        add_in_list=True,
+    )
+    async def approve_all_pending(self, request: Request) -> RedirectResponse:
+        """대기중인 모든 재료를 일괄 승인"""
+        async with self.session_maker() as session:
+            result = await session.execute(
+                select(PendingIngredient).where(PendingIngredient.approval_status == "pending")
+            )
+            ingredients = result.scalars().all()
+
+            for ingredient in ingredients:
+                ingredient.approval_status = "approved"
+
+            await session.commit()
+
+        return RedirectResponse(
+            url=request.url_for("admin:list", identity=self.identity),
+            status_code=302
+        )
+
+    @action(
+        name="view_ingredient_warehouse",
+        label="식재료 창고 (고유 재료 목록)",
+        add_in_detail=False,
+        add_in_list=True,
+    )
+    async def view_ingredient_warehouse(self, request: Request):
+        """고유 재료 목록을 쉼표로 구분하여 표시"""
+        from starlette.responses import HTMLResponse
+
+        async with self.session_maker() as session:
+            # 고유 재료 이름 조회 (중복 제거)
+            result = await session.execute(
+                select(PendingIngredient.normalized_name).distinct().order_by(PendingIngredient.normalized_name)
+            )
+            unique_ingredients = [row[0] for row in result.fetchall() if row[0]]
+
+        # 쉼표로 구분된 문자열 생성
+        ingredients_text = ", ".join(unique_ingredients)
+
+        # 간단한 HTML 페이지
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>식재료 창고 - 고유 재료 목록</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; padding: 20px; }}
+                .container {{ max-width: 1200px; margin: 0 auto; }}
+                h1 {{ color: #333; }}
+                .stats {{ background: #f0f0f0; padding: 10px; margin: 20px 0; border-radius: 5px; }}
+                .content {{ background: white; border: 1px solid #ddd; padding: 20px; border-radius: 5px; }}
+                textarea {{ width: 100%; height: 400px; font-family: monospace; padding: 10px; }}
+                button {{ background: #007bff; color: white; border: none; padding: 10px 20px;
+                         cursor: pointer; border-radius: 5px; font-size: 16px; margin: 10px 5px; }}
+                button:hover {{ background: #0056b3; }}
+                .back-btn {{ background: #6c757d; }}
+                .back-btn:hover {{ background: #545b62; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>🏪 식재료 창고 - 고유 재료 목록</h1>
+                <div class="stats">
+                    <strong>총 고유 재료 개수:</strong> {len(unique_ingredients)}개
+                </div>
+                <div class="content">
+                    <h3>쉼표로 구분된 목록 (복사 가능)</h3>
+                    <textarea id="ingredientsText" readonly>{ingredients_text}</textarea>
+                    <button onclick="copyToClipboard()">📋 클립보드에 복사</button>
+                    <button class="back-btn" onclick="window.history.back()">← 돌아가기</button>
+                </div>
+            </div>
+            <script>
+                function copyToClipboard() {{
+                    const text = document.getElementById('ingredientsText');
+                    text.select();
+                    document.execCommand('copy');
+                    alert('클립보드에 복사되었습니다!');
+                }}
+            </script>
+        </body>
+        </html>
+        """
+
+        return HTMLResponse(content=html_content)
+
+    @action(
+        name="bulk_rename_ingredient",
+        label="재료 이름 일괄 수정",
+        add_in_detail=False,
+        add_in_list=True,
+    )
+    async def bulk_rename_ingredient(self, request: Request):
+        """재료 이름을 일괄 수정하는 폼 제공"""
+        from starlette.responses import HTMLResponse
+
+        # POST 요청 처리 (실제 수정)
+        if request.method == "POST":
+            form = await request.form()
+            old_name = form.get("old_name", "").strip()
+            new_name = form.get("new_name", "").strip()
+
+            if old_name and new_name:
+                async with self.session_maker() as session:
+                    # 재료 조회 및 업데이트
+                    result = await session.execute(
+                        select(PendingIngredient).where(PendingIngredient.normalized_name == old_name)
+                    )
+                    ingredients = result.scalars().all()
+
+                    updated_count = len(ingredients)
+                    for ingredient in ingredients:
+                        ingredient.normalized_name = new_name
+
+                    await session.commit()
+
+                # 성공 메시지와 함께 리다이렉트
+                return RedirectResponse(
+                    url=request.url_for("admin:list", identity=self.identity) + f"?msg=Updated {updated_count} ingredients",
+                    status_code=302
+                )
+
+        # GET 요청 처리 (폼 표시)
+        async with self.session_maker() as session:
+            # 고유 재료 이름 조회
+            result = await session.execute(
+                select(PendingIngredient.normalized_name).distinct().order_by(PendingIngredient.normalized_name)
+            )
+            unique_ingredients = [row[0] for row in result.fetchall() if row[0]]
+
+        # 드롭다운 옵션 생성
+        options_html = "".join([f'<option value="{ing}">{ing}</option>' for ing in unique_ingredients])
+
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>재료 이름 일괄 수정</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }}
+                .container {{ max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }}
+                h1 {{ color: #333; margin-bottom: 30px; }}
+                .form-group {{ margin-bottom: 20px; }}
+                label {{ display: block; font-weight: bold; margin-bottom: 8px; color: #555; }}
+                select, input {{ width: 100%; padding: 10px; font-size: 16px; border: 1px solid #ddd; border-radius: 5px; }}
+                select {{ background: white; }}
+                .button-group {{ margin-top: 30px; display: flex; gap: 10px; }}
+                button {{ flex: 1; padding: 12px; font-size: 16px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }}
+                .submit-btn {{ background: #28a745; color: white; }}
+                .submit-btn:hover {{ background: #218838; }}
+                .back-btn {{ background: #6c757d; color: white; }}
+                .back-btn:hover {{ background: #545b62; }}
+                .info {{ background: #e7f3ff; padding: 15px; border-left: 4px solid #007bff; margin-bottom: 20px; }}
+                .warning {{ background: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin-bottom: 20px; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>✏️ 재료 이름 일괄 수정</h1>
+
+                <div class="info">
+                    <strong>💡 사용 방법:</strong> 변경할 재료 이름을 선택하고, 새로운 이름을 입력한 후 수정 버튼을 누르세요.
+                </div>
+
+                <div class="warning">
+                    <strong>⚠️ 주의:</strong> 이 작업은 되돌릴 수 없습니다. 신중하게 진행하세요.
+                </div>
+
+                <form method="POST">
+                    <div class="form-group">
+                        <label for="old_name">변경할 재료 이름 선택:</label>
+                        <select id="old_name" name="old_name" required>
+                            <option value="">-- 재료를 선택하세요 --</option>
+                            {options_html}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="new_name">새로운 재료 이름:</label>
+                        <input type="text" id="new_name" name="new_name" placeholder="예: 후추" required>
+                    </div>
+
+                    <div class="button-group">
+                        <button type="submit" class="submit-btn">✅ 일괄 수정 실행</button>
+                        <button type="button" class="back-btn" onclick="window.history.back()">← 취소</button>
+                    </div>
+                </form>
+
+                <div style="margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                    <strong>현재 고유 재료 개수:</strong> {len(unique_ingredients)}개
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        return HTMLResponse(content=html_content)
+
     page_size = 50
 
 
@@ -649,6 +855,31 @@ class PendingRecipeAdmin(ModelView, model=PendingRecipe):
                 recipe = result.scalar_one_or_none()
                 if recipe:
                     recipe.approval_status = "rejected"
+            await session.commit()
+
+        return RedirectResponse(
+            url=request.url_for("admin:list", identity=self.identity),
+            status_code=302
+        )
+
+    @action(
+        name="approve_all_pending",
+        label="대기중 항목 전체 승인",
+        confirmation_message="현재 대기중인 모든 레시피를 승인하시겠습니까?",
+        add_in_detail=False,
+        add_in_list=True,
+    )
+    async def approve_all_pending(self, request: Request) -> RedirectResponse:
+        """대기중인 모든 레시피를 일괄 승인"""
+        async with self.session_maker() as session:
+            result = await session.execute(
+                select(PendingRecipe).where(PendingRecipe.approval_status == "pending")
+            )
+            recipes = result.scalars().all()
+
+            for recipe in recipes:
+                recipe.approval_status = "approved"
+
             await session.commit()
 
         return RedirectResponse(

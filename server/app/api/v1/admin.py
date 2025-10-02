@@ -728,3 +728,96 @@ async def approve_batch(
     except Exception as e:
         logger.error(f"배치 승인 실패: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"배치 승인 실패: {str(e)}")
+
+
+@router.get("/ingredients/unique", response_model=Dict[str, Any])
+async def get_unique_ingredients(
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    고유 재료 이름 목록 조회
+
+    PendingIngredient와 Ingredient 테이블에서 중복 제거된
+    normalized_name 목록을 반환합니다.
+
+    Returns:
+        dict: {
+            "pending_ingredients": ["재료1", "재료2", ...],
+            "approved_ingredients": ["재료A", "재료B", ...],
+            "total_pending": 123,
+            "total_approved": 456
+        }
+    """
+    # PendingIngredient에서 고유 재료 이름 조회
+    pending_query = select(PendingIngredient.normalized_name).distinct()
+    pending_result = await db.execute(pending_query)
+    pending_ingredients = sorted([row[0] for row in pending_result.fetchall() if row[0]])
+
+    # Ingredient에서 고유 재료 이름 조회
+    from app.models.ingredient import Ingredient
+    approved_query = select(Ingredient.name_ko).distinct()
+    approved_result = await db.execute(approved_query)
+    approved_ingredients = sorted([row[0] for row in approved_result.fetchall() if row[0]])
+
+    return {
+        "pending_ingredients": pending_ingredients,
+        "approved_ingredients": approved_ingredients,
+        "total_pending": len(pending_ingredients),
+        "total_approved": len(approved_ingredients)
+    }
+
+
+@router.post("/ingredients/bulk-rename", response_model=Dict[str, Any])
+async def bulk_rename_ingredient(
+    old_name: str = Query(..., description="변경할 기존 재료 이름"),
+    new_name: str = Query(..., description="새로운 재료 이름"),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    재료 이름 일괄 수정
+
+    PendingIngredient 테이블에서 특정 normalized_name을 가진
+    모든 레코드를 일괄 변경합니다.
+
+    예: "후추톡톡" → "후추"
+
+    Args:
+        old_name: 변경할 기존 재료 이름
+        new_name: 새로운 재료 이름
+        db: 데이터베이스 세션
+
+    Returns:
+        dict: {
+            "message": "재료 이름 일괄 수정 완료",
+            "old_name": "후추톡톡",
+            "new_name": "후추",
+            "updated_count": 42
+        }
+    """
+    # 기존 재료 이름으로 검색
+    query = select(PendingIngredient).where(
+        PendingIngredient.normalized_name == old_name
+    )
+    result = await db.execute(query)
+    ingredients = result.scalars().all()
+
+    if not ingredients:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"'{old_name}' 재료를 찾을 수 없습니다"
+        )
+
+    # 일괄 업데이트
+    updated_count = 0
+    for ingredient in ingredients:
+        ingredient.normalized_name = new_name
+        updated_count += 1
+
+    await db.commit()
+
+    return {
+        "message": "재료 이름 일괄 수정 완료",
+        "old_name": old_name,
+        "new_name": new_name,
+        "updated_count": updated_count
+    }
