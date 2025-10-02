@@ -34,24 +34,24 @@ spec:
           env:
             - name: ENVIRONMENT
               value: "development"
-            - name: DATABASE_HOST
+            - name: POSTGRES_SERVER
               valueFrom:
                 secretKeyRef:
                   name: fridge2fork-secrets
                   key: database-host
-            - name: DATABASE_PORT
+            - name: POSTGRES_PORT
               value: "5432"
-            - name: DATABASE_NAME
+            - name: POSTGRES_DB
               valueFrom:
                 secretKeyRef:
                   name: fridge2fork-secrets
                   key: database-name
-            - name: DATABASE_USER
+            - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
                   name: fridge2fork-secrets
                   key: database-user
-            - name: DATABASE_PASSWORD
+            - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: fridge2fork-secrets
@@ -81,24 +81,24 @@ spec:
           env:
             - name: ENVIRONMENT
               value: "development"
-            - name: DATABASE_HOST
+            - name: POSTGRES_SERVER
               valueFrom:
                 secretKeyRef:
                   name: fridge2fork-secrets
                   key: database-host
-            - name: DATABASE_PORT
+            - name: POSTGRES_PORT
               value: "5432"
-            - name: DATABASE_NAME
+            - name: POSTGRES_DB
               valueFrom:
                 secretKeyRef:
                   name: fridge2fork-secrets
                   key: database-name
-            - name: DATABASE_USER
+            - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
                   name: fridge2fork-secrets
                   key: database-user
-            - name: DATABASE_PASSWORD
+            - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: fridge2fork-secrets

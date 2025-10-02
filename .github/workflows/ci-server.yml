@@ -70,7 +70,11 @@ jobs:
       - name: Run migrations
         working-directory: ./server/app
         env:
-          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
+          POSTGRES_DB: test_db
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_SERVER: localhost
+          POSTGRES_PORT: '5432'
           SECRET_KEY: test-secret-key-for-ci
           DEBUG: 'False'
         run: |
@@ -79,7 +83,11 @@ jobs:
       - name: Run tests
         working-directory: ./server/app
         env:
-          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
+          POSTGRES_DB: test_db
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_SERVER: localhost
+          POSTGRES_PORT: '5432'
           SECRET_KEY: test-secret-key-for-ci
           DEBUG: 'False'
         run: |
@@ -88,7 +96,11 @@ jobs:
       - name: Check Django deployment settings
         working-directory: ./server/app
         env:
-          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
+          POSTGRES_DB: test_db
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_SERVER: localhost
+          POSTGRES_PORT: '5432'
           SECRET_KEY: test-secret-key-for-ci
           DEBUG: 'False'
         run: |

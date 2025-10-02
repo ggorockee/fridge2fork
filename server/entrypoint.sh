@@ -5,13 +5,13 @@ echo "🚀 Starting entrypoint script..."
 echo "Environment: ${ENVIRONMENT:-development}"
 
 # Wait for PostgreSQL to be ready
-if [ -n "$DATABASE_HOST" ]; then
-    echo "⏳ Waiting for PostgreSQL at $DATABASE_HOST:${DATABASE_PORT:-5432}..."
+if [ -n "$POSTGRES_SERVER" ]; then
+    echo "⏳ Waiting for PostgreSQL at $POSTGRES_SERVER:${POSTGRES_PORT:-5432}..."
 
     max_attempts=30
     attempt=0
 
-    while ! pg_isready -h "$DATABASE_HOST" -p "${DATABASE_PORT:-5432}" -U "${DATABASE_USER:-postgres}" > /dev/null 2>&1; do
+    while ! pg_isready -h "$POSTGRES_SERVER" -p "${POSTGRES_PORT:-5432}" -U "${POSTGRES_USER:-postgres}" > /dev/null 2>&1; do
         attempt=$((attempt + 1))
         if [ $attempt -eq $max_attempts ]; then
             echo "❌ PostgreSQL is not available after $max_attempts attempts"
