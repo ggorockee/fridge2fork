@@ -45,8 +45,12 @@ FROM base AS dev
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     UV_SYSTEM_PYTHON=1 \
+    UV_CACHE_DIR=/tmp/.uv-cache \
     DJANGO_SETTINGS_MODULE=settings.settings \
     ENVIRONMENT=development
+
+# Create UV cache directory with write permissions
+RUN mkdir -p /tmp/.uv-cache && chmod -R 777 /tmp/.uv-cache
 
 # Install dependencies with uv
 RUN uv sync --frozen
@@ -75,8 +79,12 @@ FROM base AS prod
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     UV_SYSTEM_PYTHON=1 \
+    UV_CACHE_DIR=/tmp/.uv-cache \
     DJANGO_SETTINGS_MODULE=settings.settings \
     ENVIRONMENT=production
+
+# Create UV cache directory with write permissions
+RUN mkdir -p /tmp/.uv-cache && chmod -R 777 /tmp/.uv-cache
 
 # Install dependencies with uv (production only, no dev dependencies)
 RUN uv sync --frozen --no-dev

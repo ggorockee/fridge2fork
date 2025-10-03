@@ -2,7 +2,7 @@
 set -e
 
 # Ensure uv is in PATH
-export PATH="/root/.local/bin:$PATH"
+export PATH="/usr/local/bin:$PATH"
 
 echo "🚀 Starting entrypoint script..."
 echo "Environment: ${ENVIRONMENT:-development}"
