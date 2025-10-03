@@ -375,7 +375,16 @@ class IngredientAdmin(admin.ModelAdmin):
     readonly_fields = ('created_at', 'updated_at')
     autocomplete_fields = ['normalized_ingredient', 'recipe']
 
-    actions = ['find_duplicates', 'bulk_normalize', 'auto_normalize_selected', 'mark_as_essential', 'mark_as_optional']
+    actions = [
+        'find_duplicates',
+        'bulk_normalize',
+        'auto_normalize_selected',
+        'mark_as_essential',
+        'mark_as_optional',
+        'change_category_to_essential',
+        'change_category_to_seasoning',
+        'change_category_to_optional',
+    ]
 
     fieldsets = (
         ('재료 정보', {
@@ -516,6 +525,39 @@ class IngredientAdmin(admin.ModelAdmin):
             level='success'
         )
 
+    @admin.action(description='카테고리 → 필수 재료로 변경')
+    def change_category_to_essential(self, request, queryset):
+        """선택한 재료의 카테고리를 필수 재료로 변경"""
+        updated = queryset.update(category=Ingredient.ESSENTIAL)
+        self.message_user(
+            request,
+            f'{updated}개 재료의 카테고리를 필수 재료로 변경했습니다.',
+            level='success'
+        )
+
+    @admin.action(description='카테고리 → 조미료로 변경')
+    def change_category_to_seasoning(self, request, queryset):
+        """선택한 재료의 카테고리를 조미료로 변경"""
+        updated = queryset.update(category=Ingredient.SEASONING)
+        self.message_user(
+            request,
+            f'{updated}개 재료의 카테고리를 조미료로 변경했습니다.',
+            level='success'
+        )
+
+    @admin.action(description='카테고리 → 선택 재료로 변경')
+    def change_category_to_optional(self, request, queryset):
+        """선택한 재료의 카테고리를 선택 재료로 변경"""
+        updated = queryset.update(category=Ingredient.OPTIONAL)
+        self.message_user(
+            request,
+            f'{updated}개 재료의 카테고리를 선택 재료로 변경했습니다.',
+            level='success'
+        )
+
+    # list_editable 기능 추가를 위한 설정
+    list_editable = ('category',)
+
 
 class NormalizedIngredientInline(admin.TabularInline):
     """NormalizedIngredient에서 관련 Ingredient 표시 (읽기 전용)"""
@@ -581,7 +623,19 @@ class NormalizedIngredientAdmin(admin.ModelAdmin):
     ordering = ('name',)
     readonly_fields = ('created_at', 'updated_at', 'get_related_count', 'get_usage_count')
 
-    actions = ['merge_normalized_ingredients', 'mark_as_common_seasoning', 'unmark_as_common_seasoning', 'export_to_csv']
+    actions = [
+        'merge_normalized_ingredients',
+        'mark_as_common_seasoning',
+        'unmark_as_common_seasoning',
+        'export_to_csv',
+        'change_category_to_meat',
+        'change_category_to_vegetable',
+        'change_category_to_seafood',
+        'change_category_to_seasoning',
+        'change_category_to_grain',
+        'change_category_to_dairy',
+        'change_category_to_etc',
+    ]
 
     # 자동완성 활성화
     autocomplete_fields = []  # NormalizedIngredient 자체는 자동완성 대상
@@ -734,6 +788,80 @@ class NormalizedIngredientAdmin(admin.ModelAdmin):
             ])
 
         return response
+
+    @admin.action(description='카테고리 → 육류로 변경')
+    def change_category_to_meat(self, request, queryset):
+        """선택한 재료의 카테고리를 육류로 변경"""
+        updated = queryset.update(category=NormalizedIngredient.MEAT)
+        self.message_user(
+            request,
+            f'{updated}개 재료의 카테고리를 육류로 변경했습니다.',
+            level='success'
+        )
+
+    @admin.action(description='카테고리 → 채소류로 변경')
+    def change_category_to_vegetable(self, request, queryset):
+        """선택한 재료의 카테고리를 채소류로 변경"""
+        updated = queryset.update(category=NormalizedIngredient.VEGETABLE)
+        self.message_user(
+            request,
+            f'{updated}개 재료의 카테고리를 채소류로 변경했습니다.',
+            level='success'
+        )
+
+    @admin.action(description='카테고리 → 해산물로 변경')
+    def change_category_to_seafood(self, request, queryset):
+        """선택한 재료의 카테고리를 해산물로 변경"""
+        updated = queryset.update(category=NormalizedIngredient.SEAFOOD)
+        self.message_user(
+            request,
+            f'{updated}개 재료의 카테고리를 해산물로 변경했습니다.',
+            level='success'
+        )
+
+    @admin.action(description='카테고리 → 조미료로 변경')
+    def change_category_to_seasoning(self, request, queryset):
+        """선택한 재료의 카테고리를 조미료로 변경"""
+        updated = queryset.update(category=NormalizedIngredient.SEASONING)
+        self.message_user(
+            request,
+            f'{updated}개 재료의 카테고리를 조미료로 변경했습니다.',
+            level='success'
+        )
+
+    @admin.action(description='카테고리 → 곡물로 변경')
+    def change_category_to_grain(self, request, queryset):
+        """선택한 재료의 카테고리를 곡물로 변경"""
+        updated = queryset.update(category=NormalizedIngredient.GRAIN)
+        self.message_user(
+            request,
+            f'{updated}개 재료의 카테고리를 곡물로 변경했습니다.',
+            level='success'
+        )
+
+    @admin.action(description='카테고리 → 유제품로 변경')
+    def change_category_to_dairy(self, request, queryset):
+        """선택한 재료의 카테고리를 유제품로 변경"""
+        updated = queryset.update(category=NormalizedIngredient.DAIRY)
+        self.message_user(
+            request,
+            f'{updated}개 재료의 카테고리를 유제품로 변경했습니다.',
+            level='success'
+        )
+
+    @admin.action(description='카테고리 → 기타로 변경')
+    def change_category_to_etc(self, request, queryset):
+        """선택한 재료의 카테고리를 기타로 변경"""
+        updated = queryset.update(category=NormalizedIngredient.ETC)
+        self.message_user(
+            request,
+            f'{updated}개 재료의 카테고리를 기타로 변경했습니다.',
+            level='success'
+        )
+
+
+    # list_editable 기능 추가를 위한 설정
+    list_editable = ('category',)
 
 
 class FridgeIngredientInline(admin.TabularInline):
