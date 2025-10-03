@@ -11,6 +11,72 @@ from core.models import CommonModel
 User = get_user_model()
 
 
+class IngredientCategory(CommonModel):
+    """
+    재료 카테고리 모델
+
+    NormalizedIngredient의 카테고리를 동적으로 관리
+    """
+
+    CATEGORY_TYPE_CHOICES = [
+        ('normalized', '정규화 재료 카테고리'),
+        ('ingredient', '재료 카테고리'),
+    ]
+
+    name = models.CharField(
+        max_length=50,
+        verbose_name="카테고리명",
+        help_text="예: 육류, 채소류, 필수 재료 등"
+    )
+    code = models.CharField(
+        max_length=50,
+        verbose_name="코드",
+        help_text="시스템 내부 코드 (예: meat, vegetable)"
+    )
+    category_type = models.CharField(
+        max_length=20,
+        choices=CATEGORY_TYPE_CHOICES,
+        default='normalized',
+        verbose_name="카테고리 타입",
+        help_text="정규화 재료용 또는 재료용"
+    )
+    icon = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name="아이콘",
+        help_text="이모지 또는 아이콘 클래스 (예: 🥩, fas fa-meat)"
+    )
+    display_order = models.IntegerField(
+        default=0,
+        verbose_name="표시 순서",
+        help_text="낮을수록 먼저 표시"
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="활성화",
+        help_text="비활성화 시 선택 불가"
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name="설명",
+        help_text="카테고리 설명"
+    )
+
+    class Meta:
+        verbose_name = "재료 카테고리"
+        verbose_name_plural = "재료 카테고리"
+        ordering = ['category_type', 'display_order', 'name']
+        unique_together = [['code', 'category_type']]
+        indexes = [
+            models.Index(fields=['category_type', 'is_active'], name='category_type_active_idx'),
+            models.Index(fields=['code'], name='category_code_idx'),
+        ]
+
+    def __str__(self):
+        """카테고리 문자열 표현"""
+        return f"{self.name} ({self.get_category_type_display()})"
+
+
 class Recipe(CommonModel):
     """
     레시피 모델
@@ -130,7 +196,7 @@ class NormalizedIngredient(CommonModel):
     다양한 원본 재료명을 하나의 정규화된 이름으로 통합 관리
     """
 
-    # 카테고리 선택지
+    # 하위 호환성을 위한 상수 유지 (deprecated)
     MEAT = 'meat'
     VEGETABLE = 'vegetable'
     SEAFOOD = 'seafood'
@@ -139,25 +205,19 @@ class NormalizedIngredient(CommonModel):
     DAIRY = 'dairy'
     ETC = 'etc'
 
-    CATEGORY_CHOICES = [
-        (MEAT, '육류'),
-        (VEGETABLE, '채소류'),
-        (SEAFOOD, '해산물'),
-        (SEASONING, '조미료'),
-        (GRAIN, '곡물'),
-        (DAIRY, '유제품'),
-        (ETC, '기타'),
-    ]
-
     name = models.CharField(
         max_length=100,
         unique=True,
         verbose_name="정규화 재료명",
         help_text="통합된 재료명 (예: 돼지고기)"
     )
-    category = models.CharField(
-        max_length=20,
-        choices=CATEGORY_CHOICES,
+    category = models.ForeignKey(
+        IngredientCategory,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        limit_choices_to={'category_type': 'normalized', 'is_active': True},
+        related_name='normalized_ingredients',
         verbose_name="카테고리",
         help_text="재료 분류"
     )
@@ -198,16 +258,10 @@ class Ingredient(CommonModel):
     레시피의 재료 정보를 저장하며, 원본 재료명과 정규화된 재료명을 구분
     """
 
-    # 카테고리 선택지
+    # 하위 호환성을 위한 상수 유지 (deprecated)
     ESSENTIAL = 'essential'
     SEASONING = 'seasoning'
     OPTIONAL = 'optional'
-
-    CATEGORY_CHOICES = [
-        (ESSENTIAL, '필수 재료'),
-        (SEASONING, '조미료'),
-        (OPTIONAL, '선택 재료'),
-    ]
 
     # 커스텀 Manager 적용
     from .managers import IngredientManager
@@ -239,10 +293,13 @@ class Ingredient(CommonModel):
         verbose_name="정규화 재료명",
         help_text="매칭을 위해 정규화된 재료명 (기본값: original_name)"
     )
-    category = models.CharField(
-        max_length=20,
-        choices=CATEGORY_CHOICES,
-        default=ESSENTIAL,
+    category = models.ForeignKey(
+        IngredientCategory,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        limit_choices_to={'category_type': 'ingredient', 'is_active': True},
+        related_name='ingredients',
         verbose_name="카테고리",
         help_text="재료 카테고리 (필수/조미료/선택)"
     )

@@ -9,7 +9,7 @@ from django.utils.html import format_html
 from django.urls import path
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .models import Recipe, Ingredient, NormalizedIngredient, Fridge, FridgeIngredient
+from .models import Recipe, Ingredient, NormalizedIngredient, Fridge, FridgeIngredient, IngredientCategory
 from .services.csv_import import import_csv_file
 
 
@@ -461,11 +461,18 @@ class IngredientAdmin(admin.ModelAdmin):
 
             # 자동 연결이 체크된 경우
             if auto_link:
+                # 기본 카테고리 가져오기 (code='etc')
+                from .models import IngredientCategory
+                default_category = IngredientCategory.objects.filter(
+                    code='etc',
+                    category_type='normalized'
+                ).first()
+
                 # NormalizedIngredient 찾기 또는 생성
                 normalized_ingredient, created = NormalizedIngredient.objects.get_or_create(
                     name=new_normalized_name,
                     defaults={
-                        'category': NormalizedIngredient.ETC,  # 기본 카테고리
+                        'category': default_category,  # 기본 카테고리
                         'description': f'일괄 정규화를 통해 자동 생성됨'
                     }
                 )
@@ -557,13 +564,16 @@ class IngredientAdmin(admin.ModelAdmin):
         normalized_count = 0
         created_count = 0
 
+        # 기타 카테고리 미리 조회
+        etc_category = IngredientCategory.objects.filter(code='etc', category_type='normalized').first()
+
         for ingredient in queryset.filter(normalized_ingredient__isnull=True):
             base_name = command.extract_base_name(ingredient.original_name)
             if base_name:
                 # 기존 NormalizedIngredient 찾기 또는 생성
                 normalized, created = NormalizedIngredient.objects.get_or_create(
                     name=base_name,
-                    defaults={'category': ingredient.category or 'etc'}
+                    defaults={'category': ingredient.category if ingredient.category else etc_category}
                 )
 
                 # Ingredient에 연결
@@ -604,32 +614,44 @@ class IngredientAdmin(admin.ModelAdmin):
     @admin.action(description='카테고리 → 필수 재료로 변경')
     def change_category_to_essential(self, request, queryset):
         """선택한 재료의 카테고리를 필수 재료로 변경"""
-        updated = queryset.update(category=Ingredient.ESSENTIAL)
-        self.message_user(
-            request,
-            f'{updated}개 재료의 카테고리를 필수 재료로 변경했습니다.',
-            level='success'
-        )
+        category = IngredientCategory.objects.filter(code='essential', category_type='ingredient').first()
+        if category:
+            updated = queryset.update(category=category)
+            self.message_user(
+                request,
+                f'{updated}개 재료의 카테고리를 필수 재료로 변경했습니다.',
+                level='success'
+            )
+        else:
+            self.message_user(request, '필수 재료 카테고리를 찾을 수 없습니다.', level='error')
 
     @admin.action(description='카테고리 → 조미료로 변경')
     def change_category_to_seasoning(self, request, queryset):
         """선택한 재료의 카테고리를 조미료로 변경"""
-        updated = queryset.update(category=Ingredient.SEASONING)
-        self.message_user(
-            request,
-            f'{updated}개 재료의 카테고리를 조미료로 변경했습니다.',
-            level='success'
-        )
+        category = IngredientCategory.objects.filter(code='seasoning', category_type='ingredient').first()
+        if category:
+            updated = queryset.update(category=category)
+            self.message_user(
+                request,
+                f'{updated}개 재료의 카테고리를 조미료로 변경했습니다.',
+                level='success'
+            )
+        else:
+            self.message_user(request, '조미료 카테고리를 찾을 수 없습니다.', level='error')
 
     @admin.action(description='카테고리 → 선택 재료로 변경')
     def change_category_to_optional(self, request, queryset):
         """선택한 재료의 카테고리를 선택 재료로 변경"""
-        updated = queryset.update(category=Ingredient.OPTIONAL)
-        self.message_user(
-            request,
-            f'{updated}개 재료의 카테고리를 선택 재료로 변경했습니다.',
-            level='success'
-        )
+        category = IngredientCategory.objects.filter(code='optional', category_type='ingredient').first()
+        if category:
+            updated = queryset.update(category=category)
+            self.message_user(
+                request,
+                f'{updated}개 재료의 카테고리를 선택 재료로 변경했습니다.',
+                level='success'
+            )
+        else:
+            self.message_user(request, '선택 재료 카테고리를 찾을 수 없습니다.', level='error')
 
     # list_editable 기능 추가를 위한 설정
     list_editable = ('category',)
@@ -693,7 +715,7 @@ class HighUsageFilter(admin.SimpleListFilter):
 class NormalizedIngredientAdmin(admin.ModelAdmin):
     """NormalizedIngredient Admin"""
 
-    list_display = ('name', 'category', 'get_category_display', 'is_common_seasoning', 'get_related_count', 'get_usage_count', 'created_at')
+    list_display = ('name', 'category', 'is_common_seasoning', 'get_related_count', 'get_usage_count', 'created_at')
     list_filter = ('category', 'is_common_seasoning', HasIngredientsFilter, HighUsageFilter, 'created_at')
     search_fields = ('name', 'description')
     ordering = ('name',)
@@ -857,7 +879,7 @@ class NormalizedIngredientAdmin(admin.ModelAdmin):
             writer.writerow([
                 obj.id,
                 obj.name,
-                obj.get_category_display(),
+                obj.category.name if obj.category else '-',
                 '예' if obj.is_common_seasoning else '아니오',
                 obj.usage_count,
                 obj.created_at.strftime('%Y-%m-%d')
@@ -868,72 +890,100 @@ class NormalizedIngredientAdmin(admin.ModelAdmin):
     @admin.action(description='카테고리 → 육류로 변경')
     def change_category_to_meat(self, request, queryset):
         """선택한 재료의 카테고리를 육류로 변경"""
-        updated = queryset.update(category=NormalizedIngredient.MEAT)
-        self.message_user(
-            request,
-            f'{updated}개 재료의 카테고리를 육류로 변경했습니다.',
-            level='success'
-        )
+        category = IngredientCategory.objects.filter(code='meat', category_type='normalized').first()
+        if category:
+            updated = queryset.update(category=category)
+            self.message_user(
+                request,
+                f'{updated}개 재료의 카테고리를 육류로 변경했습니다.',
+                level='success'
+            )
+        else:
+            self.message_user(request, '육류 카테고리를 찾을 수 없습니다.', level='error')
 
     @admin.action(description='카테고리 → 채소류로 변경')
     def change_category_to_vegetable(self, request, queryset):
         """선택한 재료의 카테고리를 채소류로 변경"""
-        updated = queryset.update(category=NormalizedIngredient.VEGETABLE)
-        self.message_user(
-            request,
-            f'{updated}개 재료의 카테고리를 채소류로 변경했습니다.',
-            level='success'
-        )
+        category = IngredientCategory.objects.filter(code='vegetable', category_type='normalized').first()
+        if category:
+            updated = queryset.update(category=category)
+            self.message_user(
+                request,
+                f'{updated}개 재료의 카테고리를 채소류로 변경했습니다.',
+                level='success'
+            )
+        else:
+            self.message_user(request, '채소류 카테고리를 찾을 수 없습니다.', level='error')
 
     @admin.action(description='카테고리 → 해산물로 변경')
     def change_category_to_seafood(self, request, queryset):
         """선택한 재료의 카테고리를 해산물로 변경"""
-        updated = queryset.update(category=NormalizedIngredient.SEAFOOD)
-        self.message_user(
-            request,
-            f'{updated}개 재료의 카테고리를 해산물로 변경했습니다.',
-            level='success'
-        )
+        category = IngredientCategory.objects.filter(code='seafood', category_type='normalized').first()
+        if category:
+            updated = queryset.update(category=category)
+            self.message_user(
+                request,
+                f'{updated}개 재료의 카테고리를 해산물로 변경했습니다.',
+                level='success'
+            )
+        else:
+            self.message_user(request, '해산물 카테고리를 찾을 수 없습니다.', level='error')
 
     @admin.action(description='카테고리 → 조미료로 변경')
     def change_category_to_seasoning(self, request, queryset):
         """선택한 재료의 카테고리를 조미료로 변경"""
-        updated = queryset.update(category=NormalizedIngredient.SEASONING)
-        self.message_user(
-            request,
-            f'{updated}개 재료의 카테고리를 조미료로 변경했습니다.',
-            level='success'
-        )
+        category = IngredientCategory.objects.filter(code='seasoning', category_type='normalized').first()
+        if category:
+            updated = queryset.update(category=category)
+            self.message_user(
+                request,
+                f'{updated}개 재료의 카테고리를 조미료로 변경했습니다.',
+                level='success'
+            )
+        else:
+            self.message_user(request, '조미료 카테고리를 찾을 수 없습니다.', level='error')
 
     @admin.action(description='카테고리 → 곡물로 변경')
     def change_category_to_grain(self, request, queryset):
         """선택한 재료의 카테고리를 곡물로 변경"""
-        updated = queryset.update(category=NormalizedIngredient.GRAIN)
-        self.message_user(
-            request,
-            f'{updated}개 재료의 카테고리를 곡물로 변경했습니다.',
-            level='success'
-        )
+        category = IngredientCategory.objects.filter(code='grain', category_type='normalized').first()
+        if category:
+            updated = queryset.update(category=category)
+            self.message_user(
+                request,
+                f'{updated}개 재료의 카테고리를 곡물로 변경했습니다.',
+                level='success'
+            )
+        else:
+            self.message_user(request, '곡물 카테고리를 찾을 수 없습니다.', level='error')
 
     @admin.action(description='카테고리 → 유제품로 변경')
     def change_category_to_dairy(self, request, queryset):
         """선택한 재료의 카테고리를 유제품로 변경"""
-        updated = queryset.update(category=NormalizedIngredient.DAIRY)
-        self.message_user(
-            request,
-            f'{updated}개 재료의 카테고리를 유제품로 변경했습니다.',
-            level='success'
-        )
+        category = IngredientCategory.objects.filter(code='dairy', category_type='normalized').first()
+        if category:
+            updated = queryset.update(category=category)
+            self.message_user(
+                request,
+                f'{updated}개 재료의 카테고리를 유제품로 변경했습니다.',
+                level='success'
+            )
+        else:
+            self.message_user(request, '유제품 카테고리를 찾을 수 없습니다.', level='error')
 
     @admin.action(description='카테고리 → 기타로 변경')
     def change_category_to_etc(self, request, queryset):
         """선택한 재료의 카테고리를 기타로 변경"""
-        updated = queryset.update(category=NormalizedIngredient.ETC)
-        self.message_user(
-            request,
-            f'{updated}개 재료의 카테고리를 기타로 변경했습니다.',
-            level='success'
-        )
+        category = IngredientCategory.objects.filter(code='etc', category_type='normalized').first()
+        if category:
+            updated = queryset.update(category=category)
+            self.message_user(
+                request,
+                f'{updated}개 재료의 카테고리를 기타로 변경했습니다.',
+                level='success'
+            )
+        else:
+            self.message_user(request, '기타 카테고리를 찾을 수 없습니다.', level='error')
 
 
     # list_editable 기능 추가를 위한 설정
@@ -1021,15 +1071,11 @@ class FridgeAdmin(admin.ModelAdmin):
 
         items = []
         for ing in ingredients:
-            category_icon = {
-                'meat': '🥩',
-                'vegetable': '🥕',
-                'seafood': '🦐',
-                'seasoning': '🧂',
-                'grain': '🌾',
-                'dairy': '🥛',
-                'etc': '📦'
-            }.get(ing.category, '📦')
+            # 카테고리 아이콘
+            if ing.category and ing.category.icon:
+                category_icon = ing.category.icon
+            else:
+                category_icon = '📦'
 
             items.append(f'{category_icon} {ing.name}')
 
@@ -1075,19 +1121,87 @@ class FridgeIngredientAdmin(admin.ModelAdmin):
 
     def get_category(self, obj):
         """재료 카테고리 표시"""
-        category_icon = {
-            'meat': '🥩',
-            'vegetable': '🥕',
-            'seafood': '🦐',
-            'seasoning': '🧂',
-            'grain': '🌾',
-            'dairy': '🥛',
-            'etc': '📦'
-        }.get(obj.normalized_ingredient.category, '📦')
+        # 카테고리 아이콘 (카테고리 객체의 icon 필드 사용 또는 기본값)
+        if obj.normalized_ingredient.category and obj.normalized_ingredient.category.icon:
+            category_icon = obj.normalized_ingredient.category.icon
+        else:
+            category_icon = '📦'
 
+        category_name = obj.normalized_ingredient.category.name if obj.normalized_ingredient.category else '미분류'
         return format_html(
             '{} {}',
             category_icon,
-            obj.normalized_ingredient.get_category_display()
+            category_name
         )
     get_category.short_description = '카테고리'
+
+
+@admin.register(IngredientCategory)
+class IngredientCategoryAdmin(admin.ModelAdmin):
+    """IngredientCategory Admin - 재료 카테고리 관리"""
+
+    list_display = ('name', 'code', 'category_type', 'get_icon_display', 'display_order', 'is_active', 'get_usage_count')
+    list_filter = ('category_type', 'is_active')
+    search_fields = ('name', 'code', 'description')
+    ordering = ('category_type', 'display_order', 'name')
+    readonly_fields = ('created_at', 'updated_at', 'get_usage_count')
+
+    list_editable = ('display_order', 'is_active')
+
+    fieldsets = (
+        ('카테고리 정보', {
+            'fields': ('name', 'code', 'category_type', 'icon', 'display_order')
+        }),
+        ('상태', {
+            'fields': ('is_active', 'description')
+        }),
+        ('통계', {
+            'fields': ('get_usage_count',),
+            'classes': ('collapse',)
+        }),
+        ('시스템 정보', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def get_queryset(self, request):
+        """사용 횟수 최적화"""
+        qs = super().get_queryset(request)
+        return qs.annotate(
+            normalized_usage=Count('normalized_ingredients', distinct=True),
+            ingredient_usage=Count('ingredients', distinct=True)
+        )
+
+    def get_icon_display(self, obj):
+        """아이콘 표시"""
+        if obj.icon:
+            return format_html(
+                '<span style="font-size: 20px;">{}</span>',
+                obj.icon
+            )
+        return '-'
+    get_icon_display.short_description = '아이콘'
+
+    def get_usage_count(self, obj):
+        """사용 횟수 표시 (category_type에 따라 다르게)"""
+        if obj.category_type == 'normalized':
+            if hasattr(obj, 'normalized_usage'):
+                count = obj.normalized_usage
+            else:
+                count = obj.normalized_ingredients.count()
+            label = '정규화 재료'
+        else:  # ingredient
+            if hasattr(obj, 'ingredient_usage'):
+                count = obj.ingredient_usage
+            else:
+                count = obj.ingredients.count()
+            label = '재료'
+
+        if count > 0:
+            return format_html(
+                '<span style="color: blue; font-weight: bold;">{} {} 개</span>',
+                label, count
+            )
+        return format_html('<span style="color: gray;">사용 안됨</span>')
+    get_usage_count.short_description = '사용 횟수'
