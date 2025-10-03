@@ -9,7 +9,9 @@ api = NinjaAPI(
     title="Fridge2Fork API",
     version="1.0.0",
     description="냉장고 재료 기반 레시피 추천 API",
-    urls_namespace="api_v1"
+    urls_namespace="api_v1",
+    docs_url="/docs",
+    openapi_url="/openapi.json"
 )
 
 # 레시피 라우터 등록
