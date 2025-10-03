@@ -20,9 +20,9 @@ from core.api import api
 from core.views import health_check, readiness_check, liveness_check
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('v1/', api.urls),
-    # Health check endpoints for K8s
+    path('fridge2fork/admin/', admin.site.urls),
+    path('fridge2fork/v1/', api.urls),
+    # Health check endpoints for K8s (no prefix)
     path('health/', health_check, name='health'),
     path('readiness/', readiness_check, name='readiness'),
     path('liveness/', liveness_check, name='liveness'),
