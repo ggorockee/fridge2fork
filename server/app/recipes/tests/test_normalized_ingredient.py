@@ -2,11 +2,11 @@
 NormalizedIngredient 모델 테스트
 """
 
-from django.test import TestCase
 from recipes.models import Recipe, Ingredient, NormalizedIngredient
+from .base import CategoryTestCase
 
 
-class NormalizedIngredientModelTest(TestCase):
+class NormalizedIngredientModelTest(CategoryTestCase):
     """NormalizedIngredient 모델 테스트"""
 
     def setUp(self):
@@ -24,13 +24,13 @@ class NormalizedIngredientModelTest(TestCase):
         """정규화 재료 생성 테스트"""
         normalized = NormalizedIngredient.objects.create(
             name="돼지고기",
-            category=NormalizedIngredient.MEAT,
+            category=self.meat_category,
             is_common_seasoning=False,
             description="육류 - 돼지고기 관련 모든 부위"
         )
 
         self.assertEqual(normalized.name, "돼지고기")
-        self.assertEqual(normalized.category, NormalizedIngredient.MEAT)
+        self.assertEqual(normalized.category, self.meat_category)
         self.assertFalse(normalized.is_common_seasoning)
         self.assertEqual(normalized.description, "육류 - 돼지고기 관련 모든 부위")
 
@@ -38,41 +38,41 @@ class NormalizedIngredientModelTest(TestCase):
         """정규화 재료명 unique 제약 확인"""
         NormalizedIngredient.objects.create(
             name="돼지고기",
-            category=NormalizedIngredient.MEAT
+            category=self.meat_category
         )
 
         # 같은 이름으로 생성 시 에러 발생
         with self.assertRaises(Exception):
             NormalizedIngredient.objects.create(
                 name="돼지고기",
-                category=NormalizedIngredient.MEAT
+                category=self.meat_category
             )
 
     def test_normalized_ingredient_category(self):
         """카테고리 분류 확인"""
         meat = NormalizedIngredient.objects.create(
             name="돼지고기",
-            category=NormalizedIngredient.MEAT
+            category=self.meat_category
         )
         vegetable = NormalizedIngredient.objects.create(
             name="배추",
-            category=NormalizedIngredient.VEGETABLE
+            category=self.vegetable_category
         )
         seasoning = NormalizedIngredient.objects.create(
             name="소금",
-            category=NormalizedIngredient.SEASONING,
+            category=self.seasoning_norm_category,
             is_common_seasoning=True
         )
 
-        self.assertEqual(meat.category, "meat")
-        self.assertEqual(vegetable.category, "vegetable")
-        self.assertEqual(seasoning.category, "seasoning")
+        self.assertEqual(meat.category, self.meat_category)
+        self.assertEqual(vegetable.category, self.vegetable_category)
+        self.assertEqual(seasoning.category, self.seasoning_norm_category)
 
     def test_get_all_variations(self):
         """관련 원본 재료 조회 테스트"""
         normalized_pork = NormalizedIngredient.objects.create(
             name="돼지고기",
-            category=NormalizedIngredient.MEAT
+            category=self.meat_category
         )
 
         # 다양한 변형 재료 생성
@@ -80,19 +80,19 @@ class NormalizedIngredientModelTest(TestCase):
             recipe=self.recipe,
             original_name="수육용 돼지고기 300g",
             normalized_ingredient=normalized_pork,
-            category=Ingredient.ESSENTIAL
+            category=self.essential_category
         )
         ingredient2 = Ingredient.objects.create(
             recipe=self.recipe,
             original_name="구이용 돼지고기",
             normalized_ingredient=normalized_pork,
-            category=Ingredient.ESSENTIAL
+            category=self.essential_category
         )
         ingredient3 = Ingredient.objects.create(
             recipe=self.recipe,
             original_name="삼겹살",
             normalized_ingredient=normalized_pork,
-            category=Ingredient.ESSENTIAL
+            category=self.essential_category
         )
 
         # get_all_variations() 메서드 테스트
@@ -107,12 +107,12 @@ class NormalizedIngredientModelTest(TestCase):
         """조미료 판별 확인"""
         salt = NormalizedIngredient.objects.create(
             name="소금",
-            category=NormalizedIngredient.SEASONING,
+            category=self.seasoning_norm_category,
             is_common_seasoning=True
         )
         pork = NormalizedIngredient.objects.create(
             name="돼지고기",
-            category=NormalizedIngredient.MEAT,
+            category=self.meat_category,
             is_common_seasoning=False
         )
 
@@ -123,7 +123,7 @@ class NormalizedIngredientModelTest(TestCase):
         """__str__() 메서드 확인"""
         normalized = NormalizedIngredient.objects.create(
             name="돼지고기",
-            category=NormalizedIngredient.MEAT
+            category=self.meat_category
         )
 
         self.assertEqual(str(normalized), "돼지고기")
@@ -132,14 +132,14 @@ class NormalizedIngredientModelTest(TestCase):
         """Ingredient와 NormalizedIngredient 관계 확인"""
         normalized_pork = NormalizedIngredient.objects.create(
             name="돼지고기",
-            category=NormalizedIngredient.MEAT
+            category=self.meat_category
         )
 
         ingredient = Ingredient.objects.create(
             recipe=self.recipe,
             original_name="수육용 돼지고기 300g",
             normalized_ingredient=normalized_pork,
-            category=Ingredient.ESSENTIAL
+            category=self.essential_category
         )
 
         # 정방향 참조

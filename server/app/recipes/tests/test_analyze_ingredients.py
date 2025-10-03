@@ -2,16 +2,17 @@
 재료 정규화 자동 분석 스크립트 테스트
 """
 
-from django.test import TestCase
 from recipes.models import Recipe, Ingredient
 from recipes.management.commands.analyze_ingredients import Command
+from .base import CategoryTestCase
 
 
-class AnalyzeIngredientsTest(TestCase):
+class AnalyzeIngredientsTest(CategoryTestCase):
     """재료 정규화 분석 테스트"""
 
     def setUp(self):
         """테스트용 레시피 및 재료 생성"""
+
         self.recipe1 = Recipe.objects.create(
             recipe_sno="RCP300",
             title="김치찌개",
@@ -33,29 +34,29 @@ class AnalyzeIngredientsTest(TestCase):
         Ingredient.objects.create(
             recipe=self.recipe1,
             original_name="수육용 돼지고기 300g",
-            category=Ingredient.ESSENTIAL
+            category=self.essential_category
         )
         Ingredient.objects.create(
             recipe=self.recipe2,
             original_name="구이용 돼지고기 200g",
-            category=Ingredient.ESSENTIAL
+            category=self.essential_category
         )
         Ingredient.objects.create(
             recipe=self.recipe1,
             original_name="돼지고기 앞다리살",
-            category=Ingredient.ESSENTIAL
+            category=self.essential_category
         )
 
         # 조미료 (빈도 높음)
         Ingredient.objects.create(
             recipe=self.recipe1,
             original_name="소금 약간",
-            category=Ingredient.SEASONING
+            category=self.seasoning_category
         )
         Ingredient.objects.create(
             recipe=self.recipe2,
             original_name="소금",
-            category=Ingredient.SEASONING
+            category=self.seasoning_category
         )
 
     def test_extract_base_ingredient_name(self):

@@ -2,11 +2,11 @@
 재료 검색 QuerySet 및 Manager 테스트
 """
 
-from django.test import TestCase
+from .base import CategoryTestCase
 from recipes.models import Recipe, Ingredient, NormalizedIngredient
 
 
-class IngredientQuerySetTest(TestCase):
+class IngredientQuerySetTest(CategoryTestCase):
     """IngredientQuerySet 테스트"""
 
     def setUp(self):
@@ -32,20 +32,20 @@ class IngredientQuerySetTest(TestCase):
         # 정규화 재료 생성
         self.pork = NormalizedIngredient.objects.create(
             name="돼지고기",
-            category=NormalizedIngredient.MEAT
+            category=self.meat_category
         )
         self.cabbage = NormalizedIngredient.objects.create(
             name="배추",
-            category=NormalizedIngredient.VEGETABLE
+            category=self.vegetable_category
         )
         self.salt = NormalizedIngredient.objects.create(
             name="소금",
-            category=NormalizedIngredient.SEASONING,
+            category=self.seasoning_norm_category,
             is_common_seasoning=True
         )
         self.soysauce = NormalizedIngredient.objects.create(
             name="간장",
-            category=NormalizedIngredient.SEASONING,
+            category=self.seasoning_norm_category,
             is_common_seasoning=True
         )
 
@@ -55,21 +55,21 @@ class IngredientQuerySetTest(TestCase):
             original_name="수육용 돼지고기 300g",
             normalized_name="돼지고기",
             normalized_ingredient=self.pork,
-            category=Ingredient.ESSENTIAL
+            category=self.essential_category
         )
         Ingredient.objects.create(
             recipe=self.recipe1,
             original_name="배추김치",
             normalized_name="배추",
             normalized_ingredient=self.cabbage,
-            category=Ingredient.ESSENTIAL
+            category=self.essential_category
         )
         Ingredient.objects.create(
             recipe=self.recipe1,
             original_name="소금 약간",
             normalized_name="소금",
             normalized_ingredient=self.salt,
-            category=Ingredient.SEASONING
+            category=self.seasoning_category
         )
 
         # 재료 생성 (제육볶음)
@@ -78,14 +78,14 @@ class IngredientQuerySetTest(TestCase):
             original_name="구이용 돼지고기 200g",
             normalized_name="돼지고기",
             normalized_ingredient=self.pork,
-            category=Ingredient.ESSENTIAL
+            category=self.essential_category
         )
         Ingredient.objects.create(
             recipe=self.recipe2,
             original_name="간장 2큰술",
             normalized_name="간장",
             normalized_ingredient=self.soysauce,
-            category=Ingredient.SEASONING
+            category=self.seasoning_category
         )
 
     def test_search_by_normalized_name(self):
@@ -120,15 +120,15 @@ class IngredientQuerySetTest(TestCase):
     def test_filter_by_category(self):
         """카테고리별 필터링 테스트"""
         # 육류 재료
-        meat_ingredients = Ingredient.objects.by_category(NormalizedIngredient.MEAT)
+        meat_ingredients = Ingredient.objects.by_category(self.meat_category)
         self.assertEqual(meat_ingredients.count(), 2)
 
         # 채소류 재료
-        veg_ingredients = Ingredient.objects.by_category(NormalizedIngredient.VEGETABLE)
+        veg_ingredients = Ingredient.objects.by_category(self.vegetable_category)
         self.assertEqual(veg_ingredients.count(), 1)
 
         # 조미료 재료
-        seasoning_ingredients = Ingredient.objects.by_category(NormalizedIngredient.SEASONING)
+        seasoning_ingredients = Ingredient.objects.by_category(self.seasoning_norm_category)
         self.assertEqual(seasoning_ingredients.count(), 2)
 
     def test_get_essential_ingredients_only(self):
@@ -151,13 +151,13 @@ class IngredientQuerySetTest(TestCase):
         self.assertEqual(ingredients.count(), 2)
 
         # 육류 + 범용 조미료 제외
-        ingredients = Ingredient.objects.by_category(NormalizedIngredient.MEAT).exclude_seasonings()
+        ingredients = Ingredient.objects.by_category(self.meat_category).exclude_seasonings()
         self.assertEqual(ingredients.count(), 2)
 
         # 여러 조건 체이닝
         ingredients = (Ingredient.objects
                       .search_normalized("돼지고기")
-                      .by_category(NormalizedIngredient.MEAT)
+                      .by_category(self.meat_category)
                       .exclude_seasonings())
         self.assertEqual(ingredients.count(), 2)
 
@@ -169,7 +169,7 @@ class IngredientQuerySetTest(TestCase):
             original_name="미정규화 재료",
             normalized_name="미정규화",
             normalized_ingredient=None,
-            category=Ingredient.ESSENTIAL
+            category=self.essential_category
         )
 
         # 미정규화 재료로 검색 (결과 없음)

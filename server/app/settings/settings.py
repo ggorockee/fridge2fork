@@ -63,6 +63,7 @@ INSTALLED_APPS = SYSTEM_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # WhiteNoise for static files
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -142,6 +143,16 @@ USE_TZ = True
 
 STATIC_URL = '/fridge2fork/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# WhiteNoise 설정 - 압축 및 캐싱 활성화
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 # 정적 파일 백엔드 설정
 STATICFILES_FINDERS = [
