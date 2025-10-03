@@ -32,6 +32,12 @@ DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
+# CSRF 신뢰된 출처 설정 (개발/운영 환경)
+CSRF_TRUSTED_ORIGINS = os.getenv(
+    'CSRF_TRUSTED_ORIGINS',
+    'https://api-dev.woohalabs.com,https://api.woohalabs.com'
+).split(',')
+
 
 # Application definition
 
