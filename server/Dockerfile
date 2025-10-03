@@ -12,11 +12,21 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install uv
-RUN curl -LsSf https://astral.sh/uv/install.sh
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 
+# Verify uv installation and show path
+RUN echo "=== UV Installation Verification ===" && \
+    which uv && echo "UV found at: $(which uv)" || \
+    (echo "UV not found in PATH, searching..." && \
+     find / -name uv -type f 2>/dev/null | head -5 && \
+     echo "Adding /root/.cargo/bin to PATH")
 
-RUN which uv || find / -name uv -type f 2>/dev/null
 ENV PATH="/root/.cargo/bin:$PATH"
+
+# Final verification
+RUN echo "=== Final UV Check ===" && \
+    which uv && echo "UV is available at: $(which uv)" && \
+    uv --version
 
 
 
