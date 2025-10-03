@@ -18,12 +18,16 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path
+from django.views.generic import RedirectView
 from core.api import api
 from core.views import health_check, readiness_check, liveness_check
 
 urlpatterns = [
     path('fridge2fork/admin/', admin.site.urls),
     path('fridge2fork/v1/', api.urls),
+    # /admin/ 경로를 /fridge2fork/admin/으로 리다이렉트
+    path('admin/', RedirectView.as_view(url='/fridge2fork/admin/', permanent=True)),
+    path('admin/<path:path>', RedirectView.as_view(url='/fridge2fork/admin/%(path)s', permanent=True)),
     # Health check endpoints for K8s (no prefix)
     path('health/', health_check, name='health'),
     path('readiness/', readiness_check, name='readiness'),
