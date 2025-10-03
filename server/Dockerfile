@@ -11,20 +11,18 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install uv
-RUN echo" ===current path===\n" && \
-    echo $PATH
+
 
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Verify uv installation and show path
+# Copy uv from .local/bin to /usr/local/bin for global access
 RUN echo "=== UV Installation Verification ===" && \
-    which uv && echo "UV found at: $(which uv)" || \
-    (echo "UV not found in PATH, searching..." && \
-     find / -name uv -type f 2>/dev/null | head -5 && \
-     echo "Adding /root/.cargo/bin to PATH")
-
-ENV PATH="/root/.cargo/bin:$PATH"
+    echo "Searching for uv in /root/.local..." && \
+    find /root/.local -name uv -type f 2>/dev/null && \
+    echo "Copying uv to /usr/local/bin..." && \
+    cp /root/.local/bin/uv /usr/local/bin/uv && \
+    chmod +x /usr/local/bin/uv && \
+    echo "UV copied to /usr/local/bin/uv"
 
 # Final verification
 RUN echo "=== Final UV Check ===" && \
