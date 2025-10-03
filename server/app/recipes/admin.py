@@ -386,6 +386,7 @@ class IngredientAdmin(admin.ModelAdmin):
     autocomplete_fields = ['normalized_ingredient', 'recipe']
 
     actions = [
+        'bulk_set_normalized_name',
         'find_duplicates',
         'bulk_normalize',
         'auto_normalize_selected',
@@ -441,6 +442,37 @@ class IngredientAdmin(admin.ModelAdmin):
             )
         return format_html('<span style="color: red;">✗ 미연결</span>')
     get_normalized_ingredient.short_description = '정규화 재료'
+
+    @admin.action(description='일괄 정규화명 변경')
+    def bulk_set_normalized_name(self, request, queryset):
+        """선택한 재료들의 normalized_name을 일괄 변경"""
+        if 'apply' in request.POST:
+            # POST 요청: 실제 업데이트 수행
+            new_normalized_name = request.POST.get('normalized_name', '').strip()
+
+            if not new_normalized_name:
+                self.message_user(request, '정규화 재료명을 입력해주세요.', level='error')
+                return
+
+            # normalized_name 업데이트
+            updated_count = queryset.update(normalized_name=new_normalized_name)
+
+            self.message_user(
+                request,
+                f'✅ {updated_count}개 재료의 정규화명을 "{new_normalized_name}"(으)로 변경했습니다.',
+                level='success'
+            )
+            return
+
+        # GET 요청: 중간 확인 페이지 표시
+        context = {
+            'title': '일괄 정규화명 변경',
+            'queryset': queryset,
+            'opts': self.model._meta,
+            'action_checkbox_name': admin.helpers.ACTION_CHECKBOX_NAME,
+        }
+
+        return render(request, 'admin/recipes/bulk_set_normalized_name.html', context)
 
     @admin.action(description='중복 재료 탐지')
     def find_duplicates(self, request, queryset):
