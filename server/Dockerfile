@@ -12,9 +12,14 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install uv
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
-    chmod +x /root/.local/bin/uv
-ENV PATH="/root/.local/bin:$PATH"
+RUN curl -LsSf https://astral.sh/uv/install.sh
+
+
+RUN which uv || find / -name uv -type f 2>/dev/null
+ENV PATH="/root/.cargo/bin:$PATH"
+
+
+
 
 # Set working directory
 WORKDIR /app
