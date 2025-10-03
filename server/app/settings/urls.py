@@ -30,6 +30,10 @@ urlpatterns = [
     path('liveness/', liveness_check, name='liveness'),
 ]
 
-# 개발 환경에서 static 파일 서빙
+# 정적 파일 서빙 (개발 및 프로덕션 환경 모두)
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+# 개발 환경에서만 미디어 파일 서빙
 if settings.DEBUG:
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    from django.conf.urls.static import static
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
