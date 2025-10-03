@@ -78,17 +78,17 @@ class LowIngredientCountFilter(admin.SimpleListFilter):
 class RecipeAdmin(admin.ModelAdmin):
     """Recipe Admin"""
 
-    list_display = ('image_thumbnail', 'name', 'title', 'get_ingredient_count', 'get_essential_count', 'difficulty', 'cooking_time', 'views', 'created_at')
+    list_display = ('image_thumbnail', 'name', 'title', 'get_recipe_link', 'get_ingredient_count', 'get_essential_count', 'difficulty', 'cooking_time', 'views', 'created_at')
     list_filter = ('difficulty', 'method', 'situation', 'recipe_type', HasAllNormalizedIngredientsFilter, LowIngredientCountFilter, 'created_at')
     search_fields = ('name', 'title', 'introduction', 'recipe_sno')
     ordering = ('-created_at',)
-    readonly_fields = ('created_at', 'updated_at', 'views', 'recommendations', 'scraps', 'image_preview', 'recipe_sno', 'get_ingredient_count', 'get_essential_count', 'get_seasoning_count')
+    readonly_fields = ('created_at', 'updated_at', 'views', 'recommendations', 'scraps', 'image_preview', 'recipe_sno', 'get_recipe_link', 'get_ingredient_count', 'get_essential_count', 'get_seasoning_count')
 
     actions = ['validate_recipe_ingredients', 'export_recipe_with_ingredients']
 
     fieldsets = (
         ('기본 정보', {
-            'fields': ('recipe_sno', 'name', 'title', 'introduction', 'image_url', 'image_preview')
+            'fields': ('recipe_sno', 'name', 'title', 'introduction', 'image_url', 'image_preview', 'recipe_url', 'get_recipe_link')
         }),
         ('조리 정보', {
             'fields': ('servings', 'difficulty', 'cooking_time', 'method', 'situation')
@@ -179,6 +179,16 @@ class RecipeAdmin(admin.ModelAdmin):
             )
         return '이미지 없음'
     image_preview.short_description = '이미지 미리보기'
+
+    def get_recipe_link(self, obj):
+        """만개의 레시피 링크"""
+        if obj.recipe_url:
+            return format_html(
+                '<a href="{}" target="_blank" style="color: #007bff; text-decoration: none; font-weight: 500;">🔗 만개의 레시피에서 보기</a>',
+                obj.recipe_url
+            )
+        return '-'
+    get_recipe_link.short_description = '레시피 링크'
 
     @admin.action(description='레시피 재료 유효성 검증')
     def validate_recipe_ingredients(self, request, queryset):

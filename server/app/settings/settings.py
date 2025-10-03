@@ -230,22 +230,26 @@ JAZZMIN_UI_TWEAKS = {
     "footer_small_text": False,
     "body_small_text": False,
     "brand_small_text": False,
-    "brand_colour": "navbar-success",
-    "accent": "accent-teal",
-    "navbar": "navbar-dark",
+    # 밝은 네비게이션 바 (흰색 배경, 검은색 텍스트)
+    "brand_colour": "navbar-white",
+    "accent": "accent-primary",
+    # 밝은 네비게이션 (navbar-light: 흰색 배경에 어두운 텍스트)
+    "navbar": "navbar-white navbar-light",
     "no_navbar_border": False,
     "navbar_fixed": False,
     "layout_boxed": False,
     "footer_fixed": False,
     "sidebar_fixed": False,
-    "sidebar": "sidebar-dark-success",
+    # 밝은 사이드바 (sidebar-light: 흰색/밝은 배경에 어두운 텍스트)
+    "sidebar": "sidebar-light-primary",
     "sidebar_nav_small_text": False,
     "sidebar_disable_expand": False,
     "sidebar_nav_child_indent": False,
     "sidebar_nav_compact_style": False,
     "sidebar_nav_legacy_style": False,
     "sidebar_nav_flat_style": False,
-    "theme": "flatly",
+    # 밝고 깔끔한 테마 (cosmo: 밝은 파란색 기반, 시인성 우수)
+    "theme": "cosmo",
     "dark_mode_theme": None,
     "button_classes": {
         "primary": "btn-primary",

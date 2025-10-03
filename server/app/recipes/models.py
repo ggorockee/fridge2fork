@@ -83,6 +83,11 @@ class Recipe(CommonModel):
         verbose_name="이미지 URL",
         help_text="RCP_IMG_URL"
     )
+    recipe_url = models.URLField(
+        blank=True,
+        verbose_name="레시피 URL",
+        help_text="만개의 레시피 상세 페이지 URL (https://www.10000recipe.com/recipe/{RCP_SNO})"
+    )
     views = models.IntegerField(
         default=0,
         verbose_name="조회수",
