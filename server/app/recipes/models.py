@@ -108,6 +108,15 @@ class Recipe(CommonModel):
         verbose_name = "레시피"
         verbose_name_plural = "레시피"
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['name'], name='recipe_name_idx'),
+            models.Index(fields=['difficulty'], name='recipe_difficulty_idx'),
+            models.Index(fields=['method'], name='recipe_method_idx'),
+            models.Index(fields=['situation'], name='recipe_situation_idx'),
+            models.Index(fields=['recipe_type'], name='recipe_type_idx'),
+            models.Index(fields=['difficulty', 'cooking_time'], name='recipe_difficulty_time_idx'),
+            models.Index(fields=['-created_at'], name='recipe_created_idx'),
+        ]
 
     def __str__(self):
         """레시피 문자열 표현"""
@@ -167,6 +176,11 @@ class NormalizedIngredient(CommonModel):
         verbose_name = "정규화 재료"
         verbose_name_plural = "정규화 재료"
         ordering = ['category', 'name']
+        indexes = [
+            models.Index(fields=['category'], name='normalized_category_idx'),
+            models.Index(fields=['is_common_seasoning'], name='normalized_seasoning_idx'),
+            models.Index(fields=['category', 'is_common_seasoning'], name='normalized_cat_season_idx'),
+        ]
 
     def __str__(self):
         """정규화 재료 문자열 표현"""
@@ -248,6 +262,13 @@ class Ingredient(CommonModel):
         verbose_name = "재료"
         verbose_name_plural = "재료"
         ordering = ['recipe', 'category', 'original_name']
+        indexes = [
+            models.Index(fields=['original_name'], name='ingredient_original_idx'),
+            models.Index(fields=['normalized_name'], name='ingredient_normalized_idx'),
+            models.Index(fields=['recipe', 'category'], name='ingredient_recipe_cat_idx'),
+            models.Index(fields=['normalized_ingredient', 'is_essential'], name='ingredient_norm_ess_idx'),
+            models.Index(fields=['category'], name='ingredient_category_idx'),
+        ]
 
     def save(self, *args, **kwargs):
         """저장 시 normalized_name 기본값 설정"""
@@ -297,6 +318,10 @@ class Fridge(CommonModel):
                 ),
                 name='fridge_owner_required'
             )
+        ]
+        indexes = [
+            models.Index(fields=['user'], name='fridge_user_idx'),
+            models.Index(fields=['session_key'], name='fridge_session_idx'),
         ]
 
     def get_normalized_ingredients(self):

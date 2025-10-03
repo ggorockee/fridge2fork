@@ -208,6 +208,35 @@
         font-weight: 600;
         color: #667eea;
     }
+
+    .checkbox-wrapper {
+        background: #f7fafc;
+        padding: 18px 20px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        accent-color: #667eea;
+    }
+
+    .checkbox-group label {
+        margin: 0;
+        font-weight: 500;
+        color: #2d3748;
+        cursor: pointer;
+        user-select: none;
+    }
 </style>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -294,6 +323,28 @@
                         <i class="fas fa-lightbulb"></i>
                         위 모든 재료가 이 이름으로 정규화됩니다. 예: "청양고추 개", "홍 청양고추 개" → "청양고추"
                     </p>
+                </div>
+
+                <div class="form-section">
+                    <div class="checkbox-wrapper">
+                        <div class="checkbox-group">
+                            <input type="checkbox"
+                                   id="auto_link"
+                                   name="auto_link"
+                                   checked>
+                            <label for="auto_link">
+                                <i class="fas fa-link"></i>
+                                <strong>정규화 재료 자동 연결</strong>
+                            </label>
+                        </div>
+                        <p class="help-text" style="margin-left: 32px; margin-top: 8px;">
+                            <i class="fas fa-info-circle"></i>
+                            체크 시: <strong>normalized_name</strong> 변경 + <strong>NormalizedIngredient</strong> 연결 (자동 생성 또는 기존 연결)
+                        </p>
+                        <p class="help-text" style="margin-left: 32px; color: #718096;">
+                            체크 해제 시: <strong>normalized_name</strong>만 변경 (NormalizedIngredient는 연결 안함)
+                        </p>
+                    </div>
                 </div>
 
                 <div class="preview-section">

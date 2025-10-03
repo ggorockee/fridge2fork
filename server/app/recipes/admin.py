@@ -445,23 +445,57 @@ class IngredientAdmin(admin.ModelAdmin):
 
     @admin.action(description='일괄 정규화명 변경')
     def bulk_set_normalized_name(self, request, queryset):
-        """선택한 재료들의 normalized_name을 일괄 변경"""
+        """선택한 재료들의 normalized_name을 일괄 변경 (및 NormalizedIngredient 연결)"""
         if 'apply' in request.POST:
             # POST 요청: 실제 업데이트 수행
             new_normalized_name = request.POST.get('normalized_name', '').strip()
+            auto_link = request.POST.get('auto_link') == 'on'
 
             if not new_normalized_name:
                 self.message_user(request, '정규화 재료명을 입력해주세요.', level='error')
                 return
 
-            # normalized_name 업데이트
-            updated_count = queryset.update(normalized_name=new_normalized_name)
+            updated_count = 0
+            linked_count = 0
+            created_normalized = False
 
-            self.message_user(
-                request,
-                f'✅ {updated_count}개 재료의 정규화명을 "{new_normalized_name}"(으)로 변경했습니다.',
-                level='success'
-            )
+            # 자동 연결이 체크된 경우
+            if auto_link:
+                # NormalizedIngredient 찾기 또는 생성
+                normalized_ingredient, created = NormalizedIngredient.objects.get_or_create(
+                    name=new_normalized_name,
+                    defaults={
+                        'category': NormalizedIngredient.ETC,  # 기본 카테고리
+                        'description': f'일괄 정규화를 통해 자동 생성됨'
+                    }
+                )
+                created_normalized = created
+
+                # 각 재료에 normalized_name과 normalized_ingredient 모두 업데이트
+                for ingredient in queryset:
+                    ingredient.normalized_name = new_normalized_name
+                    ingredient.normalized_ingredient = normalized_ingredient
+                    ingredient.save()
+                    updated_count += 1
+                    linked_count += 1
+
+                # 성공 메시지
+                message = f'✅ {updated_count}개 재료의 정규화명을 "{new_normalized_name}"(으)로 변경하고 연결했습니다.'
+                if created_normalized:
+                    message += f' (새로운 정규화 재료 생성됨)'
+                else:
+                    message += f' (기존 정규화 재료 "{normalized_ingredient.name}"에 연결됨)'
+
+                self.message_user(request, message, level='success')
+            else:
+                # 자동 연결 없이 normalized_name만 업데이트
+                updated_count = queryset.update(normalized_name=new_normalized_name)
+
+                self.message_user(
+                    request,
+                    f'✅ {updated_count}개 재료의 정규화명을 "{new_normalized_name}"(으)로 변경했습니다.',
+                    level='success'
+                )
             return
 
         # GET 요청: 중간 확인 페이지 표시
