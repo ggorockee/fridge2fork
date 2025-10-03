@@ -12,6 +12,9 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install uv
+RUN echo" ===current path===\n" && \
+    echo $PATH
+
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Verify uv installation and show path
