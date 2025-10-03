@@ -135,13 +135,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = '/static/'
+STATIC_URL = '/fridge2fork/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-
-# 정적 파일 디렉토리 설정 (개발 환경용)
-STATICFILES_DIRS = [
-    BASE_DIR / 'static',
-]
 
 # 정적 파일 백엔드 설정
 STATICFILES_FINDERS = [
