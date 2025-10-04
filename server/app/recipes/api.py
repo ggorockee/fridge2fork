@@ -705,7 +705,8 @@ async def get_or_create_fridge(request):
         # 비회원 - 세션 키 사용
         session_key = request.session.session_key
         if not session_key:
-            request.session.create()
+            # Django 세션 생성은 동기 메서드이므로 sync_to_async 사용
+            await sync_to_async(request.session.create)()
             session_key = request.session.session_key
 
         fridge, created = await Fridge.objects.aget_or_create(session_key=session_key)
