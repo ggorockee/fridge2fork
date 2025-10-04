@@ -922,7 +922,7 @@ class _RecipeRecommendationsSectionState extends ConsumerState<_RecipeRecommenda
               const SizedBox(height: AppTheme.spacingM),
               // 레시피 카드 리스트 (가로 스크롤)
               SizedBox(
-                height: 200,
+                height: 195,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   itemCount: response.recipes.take(10).length,
@@ -959,86 +959,96 @@ class _RecommendedRecipeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const double cardHeight = 195.0;
+    const double imageHeight = cardHeight * 2 / 3; // 130px (2/3)
+    const double textHeight = cardHeight * 1 / 3;  // 65px (1/3)
+
     return Container(
       width: 160,
-      height: 200, // 고정 높이 200px
+      height: cardHeight,
       margin: const EdgeInsets.only(right: AppTheme.spacingM),
+      clipBehavior: Clip.hardEdge, // 카드 외부로 넘치는 콘텐츠 강제 클리핑
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Card(
+        margin: EdgeInsets.zero, // Card 자체 margin 제거
         elevation: 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 이미지 (고정 높이)
+            // 이미지 영역 (2/3 = 130px)
             ClipRRect(
               borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-              child: recipe.imageUrl != null && recipe.imageUrl!.isNotEmpty
-                  ? Image.network(
-                      recipe.imageUrl!,
-                      height: 110,
-                      width: 160,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        height: 110,
+              child: SizedBox(
+                height: imageHeight,
+                width: 160,
+                child: recipe.imageUrl != null && recipe.imageUrl!.isNotEmpty
+                    ? Image.network(
+                        recipe.imageUrl!,
+                        height: imageHeight,
+                        width: 160,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          height: imageHeight,
+                          width: 160,
+                          color: Colors.grey[200],
+                          child: const Icon(Icons.restaurant, size: 40, color: Colors.grey),
+                        ),
+                      )
+                    : Container(
+                        height: imageHeight,
                         width: 160,
                         color: Colors.grey[200],
                         child: const Icon(Icons.restaurant, size: 40, color: Colors.grey),
                       ),
-                    )
-                  : Container(
-                      height: 110,
-                      width: 160,
-                      color: Colors.grey[200],
-                      child: const Icon(Icons.restaurant, size: 40, color: Colors.grey),
-                    ),
+              ),
             ),
-            // 정보 영역 (고정 높이)
-            SizedBox(
-              height: 90, // 200 - 110(이미지) = 90
-              child: Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 제목 (2줄 고정)
-                    SizedBox(
-                      height: 40, // 2줄 제목 영역
+            // 텍스트 영역 (1/3 = 65px)
+            Container(
+              height: textHeight,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 제목 (flexible)
+                  Flexible(
+                    child: Text(
+                      recipe.title,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        height: 1.2,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  // 매칭률
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppTheme.lightOrange,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
                       child: Text(
-                        recipe.title,
+                        '${(recipe.matchScore * 100).toInt()}% 일치',
                         style: const TextStyle(
-                          fontSize: 13,
+                          fontSize: 10,
+                          color: AppTheme.primaryOrange,
                           fontWeight: FontWeight.w600,
-                          height: 1.3,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    // 매칭률 (하단 배치)
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppTheme.lightOrange,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          '${(recipe.matchScore * 100).toInt()}% 일치',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: AppTheme.primaryOrange,
-                            fontWeight: FontWeight.w600,
-                          ),
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ],
