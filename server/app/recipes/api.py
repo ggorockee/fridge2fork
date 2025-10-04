@@ -792,7 +792,7 @@ def _add_ingredient_to_fridge_sync(fridge, ingredient_name: str):
     return None
 
 
-@router.post("/fridge/ingredients", response=FridgeSchema)
+@router.post("/fridge/ingredients")
 async def add_ingredient_to_fridge(request, data: AddIngredientSchema):
     """
     냉장고에 재료 추가
@@ -812,7 +812,7 @@ async def add_ingredient_to_fridge(request, data: AddIngredientSchema):
 
     logger.info(f"Successfully added ingredient '{data.ingredient_name}'")
 
-    # 냉장고 재조회
+    # 냉장고 재조회 (JsonResponse 반환)
     return await get_fridge(request)
 
 
