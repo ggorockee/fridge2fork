@@ -305,6 +305,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Positioned(
                 right: 16,
                 bottom: 295 + 16 + 16, // 레시피 영역 높이 + 바텀 간격 + 버튼 여백
+                // bottom: 200, // 레시피 영역 높이 + 바텀 간격 + 버튼 여백
                 child: Showcase(
                   key: homeScreenAddButtonKey,
                   description: '냉장고에 식재료를 추가하려면 이 버튼을 누르세요!',
@@ -480,49 +481,56 @@ class _SelectedIngredientsSection extends StatelessWidget {
       child: Column(
         children: [
           // 냉장고 상태 제목 + [+] 버튼
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          Stack(
             children: [
-              const Text(
-                '냉장고 현황',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.textPrimary,
+              // 중앙 정렬된 제목
+              const Center(
+                child: Text(
+                  '냉장고 현황',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimary,
+                  ),
                 ),
               ),
-              const SizedBox(width: 8),
-              Showcase(
-                key: homeScreenAddButtonKey,
-                description: '냉장고에 식재료를 추가하려면 이 버튼을 누르세요!',
-                onTargetClick: () {
-                  // Showcase에서 클릭 시 부모 위젯의 콜백 호출
-                  final homeState = context.findAncestorStateOfType<_HomeScreenState>();
-                  homeState?._onAddButtonPressed();
-                },
-                disposeOnTap: true,
-                child: SizedBox(
-                  width: 32,
-                  height: 32,
-                  child: Material(
-                    color: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      side: const BorderSide(
-                        color: AppTheme.primaryOrange,
-                        width: 2,
+              // 오른쪽에 배치된 [+] 버튼
+              Positioned(
+                right: 0,
+                top: 0,
+                bottom: 0,
+                child: Showcase(
+                  key: homeScreenAddButtonKey,
+                  description: '냉장고에 식재료를 추가하려면 이 버튼을 누르세요!',
+                  onTargetClick: () {
+                    // Showcase에서 클릭 시 부모 위젯의 콜백 호출
+                    final homeState = context.findAncestorStateOfType<_HomeScreenState>();
+                    homeState?._onAddButtonPressed();
+                  },
+                  disposeOnTap: true,
+                  child: SizedBox(
+                    width: 32,
+                    height: 32,
+                    child: Material(
+                      color: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        side: const BorderSide(
+                          color: AppTheme.primaryOrange,
+                          width: 2,
+                        ),
                       ),
-                    ),
-                    child: InkWell(
-                      onTap: () {
-                        final homeState = context.findAncestorStateOfType<_HomeScreenState>();
-                        homeState?._onAddButtonPressed();
-                      },
-                      borderRadius: BorderRadius.circular(10),
-                      child: const Icon(
-                        Icons.add,
-                        color: AppTheme.primaryOrange,
-                        size: 20,
+                      child: InkWell(
+                        onTap: () {
+                          final homeState = context.findAncestorStateOfType<_HomeScreenState>();
+                          homeState?._onAddButtonPressed();
+                        },
+                        borderRadius: BorderRadius.circular(10),
+                        child: const Icon(
+                          Icons.add,
+                          color: AppTheme.primaryOrange,
+                          size: 20,
+                        ),
                       ),
                     ),
                   ),
