@@ -870,7 +870,7 @@ class _RecipeRecommendationsSectionState extends ConsumerState<_RecipeRecommenda
       limit: 10,
       algorithm: 'jaccard',
       excludeSeasonings: true,
-      minMatchRate: 0.3,
+      // minMatchRate는 서버의 관리자 설정을 사용 (기본값: 0.15)
     );
   }
 

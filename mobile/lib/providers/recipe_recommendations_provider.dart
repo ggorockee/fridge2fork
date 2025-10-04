@@ -12,7 +12,7 @@ class RecipeRecommendationsNotifier extends StateNotifier<AsyncValue<RecipeRecom
     int limit = 20,
     String algorithm = 'jaccard',
     bool excludeSeasonings = true,
-    double minMatchRate = 0.3,
+    double? minMatchRate, // null이면 서버의 관리자 설정 사용
   }) async {
     if (ingredients.isEmpty) {
       state = const AsyncValue.data(RecipeRecommendationsResponse(

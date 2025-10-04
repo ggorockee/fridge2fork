@@ -379,15 +379,19 @@ class RecipeApiService {
     int limit = 20,
     String algorithm = 'jaccard',
     bool excludeSeasonings = true,
-    double minMatchRate = 0.3,
+    double? minMatchRate, // null이면 서버의 관리자 설정 사용 (기본값: 0.15)
   }) async {
     final queryParams = <String, dynamic>{
       'ingredients': ingredients.join(','),
       'limit': limit,
       'algorithm': algorithm,
       'exclude_seasonings': excludeSeasonings,
-      'min_match_rate': minMatchRate,
     };
+
+    // minMatchRate가 명시적으로 제공된 경우에만 추가
+    if (minMatchRate != null) {
+      queryParams['min_match_rate'] = minMatchRate;
+    }
 
     return await ApiClient.get<RecipeRecommendationsResponse>(
       ApiEndpoints.recipeRecommendations,
