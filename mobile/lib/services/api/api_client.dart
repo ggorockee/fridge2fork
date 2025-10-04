@@ -212,13 +212,13 @@ class ApiClient {
       // URL 구성
       final uri = _buildUri(endpoint, queryParams);
 
-      // 세션 ID 헤더 자동 추가
+      // 세션 ID 헤더 자동 추가 (있을 경우에만)
       final sessionId = await SessionService.instance.getSessionId();
 
       // 헤더 구성
       final requestHeaders = {
         ...defaultHeaders,
-        'X-Session-ID': sessionId,
+        if (sessionId != null) 'X-Session-ID': sessionId,
         ...?headers,
       };
 
@@ -264,6 +264,15 @@ class ApiClient {
       // 응답 로깅
       if (kDebugMode && AppConfig.enableNetworkLogging) {
         debugPrint('📥 Response ${response.statusCode}: ${response.body}');
+      }
+
+      // X-Session-ID 헤더가 있으면 저장 (서버가 새로 생성한 세션)
+      final responseSessionId = response.headers['x-session-id'];
+      if (responseSessionId != null && responseSessionId.isNotEmpty) {
+        await SessionService.instance.saveSessionId(responseSessionId);
+        if (kDebugMode && AppConfig.enableNetworkLogging) {
+          debugPrint('🔐 New session ID received from server: ${responseSessionId.substring(0, 8)}...');
+        }
       }
 
       // UTF-8 인코딩 확인 및 수정

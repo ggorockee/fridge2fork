@@ -694,7 +694,7 @@ async def list_recipes(
 # ==================== 냉장고 관리 API ====================
 # 주의: 경로 충돌 방지를 위해 /fridge 엔드포인트를 /{recipe_id} 앞에 배치
 
-async def get_or_create_fridge(request):
+async def get_or_create_fridge(request, auto_create=True):
     """회원/비회원 냉장고 조회 또는 생성"""
     user = await get_user_from_request(request)
 
@@ -706,13 +706,18 @@ async def get_or_create_fridge(request):
         session_key = request.headers.get('X-Session-ID')
 
         if not session_key:
-            # 세션 ID가 없으면 에러 발생
-            from ninja.errors import HttpError
-            raise HttpError(400, '세션 ID가 필요합니다. X-Session-ID 헤더를 확인하세요.')
+            if not auto_create:
+                # 세션 ID가 없고 자동 생성 비활성화 시 에러
+                from ninja.errors import HttpError
+                raise HttpError(400, '세션 ID가 필요합니다. X-Session-ID 헤더를 확인하세요.')
+
+            # 세션 ID가 없으면 새로 생성
+            import uuid
+            session_key = str(uuid.uuid4())
 
         fridge, created = await Fridge.objects.aget_or_create(session_key=session_key)
 
-    return fridge
+    return fridge, session_key if not user else None
 
 
 def _get_fridge_sync(fridge):
@@ -749,9 +754,20 @@ async def get_fridge(request):
     최적화:
     - select_related로 N+1 쿼리 방지
     - order_by로 일관된 정렬
+
+    X-Session-ID 헤더가 없으면 자동으로 새 세션 생성 및 반환
     """
-    fridge = await get_or_create_fridge(request)
-    return await sync_to_async(_get_fridge_sync)(fridge)
+    fridge, session_key = await get_or_create_fridge(request, auto_create=True)
+    result = await sync_to_async(_get_fridge_sync)(fridge)
+
+    # 새로 생성된 세션 키가 있으면 헤더에 포함
+    if session_key:
+        from django.http import JsonResponse
+        response = JsonResponse(result)
+        response['X-Session-ID'] = session_key
+        return response
+
+    return result
 
 
 def _add_ingredient_to_fridge_sync(fridge, ingredient_name: str):
@@ -765,19 +781,13 @@ def _add_ingredient_to_fridge_sync(fridge, ingredient_name: str):
             status=404
         )
 
-    # 중복 체크 및 추가
+    # 중복 체크 및 추가 (중복이어도 성공 처리)
     fi, created = FridgeIngredient.objects.get_or_create(
         fridge=fridge,
         normalized_ingredient=normalized_ingredient
     )
 
-    if not created:
-        return JsonResponse(
-            {'error': 'DuplicateIngredient', 'message': '이미 추가된 재료입니다.'},
-            status=400
-        )
-
-    # 성공 시 None 반환 (재조회는 async 함수에서)
+    # 중복이든 신규든 성공으로 처리 (idempotent)
     return None
 
 
@@ -786,7 +796,7 @@ async def add_ingredient_to_fridge(request, data: AddIngredientSchema):
     """
     냉장고에 재료 추가
     """
-    fridge = await get_or_create_fridge(request)
+    fridge, session_key = await get_or_create_fridge(request)
 
     # 재료 추가 처리
     error_response = await sync_to_async(_add_ingredient_to_fridge_sync)(fridge, data.ingredient_name)
@@ -816,7 +826,7 @@ async def remove_ingredient_from_fridge(request, ingredient_id: int):
     """
     냉장고에서 재료 제거
     """
-    fridge = await get_or_create_fridge(request)
+    fridge, _ = await get_or_create_fridge(request)
     return await sync_to_async(_remove_ingredient_from_fridge_sync)(fridge, ingredient_id)
 
 
@@ -831,7 +841,7 @@ async def clear_fridge(request):
     """
     냉장고 비우기 (모든 재료 제거)
     """
-    fridge = await get_or_create_fridge(request)
+    fridge, _ = await get_or_create_fridge(request)
     return await sync_to_async(_clear_fridge_sync)(fridge)
 
 
