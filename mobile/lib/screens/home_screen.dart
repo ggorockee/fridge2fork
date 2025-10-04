@@ -260,7 +260,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 280), // 레시피 영역 차지할 공간 확보
+                    const SizedBox(height: 310), // 레시피 영역 차지할 공간 확보
                   ],
                 ),
               ),
@@ -272,7 +272,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               right: 0,
               bottom: 72, // 바텀 네비게이션 바 높이(56) + 여백(16)
               child: Container(
-                height: 260,
+                height: 295,
                 color: AppTheme.backgroundWhite,
                 child: selectedIngredients.isEmpty
                     ? _RecipeRecommendationSection()
@@ -283,7 +283,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             // 플로팅 액션 버튼 - 냉장고 영역 하단에 위치
             Positioned(
               right: 16,
-              bottom: 260 + 72 + 16, // 레시피 영역 높이 + 바텀바 위 여백 + 버튼 여백
+              bottom: 295 + 72 + 16, // 레시피 영역 높이 + 바텀바 위 여백 + 버튼 여백
               child: Showcase(
                 key: homeScreenAddButtonKey,
                 description: '냉장고에 식재료를 추가하려면 이 버튼을 누르세요!',
