@@ -289,22 +289,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 description: '냉장고에 식재료를 추가하려면 이 버튼을 누르세요!',
                 onTargetClick: _onAddButtonPressed,
                 disposeOnTap: true,
-                child: FloatingActionButton(
-                  onPressed: _onAddButtonPressed,
-                  backgroundColor: Colors.white,
-                  elevation: 0,
-                  heroTag: "home_fab",
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    side: const BorderSide(
-                      color: AppTheme.primaryOrange,
-                      width: 2,
+                child: SizedBox(
+                  width: 45,
+                  height: 45,
+                  child: FloatingActionButton(
+                    onPressed: _onAddButtonPressed,
+                    backgroundColor: Colors.white,
+                    elevation: 0,
+                    heroTag: "home_fab",
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(13),
+                      side: const BorderSide(
+                        color: AppTheme.primaryOrange,
+                        width: 2,
+                      ),
                     ),
-                  ),
-                  child: const Icon(
-                    Icons.add,
-                    color: AppTheme.primaryOrange,
-                    size: 32,
+                    child: const Icon(
+                      Icons.add,
+                      color: AppTheme.primaryOrange,
+                      size: 26,
+                    ),
                   ),
                 ),
               ),
