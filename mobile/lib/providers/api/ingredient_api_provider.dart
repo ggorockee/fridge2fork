@@ -12,7 +12,11 @@ class IngredientApiNotifier extends StateNotifier<AsyncValue<List<ApiIngredient>
 
   final Ref _ref;
   List<ApiIngredient> _cachedIngredients = [];
+  List<ApiCategory> _cachedCategories = [];
   IngredientSearchFilter? _lastFilter;
+
+  /// 캐시된 카테고리 목록 가져오기
+  List<ApiCategory> get cachedCategories => _cachedCategories;
 
   /// 레시피 재료 목록 로드 (새 API 사용)
   Future<void> loadRecipeIngredients({
@@ -62,6 +66,10 @@ class IngredientApiNotifier extends StateNotifier<AsyncValue<List<ApiIngredient>
                 ingredient.name.length >= 2 &&
                 !ingredient.name.contains('알 수 없는 재료'))
             .toList();
+
+        // API 응답에서 카테고리 캐싱
+        _cachedCategories = response.data!.categories;
+
         state = AsyncValue.data(_cachedIngredients);
 
         // 성공적으로 로드된 데이터를 캐시에 저장
