@@ -957,32 +957,72 @@ class _RecommendedRecipeCard extends StatelessWidget {
     required this.recipe,
   });
 
+  Future<void> _openRecipeUrl(BuildContext context) async {
+    final url = recipe.recipeUrl;
+
+    if (url == null || url.isEmpty) {
+      if (context.mounted) {
+        SnackBarHelper.showSnackBar(
+          context,
+          '레시피 링크가 없습니다.',
+          backgroundColor: Colors.orange,
+        );
+      }
+      return;
+    }
+
+    try {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        if (context.mounted) {
+          SnackBarHelper.showSnackBar(
+            context,
+            '링크를 열 수 없습니다.',
+            backgroundColor: Colors.red,
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        SnackBarHelper.showSnackBar(
+          context,
+          '링크를 열 수 없습니다: $e',
+          backgroundColor: Colors.red,
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     const double cardHeight = 195.0;
     const double imageHeight = cardHeight * 2 / 3; // 130px (2/3)
     const double textHeight = cardHeight - imageHeight;  // 65px (나머지)
 
-    return MediaQuery.withClampedTextScaling(
-      minScaleFactor: 1.0,
-      maxScaleFactor: 1.0, // 시스템 폰트 크기 변경 무시
-      child: Container(
-        width: 160,
-        height: cardHeight,
-        margin: const EdgeInsets.only(right: AppTheme.spacingM),
-        clipBehavior: Clip.hardEdge, // 하드 클리핑으로 변경
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
+    return GestureDetector(
+      onTap: () => _openRecipeUrl(context),
+      child: MediaQuery.withClampedTextScaling(
+        minScaleFactor: 1.0,
+        maxScaleFactor: 1.0, // 시스템 폰트 크기 변경 무시
+        child: Container(
+          width: 160,
+          height: cardHeight,
+          margin: const EdgeInsets.only(right: AppTheme.spacingM),
+          clipBehavior: Clip.hardEdge, // 하드 클리핑으로 변경
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
           children: [
             // 이미지 영역 (2/3 = 130px)
             SizedBox(

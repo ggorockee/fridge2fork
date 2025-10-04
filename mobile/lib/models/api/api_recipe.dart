@@ -371,6 +371,7 @@ class RecipeRecommendation {
   final String? difficulty;
   final String? cookingTime;
   final String? imageUrl;
+  final String? recipeUrl;
   final String? introduction;
   final double matchScore;
   final int matchedCount;
@@ -385,6 +386,7 @@ class RecipeRecommendation {
     this.difficulty,
     this.cookingTime,
     this.imageUrl,
+    this.recipeUrl,
     this.introduction,
     required this.matchScore,
     required this.matchedCount,
@@ -401,6 +403,7 @@ class RecipeRecommendation {
       difficulty: json['difficulty']?.toString(),
       cookingTime: json['cooking_time']?.toString(),
       imageUrl: json['image_url']?.toString(),
+      recipeUrl: json['recipe_url']?.toString(),
       introduction: json['introduction']?.toString(),
       matchScore: (json['match_score'] as num?)?.toDouble() ?? 0.0,
       matchedCount: json['matched_count'] as int? ?? 0,
@@ -418,6 +421,7 @@ class RecipeRecommendation {
       'difficulty': difficulty,
       'cooking_time': cookingTime,
       'image_url': imageUrl,
+      'recipe_url': recipeUrl,
       'introduction': introduction,
       'match_score': matchScore,
       'matched_count': matchedCount,
