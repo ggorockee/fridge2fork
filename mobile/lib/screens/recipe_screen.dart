@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../theme/app_theme.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../widgets/widgets.dart';
 import '../providers/recipe_provider.dart';
 import '../providers/ingredients_provider.dart';
+import '../providers/fridge_provider.dart';
+import '../providers/api/recipe_recommendation_provider.dart';
 import '../models/recipe.dart';
-import '../widgets/custom_toggle_switch.dart';
+import '../models/api/api_recipe.dart';
+import '../theme/app_theme.dart';
 
 class RecipeScreen extends ConsumerStatefulWidget {
   const RecipeScreen({super.key});
@@ -22,9 +25,9 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
     super.initState();
     // 스크롤 리스너 추가
     _scrollController.addListener(_onScroll);
-    // 첫 페이지 로드
+    // 냉장고 기반 레시피 추천 로드
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(paginatedRecipeProvider.notifier).loadFirstPage();
+      ref.read(recipeRecommendationProvider.notifier).loadRecommendations();
     });
   }
 
@@ -44,14 +47,35 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
     }
   }
 
+  /// 외부 링크 열기 (만개의 레시피)
+  Future<void> _launchUrl(String? urlString) async {
+    if (urlString == null || urlString.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('레시피 링크가 없습니다.')),
+      );
+      return;
+    }
+
+    final url = Uri.parse(urlString);
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('링크를 열 수 없습니다.')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final recipeState = ref.watch(paginatedRecipeProvider);
-    final showOnlyFavorites = ref.watch(showOnlyFavoritesProvider);
+    final recommendationState = ref.watch(recipeRecommendationProvider);
+    final fridgeIngredientCount = ref.watch(fridgeIngredientCountProvider);
 
-    // 즐겨찾기 필터 변경 시 새로고침
-    ref.listen(showOnlyFavoritesProvider, (previous, next) {
-      ref.read(paginatedRecipeProvider.notifier).refresh();
+    // 냉장고 재료 변경 시 자동 재추천
+    ref.listen(fridgeIngredientCountProvider, (previous, next) {
+      if (previous != next && next > 0) {
+        ref.read(recipeRecommendationProvider.notifier).loadRecommendations();
+      }
     });
 
     return Scaffold(
@@ -68,41 +92,14 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
             fontWeight: FontWeight.w600,
           ),
         ),
-        actions: [
-          // 즐겨찾기 토글 버튼
-          Consumer(
-            builder: (context, ref, child) {
-              final showOnlyFavorites = ref.watch(showOnlyFavoritesProvider);
-              return Row(
-                children: [
-                  const Text(
-                    '즐겨찾기',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppTheme.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(width: AppTheme.spacingM),
-                  CustomToggleSwitch(
-                    value: showOnlyFavorites,
-                    onChanged: (value) {
-                      ref.read(showOnlyFavoritesProvider.notifier).state = value;
-                    },
-                  ),
-                ],
-              );
-            },
-          ),
-          const SizedBox(width: AppTheme.spacingS),
-        ],
       ),
-      body: _buildBody(recipeState, showOnlyFavorites),
+      body: _buildBody(recommendationState, fridgeIngredientCount),
     );
   }
 
 
-  /// Body 구현 (무한스크롤 지원)
-  Widget _buildBody(RecipeListState recipeState, bool showOnlyFavorites) {
+  /// Body 구현
+  Widget _buildBody(RecipeRecommendationState recommendationState, int fridgeIngredientCount) {
     return Column(
       children: [
         // 검색바
@@ -128,7 +125,6 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
                   child: TextFormField(
                     onChanged: (value) {
                       ref.read(recipeSearchQueryProvider.notifier).state = value;
-                      ref.read(paginatedRecipeProvider.notifier).refresh();
                     },
                     style: const TextStyle(
                       fontSize: 14,
@@ -151,72 +147,179 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
             ),
           ),
         ),
-        
+
         // 구분선
         Container(
           height: 1,
           color: AppTheme.borderGray,
         ),
-        
+
         // 콘텐츠
         Expanded(
-          child: _buildContent(recipeState, showOnlyFavorites),
+          child: _buildContent(recommendationState, fridgeIngredientCount),
         ),
       ],
     );
   }
 
   /// 콘텐츠 구현
-  Widget _buildContent(RecipeListState recipeState, bool showOnlyFavorites) {
+  Widget _buildContent(RecipeRecommendationState recommendationState, int fridgeIngredientCount) {
+    // 로딩 상태
+    if (recommendationState.isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryOrange),
+        ),
+      );
+    }
+
     // 에러 상태
-    if (recipeState.error != null) {
-      return _buildErrorState(recipeState.error!);
+    if (recommendationState.error != null) {
+      return _buildErrorState(recommendationState.error!);
     }
 
-    // 빈 즐겨찾기 상태
-    if (recipeState.recipes.isEmpty && showOnlyFavorites && !recipeState.isLoading) {
-      return _buildEmptyFavoritesState();
+    // 냉장고가 비어있는 경우
+    if (fridgeIngredientCount == 0) {
+      return _buildEmptyFridgeState();
     }
 
-    // 검색 결과 없음
-    if (recipeState.recipes.isEmpty && !recipeState.isLoading) {
-      return _buildEmptySearchState();
+    // 추천 레시피 없음
+    if (recommendationState.recipes.isEmpty) {
+      return _buildNoRecommendationsState();
     }
 
-    // 레시피 그리드
-    return _buildRecipeGrid(recipeState);
+    // 레시피 목록 (필터링 적용)
+    return _buildRecipeList(recommendationState);
   }
 
-  /// 레시피 그리드 구현 (무한스크롤 지원)
-  Widget _buildRecipeGrid(RecipeListState recipeState) {
-    return ListView.separated(
-      controller: _scrollController,
-      padding: const EdgeInsets.all(AppTheme.spacingM),
-      itemCount: recipeState.recipes.length + (recipeState.hasMore ? 1 : 0),
-      separatorBuilder: (context, index) {
-        // 광고 영역을 특정 위치에 삽입
-        if (index == 2) {
-          return _buildAdBanner();
-        }
-        return const SizedBox(height: AppTheme.spacingM);
-      },
-      itemBuilder: (context, index) {
-        // 로딩 인디케이터 표시
-        if (index >= recipeState.recipes.length) {
-          return _buildLoadingItem();
-        }
+  /// 레시피 목록 표시
+  Widget _buildRecipeList(RecipeRecommendationState recommendationState) {
+    final filteredRecipes = ref.watch(filteredRecommendationProvider);
 
-        final recipe = recipeState.recipes[index];
-        return GestureDetector(
-          onTap: () {
-            Navigator.of(context).pushNamed(
-              '/recipe-detail',
-              arguments: recipe,
-            );
-          },
-          child: RecipeListCard(recipe: recipe),
-        );
+    return RefreshIndicator(
+      onRefresh: () async {
+        await ref.read(recipeRecommendationProvider.notifier).refresh();
       },
+      child: ListView.separated(
+        controller: _scrollController,
+        padding: const EdgeInsets.all(AppTheme.spacingM),
+        itemCount: filteredRecipes.length,
+        separatorBuilder: (context, index) {
+          // 광고 영역을 특정 위치에 삽입
+          if (index == 2) {
+            return _buildAdBanner();
+          }
+          return const SizedBox(height: AppTheme.spacingM);
+        },
+        itemBuilder: (context, index) {
+          final recipe = filteredRecipes[index];
+          return GestureDetector(
+            onTap: () => _launchUrl(recipe.recipeUrl),
+            child: RecommendationRecipeCard(recipe: recipe),
+          );
+        },
+      ),
+    );
+  }
+
+  /// 냉장고가 비어있을 때
+  Widget _buildEmptyFridgeState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppTheme.spacingXL),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                color: AppTheme.lightOrange,
+                borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+              ),
+              child: const Icon(
+                Icons.kitchen_outlined,
+                size: 60,
+                color: AppTheme.primaryOrange,
+              ),
+            ),
+            const SizedBox(height: AppTheme.spacingXL),
+            const Text(
+              '냉장고가 비어있어요',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(height: AppTheme.spacingM),
+            const Text(
+              '냉장고에 재료를 추가하면\n그 재료로 만들 수 있는 레시피를 추천해드려요!',
+              style: TextStyle(
+                fontSize: 16,
+                color: AppTheme.textSecondary,
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppTheme.spacingXL),
+            CustomButton(
+              text: '냉장고에 재료 추가하기',
+              onPressed: () {
+                // 냉장고 탭으로 이동
+                DefaultTabController.of(context).animateTo(1);
+              },
+              type: ButtonType.primary,
+              height: 48,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 추천 레시피가 없을 때
+  Widget _buildNoRecommendationsState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppTheme.spacingXL),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.restaurant_outlined,
+              size: 64,
+              color: AppTheme.textSecondary,
+            ),
+            const SizedBox(height: AppTheme.spacingM),
+            const Text(
+              '추천할 레시피가 없어요',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(height: AppTheme.spacingS),
+            const Text(
+              '냉장고에 다른 재료를 추가해보세요',
+              style: TextStyle(
+                fontSize: 14,
+                color: AppTheme.textSecondary,
+              ),
+            ),
+            const SizedBox(height: AppTheme.spacingXL),
+            CustomButton(
+              text: '냉장고에 재료 추가하기',
+              onPressed: () {
+                DefaultTabController.of(context).animateTo(1);
+              },
+              type: ButtonType.secondary,
+              height: 48,
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -375,7 +478,7 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
             CustomButton(
               text: '다시 시도',
               onPressed: () {
-                ref.read(paginatedRecipeProvider.notifier).refresh();
+                ref.read(recipeRecommendationProvider.notifier).refresh();
               },
               type: ButtonType.primary,
             ),
@@ -385,91 +488,167 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
     );
   }
 
-  /// 빈 검색 결과 상태
-  Widget _buildEmptySearchState() {
-    return Center(
+}
+
+/// 추천 레시피 카드 위젯
+class RecommendationRecipeCard extends StatelessWidget {
+  final RecipeRecommendation recipe;
+
+  const RecommendationRecipeCard({
+    super.key,
+    required this.recipe,
+  });
+
+  /// 재료 보유 상태에 따른 색상 반환
+  Color _getMatchScoreColor(double matchScore) {
+    if (matchScore >= 0.8) {
+      return const Color(0xFF4CAF50); // 녹색 - 80% 이상
+    } else if (matchScore >= 0.5) {
+      return AppTheme.primaryOrange; // 주황색 - 50% 이상
+    } else {
+      return const Color(0xFFF44336); // 빨간색 - 50% 미만
+    }
+  }
+
+  /// 매칭 스코어 텍스트
+  String _getMatchScoreText(double matchScore) {
+    final percentage = (matchScore * 100).toInt();
+    return '재료 일치율 $percentage%';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(AppTheme.spacingXL),
+        padding: const EdgeInsets.all(AppTheme.spacingM),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(
-              Icons.search_off,
-              size: 64,
-              color: AppTheme.textSecondary,
+            // 레시피 제목
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    recipe.title.isNotEmpty ? recipe.title : recipe.name,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textPrimary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const Icon(
+                  Icons.open_in_new,
+                  size: 18,
+                  color: AppTheme.textSecondary,
+                ),
+              ],
             ),
-            const SizedBox(height: AppTheme.spacingM),
-            const Text(
-              '검색 결과가 없습니다',
+            const SizedBox(height: AppTheme.spacingS),
+
+            // 재료 일치율
+            Text(
+              _getMatchScoreText(recipe.matchScore),
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary,
+                color: _getMatchScoreColor(recipe.matchScore),
               ),
             ),
             const SizedBox(height: AppTheme.spacingS),
-            const Text(
-              '다른 검색어로 시도해보세요',
-              style: TextStyle(
-                fontSize: 14,
-                color: AppTheme.textSecondary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
-  /// 즐겨찾기 빈 상태 화면
-  Widget _buildEmptyFavoritesState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppTheme.spacingXL),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                color: AppTheme.lightOrange,
-                borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-              ),
-              child: const Icon(
-                Icons.favorite_border,
-                size: 60,
-                color: AppTheme.primaryOrange,
-              ),
+            // 매칭 재료 정보
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '보유 재료',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(width: AppTheme.spacingM),
+                Expanded(
+                  child: Text(
+                    '${recipe.matchedCount}개 / 총 ${recipe.totalCount}개',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: AppTheme.spacingXL),
-            const Text(
-              '즐겨찾기한 레시피가 없어요',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary,
+
+            // 소개글 (있을 경우에만 표시)
+            if (recipe.introduction != null && recipe.introduction!.isNotEmpty) ...[
+              const SizedBox(height: AppTheme.spacingS),
+              Text(
+                recipe.introduction!,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.textSecondary,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
-            const SizedBox(height: AppTheme.spacingM),
-            const Text(
-              '마음에 드는 레시피에 하트를 눌러\n즐겨찾기에 추가해보세요!',
-              style: TextStyle(
-                fontSize: 16,
-                color: AppTheme.textSecondary,
-                height: 1.5,
+            ],
+
+            // 조리 정보
+            if (recipe.cookingTime != null || recipe.difficulty != null) ...[
+              const SizedBox(height: AppTheme.spacingS),
+              Row(
+                children: [
+                  if (recipe.cookingTime != null) ...[
+                    const Icon(
+                      Icons.timer,
+                      size: 14,
+                      color: AppTheme.textSecondary,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      recipe.cookingTime!,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                  ],
+                  if (recipe.cookingTime != null && recipe.difficulty != null)
+                    const SizedBox(width: AppTheme.spacingM),
+                  if (recipe.difficulty != null) ...[
+                    const Icon(
+                      Icons.analytics_outlined,
+                      size: 14,
+                      color: AppTheme.textSecondary,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      recipe.difficulty!,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                  ],
+                ],
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppTheme.spacingXL),
-            CustomButton(
-              text: '모든 레시피 보기',
-              onPressed: () {
-                ref.read(showOnlyFavoritesProvider.notifier).state = false;
-              },
-              type: ButtonType.secondary,
-              height: 48,
-            ),
+            ],
           ],
         ),
       ),
