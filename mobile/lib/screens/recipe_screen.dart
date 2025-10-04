@@ -205,10 +205,6 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
         padding: const EdgeInsets.all(AppTheme.spacingM),
         itemCount: filteredRecipes.length,
         separatorBuilder: (context, index) {
-          // 광고 영역을 특정 위치에 삽입
-          if (index == 2) {
-            return _buildAdBanner();
-          }
           return const SizedBox(height: AppTheme.spacingM);
         },
         itemBuilder: (context, index) {
@@ -323,109 +319,6 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
     );
   }
 
-  /// 광고 배너
-  Widget _buildAdBanner() {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: AppTheme.spacingM),
-      height: 120,
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF2E7),
-        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-        border: Border.all(
-          color: AppTheme.primaryOrange.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(AppTheme.spacingM),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    '앗! 재료가 부족한가요? 😱 😱',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: AppTheme.spacingS),
-                  const Row(
-                    children: [
-                      Text(
-                        '🛍️ ',
-                        style: TextStyle(fontSize: 16),
-                      ),
-                      Text(
-                        '쿠팡으로 재료사러 가기 ',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.primaryOrange,
-                        ),
-                      ),
-                      Text(
-                        '🛒',
-                        style: TextStyle(fontSize: 16),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  const Text(
-                    '지금 바로 주문하면 내일 바로 받아볼 수 있어요!',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: AppTheme.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Container(
-            width: 60,
-            height: 60,
-            margin: const EdgeInsets.all(AppTheme.spacingM),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  '🍎🥝',
-                  style: TextStyle(fontSize: 20),
-                ),
-                Container(
-                  width: 20,
-                  height: 20,
-                  decoration: const BoxDecoration(
-                    color: AppTheme.primaryOrange,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Center(
-                    child: Text(
-                      '2',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   /// 로딩 아이템
   Widget _buildLoadingItem() {
