@@ -47,7 +47,7 @@ class Command(BaseCommand):
         imported_count = 0
         skipped_count = 0
 
-        with open(csv_file_path, 'r', encoding='utf-8') as csvfile:
+        with open(csv_file_path, 'r', encoding='utf-8-sig') as csvfile:  # BOM 제거를 위해 utf-8-sig 사용
             reader = csv.DictReader(csvfile)
 
             for row in reader:
