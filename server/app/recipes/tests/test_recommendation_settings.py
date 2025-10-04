@@ -11,6 +11,10 @@ from .base import CategoryTestCase
 class RecommendationSettingsModelTest(TestCase):
     """추천 설정 모델 테스트"""
 
+    def setUp(self):
+        """각 테스트 전 RecommendationSettings 초기화"""
+        RecommendationSettings.objects.filter(pk=1).delete()
+
     def test_create_default_settings(self):
         """
         기본 설정 생성 테스트
@@ -79,6 +83,9 @@ class RecommendationSettingsAPITest(CategoryTestCase):
         """테스트용 데이터 생성"""
         self.client = Client()
         self.url = "/fridge2fork/v1/recipes/recommendations"
+
+        # RecommendationSettings 초기화 (싱글톤 패턴으로 id=1 고정)
+        RecommendationSettings.objects.filter(pk=1).delete()
 
         # 레시피 생성
         self.recipe1 = Recipe.objects.create(
