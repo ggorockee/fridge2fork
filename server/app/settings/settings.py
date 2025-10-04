@@ -57,6 +57,7 @@ LOCAL_APPS = [
     'core.apps.CoreConfig',
     'users.apps.UsersConfig',
     'recipes.apps.RecipesConfig',
+    'system.apps.SystemConfig',
 ]
 
 INSTALLED_APPS = SYSTEM_APPS + THIRD_PARTY_APPS + LOCAL_APPS

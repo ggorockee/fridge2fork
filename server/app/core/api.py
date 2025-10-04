@@ -57,6 +57,8 @@ api.get_openapi_schema = lambda path_params=None: custom_openapi_schema(original
 # 라우터 등록
 from recipes.api import router as recipes_router
 from users.api import router as auth_router
+from system.api import router as system_router
 
 api.add_router("/auth", auth_router, tags=["Authentication"])
 api.add_router("/recipes", recipes_router, tags=["Recipes"])
+api.add_router("/system", system_router, tags=["System"])
