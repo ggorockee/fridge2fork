@@ -321,18 +321,10 @@ def _get_recipe_recommendations_sync(
         matched_count = len(matched_ids)
         total_count = len(recipe_ingredient_ids)
 
-        # 유사도 계산
-        if algorithm == 'jaccard':
-            # Jaccard Similarity: |A ∩ B| / |A ∪ B|
-            union_count = len(user_normalized_ids | recipe_ingredient_ids)
-            match_score = matched_count / union_count if union_count > 0 else 0
-        else:  # cosine
-            # Cosine Similarity: (A · B) / (||A|| × ||B||)
-            # 이진 벡터이므로 내적 = matched_count
-            dot_product = matched_count
-            norm_a = sqrt(len(user_normalized_ids))
-            norm_b = sqrt(total_count)
-            match_score = dot_product / (norm_a * norm_b) if (norm_a * norm_b) > 0 else 0
+        # 레시피 기준 매칭률 계산
+        # 사용자가 레시피에 필요한 재료를 얼마나 가지고 있는가?
+        # match_score = 보유 재료 수 / 레시피 전체 재료 수
+        match_score = matched_count / total_count if total_count > 0 else 0
 
         # 최소 매칭률 필터링
         if match_score >= min_match_rate:
@@ -343,8 +335,8 @@ def _get_recipe_recommendations_sync(
                 'total_count': total_count
             })
 
-    # 유사도 점수 내림차순 정렬
-    recipe_matches.sort(key=lambda x: x['match_score'], reverse=True)
+    # 매칭률 내림차순 정렬 (1차: 매칭률, 2차: 매칭 재료 수)
+    recipe_matches.sort(key=lambda x: (x['match_score'], x['matched_count']), reverse=True)
 
     # limit 적용
     limited_matches = recipe_matches[:limit]
@@ -391,20 +383,28 @@ async def get_recipe_recommendations(
     min_match_rate: Optional[float] = None
 ):
     """
-    레시피 추천 (GET 방식, 유사도 알고리즘 선택 가능)
+    레시피 추천 (GET 방식)
 
     Args:
         ingredients: 쉼표로 구분된 정규화 재료명 (예: "돼지고기,배추,두부")
         limit: 추천 레시피 최대 개수 (미지정 시 관리자 설정값 사용, 범위: 1-100)
-        algorithm: 유사도 알고리즘 (미지정 시 관리자 설정값 사용, "jaccard" or "cosine")
+        algorithm: 알고리즘 선택 (미지정 시 관리자 설정값 사용, "jaccard" or "cosine") - 호환성 유지용
         exclude_seasonings: 범용 조미료 제외 여부 (미지정 시 관리자 설정값 사용)
         min_match_rate: 최소 매칭률 (미지정 시 관리자 설정값 사용, 범위: 0.0-1.0)
+
+    매칭률 계산:
+        match_score = 보유 재료 수 / 레시피 전체 재료 수
+        예) 레시피 재료 [대패삼겹살, 배추]를 모두 보유 → 100%
+
+    정렬 우선순위:
+        1차: 매칭률 (높은 순)
+        2차: 매칭된 재료 수 (많은 순)
 
     Returns:
         RecipeRecommendationsResponseSchema: {
             recipes: 추천 레시피 목록,
             total: 전체 추천 개수,
-            algorithm: 사용된 알고리즘,
+            algorithm: 사용된 알고리즘 (호환성),
             summary: 매칭률 요약
         }
     """
