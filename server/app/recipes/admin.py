@@ -1233,49 +1233,84 @@ class RecommendationSettingsAdmin(admin.ModelAdmin):
     )
 
     def get_algorithm_explanation(self, obj):
-        """알고리즘 설명 표시"""
-        explanations = {
-            'jaccard': (
-                '<div style="background: #f0f8ff; padding: 15px; border-left: 4px solid #2196F3; margin: 10px 0;">'
-                '<h3 style="margin-top: 0; color: #1976D2;">🔵 Jaccard (자카드 유사도)</h3>'
-                '<p><strong>계산 방식:</strong> 교집합 / 합집합</p>'
-                '<p><strong>수식:</strong> |매칭된 재료| / |전체 재료(사용자 + 레시피 - 중복)|</p>'
-                '<p><strong>예시:</strong></p>'
-                '<ul style="margin: 5px 0;">'
-                '<li>사용자 재료: 돼지고기, 배추, 두부 (3개)</li>'
-                '<li>레시피 재료: 돼지고기, 배추, 김치, 고춧가루 (4개)</li>'
-                '<li>매칭: 돼지고기, 배추 (2개)</li>'
-                '<li><strong>유사도: 2 / 5 = 0.4 (40%)</strong></li>'
-                '</ul>'
-                '<p><strong>✅ 장점:</strong> 직관적이고 이해하기 쉬움. 재료가 얼마나 겹치는지 명확</p>'
-                '<p><strong>⚠️ 단점:</strong> 레시피 재료가 많을수록 유사도가 낮아지는 경향</p>'
-                '<p><strong>💡 권장:</strong> 간단한 레시피 위주 추천, 재료 낭비 최소화 목적</p>'
-                '</div>'
-            ),
-            'cosine': (
-                '<div style="background: #fff3e0; padding: 15px; border-left: 4px solid #FF9800; margin: 10px 0;">'
-                '<h3 style="margin-top: 0; color: #F57C00;">🟠 Cosine (코사인 유사도)</h3>'
-                '<p><strong>계산 방식:</strong> 벡터 간 각도 (방향성)</p>'
-                '<p><strong>수식:</strong> |매칭된 재료| / (√사용자_재료_수 × √레시피_재료_수)</p>'
-                '<p><strong>예시:</strong></p>'
-                '<ul style="margin: 5px 0;">'
-                '<li>사용자 재료: 돼지고기, 배추, 두부 (3개)</li>'
-                '<li>레시피 재료: 돼지고기, 배추, 김치, 고춧가루 (4개)</li>'
-                '<li>매칭: 돼지고기, 배추 (2개)</li>'
-                '<li><strong>유사도: 2 / (√3 × √4) = 0.577 (57.7%)</strong></li>'
-                '</ul>'
-                '<p><strong>✅ 장점:</strong> 재료 개수에 덜 민감. 복잡한 레시피도 공평하게 평가</p>'
-                '<p><strong>⚠️ 단점:</strong> 수학적으로 다소 복잡함</p>'
-                '<p><strong>💡 권장:</strong> 다양한 복잡도의 레시피 균형있게 추천</p>'
-                '</div>'
-            )
-        }
+        """알고리즘 설명 표시 (두 알고리즘 모두 표시)"""
+        return format_html(
+            '<div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 10px 0;">'
+            '<h2 style="margin-top: 0; color: #333; border-bottom: 2px solid #ddd; padding-bottom: 10px;">📚 유사도 알고리즘 비교</h2>'
 
-        if obj and obj.default_algorithm:
-            return format_html(explanations.get(obj.default_algorithm, ''))
-        return format_html(explanations['jaccard'])  # 기본값
+            # Jaccard 설명
+            '<div style="background: #f0f8ff; padding: 15px; border-left: 4px solid #2196F3; margin: 15px 0; border-radius: 4px;">'
+            '<h3 style="margin-top: 0; color: #1976D2;">🔵 Jaccard (자카드 유사도) - 현재 권장</h3>'
+            '<p><strong>📐 계산 방식:</strong> 교집합 / 합집합</p>'
+            '<p><strong>📝 수식:</strong> <code>|매칭된 재료| / |전체 재료(사용자 + 레시피 - 중복)|</code></p>'
+            '<p><strong>📊 예시:</strong></p>'
+            '<ul style="margin: 5px 0; line-height: 1.6;">'
+            '<li>사용자 재료: 돼지고기, 배추, 두부 (3개)</li>'
+            '<li>레시피 재료: 돼지고기, 배추, 김치, 고춧가루 (4개)</li>'
+            '<li>매칭: 돼지고기, 배추 (2개)</li>'
+            '<li><strong>→ 유사도: 2 / 5 = 0.4 (40%)</strong></li>'
+            '</ul>'
+            '<p><strong>✅ 장점:</strong> 직관적이고 이해하기 쉬움. 재료가 얼마나 겹치는지 명확하게 표현</p>'
+            '<p><strong>⚠️ 단점:</strong> 레시피 재료가 많을수록 유사도가 낮아지는 경향</p>'
+            '<p><strong>💡 권장 상황:</strong> 간단한 레시피 위주 추천, 재료 낭비 최소화, 직관적인 매칭</p>'
+            '</div>'
 
-    get_algorithm_explanation.short_description = '선택한 알고리즘 설명'
+            # Cosine 설명
+            '<div style="background: #fff3e0; padding: 15px; border-left: 4px solid #FF9800; margin: 15px 0; border-radius: 4px;">'
+            '<h3 style="margin-top: 0; color: #F57C00;">🟠 Cosine (코사인 유사도)</h3>'
+            '<p><strong>📐 계산 방식:</strong> 벡터 간 각도 측정 (방향성)</p>'
+            '<p><strong>📝 수식:</strong> <code>|매칭된 재료| / (√사용자_재료_수 × √레시피_재료_수)</code></p>'
+            '<p><strong>📊 예시:</strong></p>'
+            '<ul style="margin: 5px 0; line-height: 1.6;">'
+            '<li>사용자 재료: 돼지고기, 배추, 두부 (3개)</li>'
+            '<li>레시피 재료: 돼지고기, 배추, 김치, 고춧가루 (4개)</li>'
+            '<li>매칭: 돼지고기, 배추 (2개)</li>'
+            '<li><strong>→ 유사도: 2 / (√3 × √4) = 2 / 3.46 = 0.577 (57.7%)</strong></li>'
+            '</ul>'
+            '<p><strong>✅ 장점:</strong> 재료 개수에 덜 민감. 복잡한 레시피도 공평하게 평가</p>'
+            '<p><strong>⚠️ 단점:</strong> 수학적으로 다소 복잡함</p>'
+            '<p><strong>💡 권장 상황:</strong> 다양한 복잡도의 레시피 균형있게 추천, 공평한 평가</p>'
+            '</div>'
+
+            # 비교 표
+            '<div style="background: white; padding: 15px; border: 1px solid #ddd; margin: 15px 0; border-radius: 4px;">'
+            '<h3 style="margin-top: 0; color: #333;">⚖️ 비교 요약</h3>'
+            '<table style="width: 100%; border-collapse: collapse;">'
+            '<thead>'
+            '<tr style="background: #f5f5f5;">'
+            '<th style="padding: 10px; border: 1px solid #ddd; text-align: left;">항목</th>'
+            '<th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Jaccard</th>'
+            '<th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Cosine</th>'
+            '</tr>'
+            '</thead>'
+            '<tbody>'
+            '<tr>'
+            '<td style="padding: 10px; border: 1px solid #ddd;"><strong>직관성</strong></td>'
+            '<td style="padding: 10px; border: 1px solid #ddd; text-align: center;">⭐⭐⭐ 매우 높음</td>'
+            '<td style="padding: 10px; border: 1px solid #ddd; text-align: center;">⭐⭐ 보통</td>'
+            '</tr>'
+            '<tr style="background: #fafafa;">'
+            '<td style="padding: 10px; border: 1px solid #ddd;"><strong>재료 개수 영향</strong></td>'
+            '<td style="padding: 10px; border: 1px solid #ddd; text-align: center;">⭐⭐ 많이 받음</td>'
+            '<td style="padding: 10px; border: 1px solid #ddd; text-align: center;">⭐⭐⭐ 적게 받음</td>'
+            '</tr>'
+            '<tr>'
+            '<td style="padding: 10px; border: 1px solid #ddd;"><strong>기본값 권장</strong></td>'
+            '<td style="padding: 10px; border: 1px solid #ddd; text-align: center;">⭐⭐⭐ 권장</td>'
+            '<td style="padding: 10px; border: 1px solid #ddd; text-align: center;">⭐⭐ 선택 가능</td>'
+            '</tr>'
+            '</tbody>'
+            '</table>'
+            '</div>'
+
+            '<p style="margin-top: 15px; padding: 10px; background: #e3f2fd; border-left: 4px solid #1976D2; border-radius: 4px;">'
+            '<strong>💬 참고:</strong> 위 드롭다운에서 알고리즘을 선택하면 API 기본값으로 사용됩니다. '
+            '사용자가 API 호출 시 직접 알고리즘을 지정할 수도 있습니다.'
+            '</p>'
+            '</div>'
+        )
+
+    get_algorithm_explanation.short_description = '알고리즘 상세 설명'
 
     def has_add_permission(self, request):
         """추가 불가 (Singleton)"""

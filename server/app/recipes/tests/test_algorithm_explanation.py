@@ -46,7 +46,7 @@ class AlgorithmExplanationTest(TestCase):
 
     def test_get_algorithm_explanation_jaccard(self):
         """
-        Jaccard 알고리즘 선택 시 자세한 설명이 표시되는지 확인
+        Jaccard 알고리즘 선택 시 두 알고리즘 설명이 모두 표시되는지 확인
         """
         settings = RecommendationSettings(
             default_algorithm='jaccard',
@@ -55,20 +55,30 @@ class AlgorithmExplanationTest(TestCase):
 
         explanation = self.admin.get_algorithm_explanation(settings)
 
-        # HTML 설명에 필수 키워드 포함 확인
+        # Jaccard 알고리즘 설명 확인
         self.assertIn('Jaccard', explanation)
         self.assertIn('자카드', explanation)
         self.assertIn('교집합', explanation)
         self.assertIn('합집합', explanation)
+        self.assertIn('0.4', explanation)  # Jaccard 예시 계산 결과
+        self.assertIn('직관적', explanation)
+
+        # Cosine 알고리즘 설명도 함께 표시되는지 확인
+        self.assertIn('Cosine', explanation)
+        self.assertIn('코사인', explanation)
+        self.assertIn('벡터', explanation)
+        self.assertIn('각도', explanation)
+        self.assertIn('0.577', explanation)  # Cosine 예시 계산 결과
+
+        # 공통 요소 확인
         self.assertIn('예시', explanation)
         self.assertIn('돼지고기', explanation)
-        self.assertIn('0.4', explanation)  # 예시 계산 결과
         self.assertIn('장점', explanation)
-        self.assertIn('직관적', explanation)
+        self.assertIn('비교 요약', explanation)  # 비교 표 확인
 
     def test_get_algorithm_explanation_cosine(self):
         """
-        Cosine 알고리즘 선택 시 자세한 설명이 표시되는지 확인
+        Cosine 알고리즘 선택 시 두 알고리즘 설명이 모두 표시되는지 확인
         """
         settings = RecommendationSettings(
             default_algorithm='cosine',
@@ -77,16 +87,26 @@ class AlgorithmExplanationTest(TestCase):
 
         explanation = self.admin.get_algorithm_explanation(settings)
 
-        # HTML 설명에 필수 키워드 포함 확인
+        # Cosine 알고리즘 설명 확인
         self.assertIn('Cosine', explanation)
         self.assertIn('코사인', explanation)
         self.assertIn('벡터', explanation)
         self.assertIn('각도', explanation)
+        self.assertIn('0.577', explanation)  # Cosine 예시 계산 결과
+        self.assertIn('민감', explanation)
+
+        # Jaccard 알고리즘 설명도 함께 표시되는지 확인
+        self.assertIn('Jaccard', explanation)
+        self.assertIn('자카드', explanation)
+        self.assertIn('교집합', explanation)
+        self.assertIn('합집합', explanation)
+        self.assertIn('0.4', explanation)  # Jaccard 예시 계산 결과
+
+        # 공통 요소 확인
         self.assertIn('예시', explanation)
         self.assertIn('돼지고기', explanation)
-        self.assertIn('0.577', explanation)  # 예시 계산 결과
         self.assertIn('장점', explanation)
-        self.assertIn('민감', explanation)
+        self.assertIn('비교 요약', explanation)  # 비교 표 확인
 
     def test_algorithm_explanation_html_styling(self):
         """
