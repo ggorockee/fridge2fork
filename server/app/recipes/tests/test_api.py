@@ -110,7 +110,7 @@ class RecipeSearchAPITest(CategoryTestCase):
 
     def test_search_recipes_by_ingredients(self):
         """재료명으로 레시피 검색 테스트"""
-        response = self.client.get('/recipes/search', {'ingredients': '돼지고기'})
+        response = self.client.get('/fridge2fork/v1/recipes/search', {'ingredients': '돼지고기'})
 
         self.assertEqual(response.status_code, 200)
         data = response.json()
@@ -126,7 +126,7 @@ class RecipeSearchAPITest(CategoryTestCase):
     def test_search_with_normalization(self):
         """정규화된 이름으로 검색 확인 (돼지고기 → 수육용 돼지고기)"""
         # "돼지고기"로 검색하면 "수육용 돼지고기", "구이용 돼지고기" 모두 찾아야 함
-        response = self.client.get('/recipes/search', {'ingredients': '돼지고기'})
+        response = self.client.get('/fridge2fork/v1/recipes/search', {'ingredients': '돼지고기'})
 
         self.assertEqual(response.status_code, 200)
         data = response.json()
@@ -140,7 +140,7 @@ class RecipeSearchAPITest(CategoryTestCase):
 
     def test_search_multiple_ingredients(self):
         """여러 재료로 검색 테스트"""
-        response = self.client.get('/recipes/search', {'ingredients': '돼지고기,배추'})
+        response = self.client.get('/fridge2fork/v1/recipes/search', {'ingredients': '돼지고기,배추'})
 
         self.assertEqual(response.status_code, 200)
         data = response.json()
@@ -152,7 +152,7 @@ class RecipeSearchAPITest(CategoryTestCase):
     def test_exclude_seasonings_option(self):
         """범용 조미료 제외 옵션 테스트"""
         # 소금을 제외하고 검색
-        response = self.client.get('/recipes/search', {
+        response = self.client.get('/fridge2fork/v1/recipes/search', {
             'ingredients': '소금',
             'exclude_seasonings': 'true'
         })
@@ -166,7 +166,7 @@ class RecipeSearchAPITest(CategoryTestCase):
     def test_recommend_recipes_by_fridge(self):
         """냉장고 재료 기반 레시피 추천 테스트"""
         response = self.client.post(
-            '/recipes/recommend',
+            '/fridge2fork/v1/recipes/recommend',
             data=json.dumps({
                 'ingredients': ['돼지고기', '배추'],
                 'exclude_seasonings': True
@@ -190,7 +190,7 @@ class RecipeSearchAPITest(CategoryTestCase):
 
     def test_ingredient_autocomplete(self):
         """재료 자동완성 테스트"""
-        response = self.client.get('/recipes/ingredients/autocomplete', {'q': '돼지'})
+        response = self.client.get('/fridge2fork/v1/recipes/ingredients/autocomplete', {'q': '돼지'})
 
         self.assertEqual(response.status_code, 200)
         data = response.json()
@@ -205,7 +205,7 @@ class RecipeSearchAPITest(CategoryTestCase):
 
     def test_search_with_no_results(self):
         """검색 결과 없음 테스트"""
-        response = self.client.get('/recipes/search', {'ingredients': '존재하지않는재료'})
+        response = self.client.get('/fridge2fork/v1/recipes/search', {'ingredients': '존재하지않는재료'})
 
         self.assertEqual(response.status_code, 200)
         data = response.json()
@@ -215,7 +215,7 @@ class RecipeSearchAPITest(CategoryTestCase):
 
     def test_search_without_ingredients_param(self):
         """재료 파라미터 없이 검색 테스트 (에러 처리)"""
-        response = self.client.get('/recipes/search')
+        response = self.client.get('/fridge2fork/v1/recipes/search')
 
         # 400 Bad Request 또는 빈 결과 반환
         self.assertIn(response.status_code, [200, 400])
