@@ -991,40 +991,45 @@ class _RecommendedRecipeCard extends StatelessWidget {
                       child: const Icon(Icons.restaurant, size: 40, color: Colors.grey),
                     ),
             ),
-            // 정보
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    recipe.title,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 8),
-                  // 매칭률
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppTheme.lightOrange,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      '${(recipe.matchScore * 100).toInt()}% 일치',
+            // 정보 - 전체 영역 차지
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 제목 (2줄 ellipsis)
+                    Text(
+                      recipe.title,
                       style: const TextStyle(
-                        fontSize: 11,
-                        color: AppTheme.primaryOrange,
+                        fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                ],
+                    const Spacer(),
+                    // 매칭률 (하단 배치)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppTheme.lightOrange,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '${(recipe.matchScore * 100).toInt()}% 일치',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppTheme.primaryOrange,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
