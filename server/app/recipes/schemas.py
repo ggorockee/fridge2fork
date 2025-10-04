@@ -16,6 +16,7 @@ class RecipeSchema(Schema):
     difficulty: str
     cooking_time: str
     image_url: Optional[str] = None
+    recipe_url: Optional[str] = None
     introduction: Optional[str] = None
 
 
