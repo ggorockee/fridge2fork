@@ -1023,78 +1023,79 @@ class _RecommendedRecipeCard extends StatelessWidget {
             ],
           ),
           child: Column(
-          children: [
-            // 이미지 영역 (2/3 = 130px)
-            SizedBox(
-              height: imageHeight,
-              width: 160,
-              child: recipe.imageUrl != null && recipe.imageUrl!.isNotEmpty
-                  ? Image.network(
-                      recipe.imageUrl!,
-                      height: imageHeight,
-                      width: 160,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
+            children: [
+              // 이미지 영역 (2/3 = 130px)
+              SizedBox(
+                height: imageHeight,
+                width: 160,
+                child: recipe.imageUrl != null && recipe.imageUrl!.isNotEmpty
+                    ? Image.network(
+                        recipe.imageUrl!,
+                        height: imageHeight,
+                        width: 160,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          height: imageHeight,
+                          width: 160,
+                          color: Colors.grey[200],
+                          child: const Icon(Icons.restaurant, size: 40, color: Colors.grey),
+                        ),
+                      )
+                    : Container(
                         height: imageHeight,
                         width: 160,
                         color: Colors.grey[200],
                         child: const Icon(Icons.restaurant, size: 40, color: Colors.grey),
                       ),
-                    )
-                  : Container(
-                      height: imageHeight,
-                      width: 160,
-                      color: Colors.grey[200],
-                      child: const Icon(Icons.restaurant, size: 40, color: Colors.grey),
-                    ),
-            ),
-            // 텍스트 영역 (나머지 = 65px)
-            Container(
-              height: textHeight,
-              padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 제목 (남은 공간 사용)
-                  Expanded(
-                    child: Text(
-                      recipe.title,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        height: 1.2,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  // 매칭률 (하단 고정)
-                  SizedBox(
-                    height: 18,
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppTheme.lightOrange,
-                          borderRadius: BorderRadius.circular(4),
+              ),
+              // 텍스트 영역 (나머지 = 65px)
+              Container(
+                height: textHeight,
+                padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 제목 (남은 공간 사용)
+                    Expanded(
+                      child: Text(
+                        recipe.title,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          height: 1.2,
                         ),
-                        child: Text(
-                          '${(recipe.matchScore * 100).toInt()}% 일치',
-                          style: const TextStyle(
-                            fontSize: 9,
-                            color: AppTheme.primaryOrange,
-                            fontWeight: FontWeight.w600,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    // 매칭률 (하단 고정)
+                    SizedBox(
+                      height: 18,
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppTheme.lightOrange,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            '${(recipe.matchScore * 100).toInt()}% 일치',
+                            style: const TextStyle(
+                              fontSize: 9,
+                              color: AppTheme.primaryOrange,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
