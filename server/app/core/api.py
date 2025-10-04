@@ -13,12 +13,6 @@ api = NinjaAPI(
     urls_namespace="api_v1",
     docs_url="/docs",
     openapi_url="/openapi.json",
-    servers=[
-        {
-            "url": "/fridge2fork/v1",
-            "description": "API Base URL"
-        }
-    ]
 )
 
 # 라우터 등록
