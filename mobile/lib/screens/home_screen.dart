@@ -922,7 +922,7 @@ class _RecipeRecommendationsSectionState extends ConsumerState<_RecipeRecommenda
               const SizedBox(height: AppTheme.spacingM),
               // 레시피 카드 리스트 (가로 스크롤)
               SizedBox(
-                height: 220,
+                height: 200,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   itemCount: response.recipes.take(10).length,
@@ -961,7 +961,7 @@ class _RecommendedRecipeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: 160,
-      height: 220, // 높이를 220px로 증가하여 overflow 방지
+      height: 200, // 고정 높이 200px
       margin: const EdgeInsets.only(right: AppTheme.spacingM),
       child: Card(
         elevation: 2,
@@ -970,48 +970,55 @@ class _RecommendedRecipeCard extends StatelessWidget {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // 이미지
+            // 이미지 (고정 높이)
             ClipRRect(
               borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
               child: recipe.imageUrl != null && recipe.imageUrl!.isNotEmpty
                   ? Image.network(
                       recipe.imageUrl!,
                       height: 110,
-                      width: double.infinity,
+                      width: 160,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) => Container(
                         height: 110,
+                        width: 160,
                         color: Colors.grey[200],
                         child: const Icon(Icons.restaurant, size: 40, color: Colors.grey),
                       ),
                     )
                   : Container(
                       height: 110,
+                      width: 160,
                       color: Colors.grey[200],
                       child: const Icon(Icons.restaurant, size: 40, color: Colors.grey),
                     ),
             ),
-            // 정보 - 남은 공간 사용
-            Expanded(
+            // 정보 영역 (고정 높이)
+            SizedBox(
+              height: 90, // 200 - 110(이미지) = 90
               child: Padding(
-                padding: const EdgeInsets.all(12.0),
+                padding: const EdgeInsets.all(10.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 제목 (2줄 ellipsis)
-                    Text(
-                      recipe.title,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                    // 제목 (2줄 고정)
+                    SizedBox(
+                      height: 40, // 2줄 제목 영역
+                      child: Text(
+                        recipe.title,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          height: 1.3,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 8), // Spacer 대신 고정 간격 사용
+                    const SizedBox(height: 6),
                     // 매칭률 (하단 배치)
-                    const Spacer(), // 매칭률을 하단에 고정
                     Align(
                       alignment: Alignment.centerRight,
                       child: Container(
