@@ -4,12 +4,12 @@
 
 import json
 import tempfile
-from django.test import TestCase
+from .base import CategoryTestCase
 from recipes.models import Recipe, Ingredient, NormalizedIngredient
 from recipes.management.commands.apply_normalization import Command
 
 
-class ApplyNormalizationTest(TestCase):
+class ApplyNormalizationTest(CategoryTestCase):
     """재료 정규화 적용 테스트"""
 
     def setUp(self):
@@ -27,19 +27,19 @@ class ApplyNormalizationTest(TestCase):
         Ingredient.objects.create(
             recipe=self.recipe,
             original_name="수육용 돼지고기 300g",
-            category=Ingredient.ESSENTIAL
+            category=self.essential_category
         )
         Ingredient.objects.create(
             recipe=self.recipe,
             original_name="구이용 돼지고기",
-            category=Ingredient.ESSENTIAL
+            category=self.essential_category
         )
 
         # 조미료
         Ingredient.objects.create(
             recipe=self.recipe,
             original_name="소금 약간",
-            category=Ingredient.SEASONING
+            category=self.seasoning_category
         )
 
         # 테스트용 제안 데이터
@@ -64,6 +64,7 @@ class ApplyNormalizationTest(TestCase):
     def test_create_normalized_ingredients(self):
         """NormalizedIngredient 생성 테스트"""
         command = Command()
+        command._load_categories()  # 카테고리 로드
 
         # JSON 데이터로 정규화 재료 생성
         created_count = command.create_normalized_ingredients(
@@ -75,15 +76,16 @@ class ApplyNormalizationTest(TestCase):
 
         # 돼지고기 확인
         pork = NormalizedIngredient.objects.get(name="돼지고기")
-        self.assertEqual(pork.category, NormalizedIngredient.MEAT)
+        self.assertEqual(pork.category, self.meat_category)
 
         # 소금 확인
         salt = NormalizedIngredient.objects.get(name="소금")
-        self.assertEqual(salt.category, NormalizedIngredient.SEASONING)
+        self.assertEqual(salt.category, self.seasoning_norm_category)
 
     def test_link_ingredients_to_normalized(self):
         """Ingredient 연결 테스트"""
         command = Command()
+        command._load_categories()  # 카테고리 로드
 
         # 먼저 정규화 재료 생성
         command.create_normalized_ingredients(
@@ -105,6 +107,7 @@ class ApplyNormalizationTest(TestCase):
     def test_mark_common_seasonings(self):
         """범용 조미료 표시 테스트"""
         command = Command()
+        command._load_categories()  # 카테고리 로드
 
         # 정규화 재료 생성
         command.create_normalized_ingredients(
@@ -129,6 +132,7 @@ class ApplyNormalizationTest(TestCase):
     def test_skip_already_normalized(self):
         """이미 정규화된 재료 스킵 확인"""
         command = Command()
+        command._load_categories()  # 카테고리 로드
 
         # 첫 번째 생성
         count1 = command.create_normalized_ingredients(
@@ -148,6 +152,7 @@ class ApplyNormalizationTest(TestCase):
     def test_apply_normalization_with_json_files(self):
         """JSON 파일로 정규화 적용 테스트"""
         command = Command()
+        command._load_categories()  # 카테고리 로드
 
         # 임시 JSON 파일 생성
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json') as f:

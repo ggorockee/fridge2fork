@@ -2,14 +2,14 @@
 Fridge 모델 테스트
 """
 
-from django.test import TestCase
 from django.contrib.auth import get_user_model
 from recipes.models import Fridge, FridgeIngredient, NormalizedIngredient
+from .base import CategoryTestCase
 
 User = get_user_model()
 
 
-class FridgeModelTest(TestCase):
+class FridgeModelTest(CategoryTestCase):
     """Fridge 모델 테스트"""
 
     def setUp(self):
@@ -23,15 +23,15 @@ class FridgeModelTest(TestCase):
         # 정규화 재료 생성
         self.ingredient1 = NormalizedIngredient.objects.create(
             name='양파',
-            category='vegetable'
+            category=self.vegetable_category
         )
         self.ingredient2 = NormalizedIngredient.objects.create(
             name='돼지고기',
-            category='meat'
+            category=self.meat_category
         )
         self.ingredient3 = NormalizedIngredient.objects.create(
             name='소금',
-            category='seasoning',
+            category=self.seasoning_norm_category,
             is_common_seasoning=True
         )
 

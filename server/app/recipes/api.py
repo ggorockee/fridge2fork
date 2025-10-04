@@ -192,7 +192,7 @@ def autocomplete_ingredients(request, q: str):
     for ingredient in normalized_ingredients:
         suggestions.append(IngredientSuggestionSchema(
             name=ingredient.name,
-            category=ingredient.get_category_display(),
+            category=ingredient.category.name,
             is_common_seasoning=ingredient.is_common_seasoning
         ))
 

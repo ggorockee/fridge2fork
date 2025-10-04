@@ -7,13 +7,25 @@ CSV 데이터 Import Management Command
 import csv
 import re
 from django.core.management.base import BaseCommand
-from recipes.models import Recipe, Ingredient
+from recipes.models import Recipe, Ingredient, IngredientCategory
 
 
 class Command(BaseCommand):
     """레시피 CSV Import 커맨드"""
 
     help = 'CSV 파일에서 레시피 데이터를 import합니다'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.essential_category = None
+
+    def _load_category(self):
+        """필수 재료 카테고리 로드"""
+        if self.essential_category is None:
+            self.essential_category = IngredientCategory.objects.get(
+                code='essential',
+                category_type='ingredient'
+            )
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -26,6 +38,9 @@ class Command(BaseCommand):
         csv_file_path = options['csv_file']
 
         self.stdout.write(self.style.SUCCESS(f'CSV 파일 읽기 시작: {csv_file_path}'))
+
+        # 카테고리 로드
+        self._load_category()
 
         recipes_to_create = []
         ingredients_data = []
@@ -90,7 +105,7 @@ class Command(BaseCommand):
                         recipe=recipe,
                         original_name=ingredient_name.strip(),
                         normalized_name=ingredient_name.strip(),
-                        category=Ingredient.ESSENTIAL
+                        category=self.essential_category
                     )
                 )
 

@@ -7,7 +7,7 @@ suggestions.json 파일을 읽어 NormalizedIngredient 생성 및 연결
 import json
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from recipes.models import Ingredient, NormalizedIngredient
+from recipes.models import Ingredient, NormalizedIngredient, IngredientCategory
 
 
 class Command(BaseCommand):
@@ -15,12 +15,29 @@ class Command(BaseCommand):
 
     help = 'suggestions.json을 읽어 재료 정규화를 적용합니다'
 
-    # 카테고리 매핑 (Ingredient category → NormalizedIngredient category)
-    CATEGORY_MAPPING = {
-        'essential': NormalizedIngredient.MEAT,  # 기본값
-        'seasoning': NormalizedIngredient.SEASONING,
-        'optional': NormalizedIngredient.ETC,
-    }
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # 카테고리 객체들을 초기화 시 로드
+        self.meat_category = None
+        self.vegetable_category = None
+        self.seafood_category = None
+        self.seasoning_category = None
+        self.grain_category = None
+        self.dairy_category = None
+        self.etc_category = None
+
+    def _load_categories(self):
+        """카테고리 객체들을 로드"""
+        if self.meat_category is not None:
+            return  # 이미 로드됨
+
+        self.meat_category = IngredientCategory.objects.get(code='meat', category_type='normalized')
+        self.vegetable_category = IngredientCategory.objects.get(code='vegetable', category_type='normalized')
+        self.seafood_category = IngredientCategory.objects.get(code='seafood', category_type='normalized')
+        self.seasoning_category = IngredientCategory.objects.get(code='seasoning', category_type='normalized')
+        self.grain_category = IngredientCategory.objects.get(code='grain', category_type='normalized')
+        self.dairy_category = IngredientCategory.objects.get(code='dairy', category_type='normalized')
+        self.etc_category = IngredientCategory.objects.get(code='etc', category_type='normalized')
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -39,6 +56,9 @@ class Command(BaseCommand):
         seasonings_file = options['seasonings_file']
 
         self.stdout.write(self.style.SUCCESS('정규화 적용 시작...'))
+
+        # 카테고리 로드
+        self._load_categories()
 
         result = self.apply_from_files(suggestions_file, seasonings_file)
 
@@ -145,7 +165,7 @@ class Command(BaseCommand):
                 normalized = NormalizedIngredient.objects.get(name=seasoning_name)
                 if not normalized.is_common_seasoning:
                     normalized.is_common_seasoning = True
-                    normalized.category = NormalizedIngredient.SEASONING
+                    normalized.category = self.seasoning_category
                     normalized.save(update_fields=['is_common_seasoning', 'category'])
                     marked_count += 1
             except NormalizedIngredient.DoesNotExist:
@@ -166,34 +186,33 @@ class Command(BaseCommand):
         # 조미료 키워드 먼저 체크
         for keyword in seasoning_keywords:
             if keyword in base_name:
-                return NormalizedIngredient.SEASONING
+                return self.seasoning_category
 
         # 키워드 매칭
         for keyword in meat_keywords:
             if keyword in base_name:
-                return NormalizedIngredient.MEAT
+                return self.meat_category
 
         for keyword in vegetable_keywords:
             if keyword in base_name:
-                return NormalizedIngredient.VEGETABLE
+                return self.vegetable_category
 
         for keyword in seafood_keywords:
             if keyword in base_name:
-                return NormalizedIngredient.SEAFOOD
+                return self.seafood_category
 
         for keyword in grain_keywords:
             if keyword in base_name:
-                return NormalizedIngredient.GRAIN
+                return self.grain_category
 
         for keyword in dairy_keywords:
             if keyword in base_name:
-                return NormalizedIngredient.DAIRY
+                return self.dairy_category
 
         # Ingredient 카테고리 기반 매핑
-        if ingredient_category:
-            return self.CATEGORY_MAPPING.get(
-                ingredient_category,
-                NormalizedIngredient.ETC
-            )
+        if ingredient_category == 'seasoning':
+            return self.seasoning_category
+        elif ingredient_category == 'essential':
+            return self.meat_category  # 기본값
 
-        return NormalizedIngredient.ETC
+        return self.etc_category

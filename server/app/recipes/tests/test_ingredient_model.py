@@ -2,11 +2,11 @@
 Ingredient 모델 테스트
 """
 
-from django.test import TestCase
 from recipes.models import Recipe, Ingredient
+from .base import CategoryTestCase
 
 
-class IngredientModelTest(TestCase):
+class IngredientModelTest(CategoryTestCase):
     """Ingredient 모델 테스트"""
 
     def setUp(self):
@@ -25,12 +25,12 @@ class IngredientModelTest(TestCase):
         ingredient = Ingredient.objects.create(
             recipe=self.recipe,
             original_name="돼지고기",
-            category=Ingredient.ESSENTIAL
+            category=self.essential_category
         )
 
         self.assertEqual(ingredient.recipe, self.recipe)
         self.assertEqual(ingredient.original_name, "돼지고기")
-        self.assertEqual(ingredient.category, Ingredient.ESSENTIAL)
+        self.assertEqual(ingredient.category, self.essential_category)
         self.assertTrue(ingredient.is_essential)
 
     def test_normalized_name_defaults_to_original(self):
@@ -38,7 +38,7 @@ class IngredientModelTest(TestCase):
         ingredient = Ingredient.objects.create(
             recipe=self.recipe,
             original_name="배추김치 1/4포기",
-            category=Ingredient.ESSENTIAL
+            category=self.essential_category
         )
 
         # normalized_name이 제공되지 않으면 original_name과 동일
@@ -49,7 +49,7 @@ class IngredientModelTest(TestCase):
             recipe=self.recipe,
             original_name="배추김치 1/4포기",
             normalized_name="배추김치",
-            category=Ingredient.ESSENTIAL
+            category=self.essential_category
         )
 
         self.assertEqual(ingredient_with_normalized.original_name, "배추김치 1/4포기")
@@ -60,12 +60,12 @@ class IngredientModelTest(TestCase):
         ingredient1 = Ingredient.objects.create(
             recipe=self.recipe,
             original_name="돼지고기",
-            category=Ingredient.ESSENTIAL
+            category=self.essential_category
         )
         ingredient2 = Ingredient.objects.create(
             recipe=self.recipe,
             original_name="김치",
-            category=Ingredient.ESSENTIAL
+            category=self.essential_category
         )
 
         # 역참조로 레시피의 재료 목록 조회
@@ -79,29 +79,29 @@ class IngredientModelTest(TestCase):
         essential = Ingredient.objects.create(
             recipe=self.recipe,
             original_name="돼지고기",
-            category=Ingredient.ESSENTIAL
+            category=self.essential_category
         )
         seasoning = Ingredient.objects.create(
             recipe=self.recipe,
             original_name="고춧가루",
-            category=Ingredient.SEASONING
+            category=self.seasoning_category
         )
         optional = Ingredient.objects.create(
             recipe=self.recipe,
             original_name="대파",
-            category=Ingredient.OPTIONAL
+            category=self.optional_category
         )
 
-        self.assertEqual(essential.category, "essential")
-        self.assertEqual(seasoning.category, "seasoning")
-        self.assertEqual(optional.category, "optional")
+        self.assertEqual(essential.category, self.essential_category)
+        self.assertEqual(seasoning.category, self.seasoning_category)
+        self.assertEqual(optional.category, self.optional_category)
 
     def test_ingredient_str_representation(self):
         """__str__() 메서드 확인 (단순 표시)"""
         ingredient = Ingredient.objects.create(
             recipe=self.recipe,
             original_name="돼지고기 200g",
-            category=Ingredient.ESSENTIAL
+            category=self.essential_category
         )
 
         # 단순 표시: original_name만 반환
@@ -113,7 +113,7 @@ class IngredientModelTest(TestCase):
         ingredient = Ingredient.objects.create(
             recipe=self.recipe,
             original_name="돼지고기",
-            category=Ingredient.ESSENTIAL
+            category=self.essential_category
         )
 
         self.assertEqual(ingredient.quantity, "")
@@ -123,7 +123,7 @@ class IngredientModelTest(TestCase):
             recipe=self.recipe,
             original_name="김치",
             normalized_name="배추김치",
-            category=Ingredient.ESSENTIAL,
+            category=self.essential_category,
             quantity="1/4포기"
         )
 
@@ -134,12 +134,12 @@ class IngredientModelTest(TestCase):
         Ingredient.objects.create(
             recipe=self.recipe,
             original_name="돼지고기",
-            category=Ingredient.ESSENTIAL
+            category=self.essential_category
         )
         Ingredient.objects.create(
             recipe=self.recipe,
             original_name="김치",
-            category=Ingredient.ESSENTIAL
+            category=self.essential_category
         )
 
         self.assertEqual(Ingredient.objects.count(), 2)

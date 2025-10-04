@@ -2,12 +2,13 @@
 레시피 검색 API 테스트
 """
 
-from django.test import TestCase, Client
+from django.test import Client
 from recipes.models import Recipe, Ingredient, NormalizedIngredient
+from .base import CategoryTestCase
 import json
 
 
-class RecipeSearchAPITest(TestCase):
+class RecipeSearchAPITest(CategoryTestCase):
     """레시피 검색 API 테스트"""
 
     def setUp(self):
@@ -43,19 +44,19 @@ class RecipeSearchAPITest(TestCase):
         # 정규화 재료 생성
         self.pork = NormalizedIngredient.objects.create(
             name="돼지고기",
-            category=NormalizedIngredient.MEAT
+            category=self.meat_category
         )
         self.cabbage = NormalizedIngredient.objects.create(
             name="배추",
-            category=NormalizedIngredient.VEGETABLE
+            category=self.vegetable_category
         )
         self.tofu = NormalizedIngredient.objects.create(
             name="두부",
-            category=NormalizedIngredient.ETC
+            category=self.etc_norm_category
         )
         self.salt = NormalizedIngredient.objects.create(
             name="소금",
-            category=NormalizedIngredient.SEASONING,
+            category=self.seasoning_norm_category,
             is_common_seasoning=True
         )
 
@@ -65,21 +66,21 @@ class RecipeSearchAPITest(TestCase):
             original_name="수육용 돼지고기 300g",
             normalized_name="돼지고기",
             normalized_ingredient=self.pork,
-            category=Ingredient.ESSENTIAL
+            category=self.essential_category
         )
         Ingredient.objects.create(
             recipe=self.recipe1,
             original_name="배추김치",
             normalized_name="배추",
             normalized_ingredient=self.cabbage,
-            category=Ingredient.ESSENTIAL
+            category=self.essential_category
         )
         Ingredient.objects.create(
             recipe=self.recipe1,
             original_name="소금 약간",
             normalized_name="소금",
             normalized_ingredient=self.salt,
-            category=Ingredient.SEASONING
+            category=self.seasoning_category
         )
 
         # 제육볶음 재료
@@ -88,7 +89,7 @@ class RecipeSearchAPITest(TestCase):
             original_name="구이용 돼지고기 200g",
             normalized_name="돼지고기",
             normalized_ingredient=self.pork,
-            category=Ingredient.ESSENTIAL
+            category=self.essential_category
         )
 
         # 된장찌개 재료
@@ -97,14 +98,14 @@ class RecipeSearchAPITest(TestCase):
             original_name="두부 1모",
             normalized_name="두부",
             normalized_ingredient=self.tofu,
-            category=Ingredient.ESSENTIAL
+            category=self.essential_category
         )
         Ingredient.objects.create(
             recipe=self.recipe3,
             original_name="소금",
             normalized_name="소금",
             normalized_ingredient=self.salt,
-            category=Ingredient.SEASONING
+            category=self.seasoning_category
         )
 
     def test_search_recipes_by_ingredients(self):

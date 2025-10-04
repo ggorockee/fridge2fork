@@ -2,18 +2,18 @@
 추천 알고리즘 서비스 테스트
 """
 
-from django.test import TestCase
 from django.contrib.auth import get_user_model
 from recipes.models import (
     Recipe, Ingredient, NormalizedIngredient,
     Fridge, FridgeIngredient
 )
 from recipes.services import RecommendationService
+from .base import CategoryTestCase
 
 User = get_user_model()
 
 
-class RecommendationServiceTest(TestCase):
+class RecommendationServiceTest(CategoryTestCase):
     """추천 알고리즘 서비스 테스트"""
 
     def setUp(self):
@@ -27,24 +27,24 @@ class RecommendationServiceTest(TestCase):
         # 정규화 재료 생성
         self.양파 = NormalizedIngredient.objects.create(
             name='양파',
-            category='vegetable'
+            category=self.vegetable_category
         )
         self.돼지고기 = NormalizedIngredient.objects.create(
             name='돼지고기',
-            category='meat'
+            category=self.meat_category
         )
         self.당근 = NormalizedIngredient.objects.create(
             name='당근',
-            category='vegetable'
+            category=self.vegetable_category
         )
         self.간장 = NormalizedIngredient.objects.create(
             name='간장',
-            category='seasoning',
+            category=self.seasoning_norm_category,
             is_common_seasoning=True
         )
         self.소금 = NormalizedIngredient.objects.create(
             name='소금',
-            category='seasoning',
+            category=self.seasoning_norm_category,
             is_common_seasoning=True
         )
 
@@ -66,21 +66,21 @@ class RecommendationServiceTest(TestCase):
             original_name='돼지고기 200g',
             normalized_name='돼지고기',
             normalized_ingredient=self.돼지고기,
-            category='essential'
+            category=self.essential_category
         )
         Ingredient.objects.create(
             recipe=self.recipe1,
             original_name='양파 1개',
             normalized_name='양파',
             normalized_ingredient=self.양파,
-            category='essential'
+            category=self.essential_category
         )
         Ingredient.objects.create(
             recipe=self.recipe1,
             original_name='간장 2큰술',
             normalized_name='간장',
             normalized_ingredient=self.간장,
-            category='seasoning'
+            category=self.seasoning_category
         )
 
         # 레시피 2: 돼지고기조림 (필수재료: 돼지고기, 양파, 당근)
@@ -101,28 +101,28 @@ class RecommendationServiceTest(TestCase):
             original_name='돼지고기 300g',
             normalized_name='돼지고기',
             normalized_ingredient=self.돼지고기,
-            category='essential'
+            category=self.essential_category
         )
         Ingredient.objects.create(
             recipe=self.recipe2,
             original_name='양파 1개',
             normalized_name='양파',
             normalized_ingredient=self.양파,
-            category='essential'
+            category=self.essential_category
         )
         Ingredient.objects.create(
             recipe=self.recipe2,
             original_name='당근 1개',
             normalized_name='당근',
             normalized_ingredient=self.당근,
-            category='essential'
+            category=self.essential_category
         )
         Ingredient.objects.create(
             recipe=self.recipe2,
             original_name='소금 약간',
             normalized_name='소금',
             normalized_ingredient=self.소금,
-            category='seasoning'
+            category=self.seasoning_category
         )
 
         # 냉장고 생성
