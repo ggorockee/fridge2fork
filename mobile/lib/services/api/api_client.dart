@@ -550,6 +550,7 @@ class ApiEndpoints {
   static const String recipes = '/fridge2fork/v1/recipes/';
   static const String recipeIngredients = '/fridge2fork/v1/recipes/ingredients'; // 레시피에 사용된 모든 재료 목록
   static const String recipeCategories = '/fridge2fork/v1/recipes/categories'; // 레시피 카테고리 목록
+  static const String recipeRecommendations = '/fridge2fork/v1/recipes/recommendations'; // 레시피 추천 (유사도 알고리즘)
   static const String randomRecommendations = '/fridge2fork/v1/recipes/random-recommendations';
   static const String recipesByFridge = '/fridge2fork/v1/recipes/by-fridge';
   static const String recipeStats = '/fridge2fork/v1/recipes/stats/summary';

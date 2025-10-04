@@ -10,6 +10,7 @@ import '../providers/api/recipe_api_provider.dart';
 import '../providers/api/ingredient_api_provider.dart';
 import '../providers/api/api_connection_provider.dart';
 import '../providers/api/random_recipe_provider.dart';
+import '../providers/recipe_recommendations_provider.dart';
 import '../providers/async_state_manager.dart';
 import '../models/api/api_recipe.dart';
 import '../models/api/api_ingredient.dart';
@@ -266,11 +267,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           const SizedBox(height: AppTheme.spacingM),
                           selectedIngredients.isEmpty
                               ? const _EmptyStateMessage()
-                              : _SelectedIngredientsSection(
-                                  ingredients: selectedIngredients,
-                                  showAll: showAllIngredients,
-                                  onRemove: _removeIngredient,
-                                  onToggleShowAll: _toggleShowAllIngredients,
+                              : Column(
+                                  children: [
+                                    _SelectedIngredientsSection(
+                                      ingredients: selectedIngredients,
+                                      showAll: showAllIngredients,
+                                      onRemove: _removeIngredient,
+                                      onToggleShowAll: _toggleShowAllIngredients,
+                                    ),
+                                    const SizedBox(height: AppTheme.spacingL),
+                                    // 레시피 추천 섹션
+                                    _RecipeRecommendationsSection(
+                                      ingredients: selectedIngredients,
+                                    ),
+                                  ],
                                 ),
                         ],
                       ),
@@ -1031,6 +1041,210 @@ class _IngredientChip extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// 레시피 추천 섹션 위젯
+class _RecipeRecommendationsSection extends ConsumerStatefulWidget {
+  final List<String> ingredients;
+
+  const _RecipeRecommendationsSection({
+    required this.ingredients,
+  });
+
+  @override
+  ConsumerState<_RecipeRecommendationsSection> createState() => _RecipeRecommendationsSectionState();
+}
+
+class _RecipeRecommendationsSectionState extends ConsumerState<_RecipeRecommendationsSection> {
+  @override
+  void initState() {
+    super.initState();
+    // 초기 로드
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadRecommendations();
+    });
+  }
+
+  @override
+  void didUpdateWidget(_RecipeRecommendationsSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 재료가 변경되면 추천 다시 로드
+    if (oldWidget.ingredients != widget.ingredients && widget.ingredients.isNotEmpty) {
+      _loadRecommendations();
+    }
+  }
+
+  void _loadRecommendations() {
+    if (widget.ingredients.isEmpty) return;
+
+    ref.read(recipeRecommendationsProvider.notifier).loadRecommendations(
+      ingredients: widget.ingredients,
+      limit: 10,
+      algorithm: 'jaccard',
+      excludeSeasonings: true,
+      minMatchRate: 0.3,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final recommendationsState = ref.watch(recipeRecommendationsProvider);
+
+    return recommendationsState.when(
+      data: (response) {
+        if (response.recipes.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return Padding(
+          padding: const EdgeInsets.all(AppTheme.spacingM),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 추천 제목
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    '맞춤 레시피 추천',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    '${response.total}개',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              // 요약
+              Text(
+                response.summary,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+              const SizedBox(height: AppTheme.spacingM),
+              // 레시피 카드 리스트 (가로 스크롤)
+              SizedBox(
+                height: 200,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: response.recipes.take(10).length,
+                  itemBuilder: (context, index) {
+                    final recipe = response.recipes[index];
+                    return _RecommendedRecipeCard(recipe: recipe);
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+      loading: () => const Padding(
+        padding: EdgeInsets.all(AppTheme.spacingM),
+        child: Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryOrange),
+          ),
+        ),
+      ),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+}
+
+/// 추천 레시피 카드 위젯
+class _RecommendedRecipeCard extends StatelessWidget {
+  final RecipeRecommendation recipe;
+
+  const _RecommendedRecipeCard({
+    required this.recipe,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 160,
+      margin: const EdgeInsets.only(right: AppTheme.spacingM),
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 이미지
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+              child: recipe.imageUrl != null && recipe.imageUrl!.isNotEmpty
+                  ? Image.network(
+                      recipe.imageUrl!,
+                      height: 100,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        height: 100,
+                        color: Colors.grey[200],
+                        child: const Icon(Icons.restaurant, size: 40, color: Colors.grey),
+                      ),
+                    )
+                  : Container(
+                      height: 100,
+                      color: Colors.grey[200],
+                      child: const Icon(Icons.restaurant, size: 40, color: Colors.grey),
+                    ),
+            ),
+            // 정보
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      recipe.title,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const Spacer(),
+                    // 매칭률
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppTheme.lightOrange,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        '${(recipe.matchScore * 100).toInt()}% 일치',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppTheme.primaryOrange,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
