@@ -8,7 +8,7 @@ import csv
 import re
 from typing import List, Dict, Tuple, Optional
 from django.db import transaction
-from recipes.models import Recipe, Ingredient
+from recipes.models import Recipe, Ingredient, IngredientCategory
 
 
 class CSVImportService:
@@ -79,6 +79,11 @@ class CSVImportService:
         self.skip_count = 0
         self.error_count = 0
         self.errors = []
+        # IngredientCategory 로드
+        self.essential_category = IngredientCategory.objects.get(
+            code='essential',
+            category_type='ingredient'
+        )
 
     def import_from_file(self, file_path: str, skip_duplicates: bool = True) -> Dict:
         """
@@ -248,7 +253,7 @@ class CSVImportService:
                 recipe=recipe,
                 original_name=ingredient_text,
                 normalized_name=ingredient_text,
-                category=Ingredient.ESSENTIAL,
+                category=self.essential_category,
                 is_essential=True
             )
 
