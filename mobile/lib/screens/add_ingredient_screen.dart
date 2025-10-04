@@ -195,7 +195,7 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final categories = ref.watch(apiCategoriesProvider);
+    final categoriesAsync = ref.watch(apiCategoriesProvider);
     final selectedCategory = ref.watch(selectedCategoryProvider);
     final filteredIngredients = ref.watch(apiIngredientNamesProvider);
     final categorizedIngredients = ref.watch(apiCategorizedIngredientNamesProvider);
@@ -211,16 +211,20 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
           topRight: Radius.circular(AppTheme.radiusLarge),
         ),
       ),
-      child: ingredientsState.when(
-        data: (ingredients) => _buildContent(
-          categories: categories,
-          selectedCategory: selectedCategory,
-          filteredIngredients: filteredIngredients,
-          categorizedIngredients: categorizedIngredients,
-          selectedIngredients: selectedIngredients,
+      child: categoriesAsync.when(
+        data: (categories) => ingredientsState.when(
+          data: (ingredients) => _buildContent(
+            categories: categories,
+            selectedCategory: selectedCategory,
+            filteredIngredients: filteredIngredients,
+            categorizedIngredients: categorizedIngredients,
+            selectedIngredients: selectedIngredients,
+          ),
+          loading: () => _buildLoadingState(),
+          error: (error, stack) => _buildErrorState(error.toString()),
         ),
         loading: () => _buildLoadingState(),
-        error: (error, stack) => _buildErrorState(error.toString()),
+        error: (error, stack) => _buildErrorState('카테고리를 불러올 수 없습니다.'),
       ),
     );
   }
