@@ -47,7 +47,7 @@ api = NinjaAPI(
 
 # OpenAPI 스키마 커스터마이징 적용
 original_get_openapi_schema = api.get_openapi_schema
-api.get_openapi_schema = lambda: custom_openapi_schema(original_get_openapi_schema)
+api.get_openapi_schema = lambda path_params=None: custom_openapi_schema(original_get_openapi_schema)
 
 # 라우터 등록
 from recipes.api import router as recipes_router
