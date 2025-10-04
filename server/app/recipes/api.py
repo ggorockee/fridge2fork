@@ -798,6 +798,7 @@ async def add_ingredient_to_fridge(request, data: AddIngredientSchema):
     냉장고에 재료 추가
     """
     import logging
+    from django.http import JsonResponse
     logger = logging.getLogger(__name__)
 
     fridge, session_key = await get_or_create_fridge(request)
@@ -812,8 +813,14 @@ async def add_ingredient_to_fridge(request, data: AddIngredientSchema):
 
     logger.info(f"Successfully added ingredient '{data.ingredient_name}'")
 
-    # 냉장고 재조회 (JsonResponse 반환)
-    return await get_fridge(request)
+    # 냉장고 재조회 (같은 fridge 객체 사용)
+    result = await sync_to_async(_get_fridge_sync)(fridge)
+
+    response = JsonResponse(result)
+    if session_key:
+        response['X-Session-ID'] = session_key
+
+    return response
 
 
 def _remove_ingredient_from_fridge_sync(fridge, ingredient_id: int):
