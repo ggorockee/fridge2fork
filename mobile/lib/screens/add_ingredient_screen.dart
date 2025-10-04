@@ -34,7 +34,7 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
     // API에서 식재료 목록 로드 (새 API 사용)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(ingredientApiProvider.notifier).loadRecipeIngredients(
-        excludeSeasonings: true,
+        excludeSeasonings: false,
         limit: 100,
       );
     });
