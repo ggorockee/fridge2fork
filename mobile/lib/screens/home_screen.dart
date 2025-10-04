@@ -273,7 +273,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 height: 260,
                 padding: const EdgeInsets.only(bottom: 16),
                 color: AppTheme.backgroundWhite,
-                child: _RecipeRecommendationSection(),
+                child: selectedIngredients.isEmpty
+                    ? _RecipeRecommendationSection()
+                    : _RecipeRecommendationsSection(ingredients: selectedIngredients),
               ),
             ),
 
