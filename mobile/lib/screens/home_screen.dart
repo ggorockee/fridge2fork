@@ -856,9 +856,9 @@ class _RecipeRecommendationsSectionState extends ConsumerState<_RecipeRecommenda
   @override
   void didUpdateWidget(_RecipeRecommendationsSection oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // 재료가 변경되면 추천 다시 로드
+    // 재료가 변경되면 추천 다시 로드 (빌드 사이클 이후로 지연)
     if (oldWidget.ingredients != widget.ingredients && widget.ingredients.isNotEmpty) {
-      _loadRecommendations();
+      Future.microtask(() => _loadRecommendations());
     }
   }
 
