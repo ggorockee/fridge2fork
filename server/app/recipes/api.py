@@ -311,6 +311,7 @@ def list_recipes(
                 'name': recipe.name,
                 'title': recipe.title,
                 'image_url': recipe.image_url,
+                'recipe_url': recipe.recipe_url,
                 'difficulty': recipe.difficulty,
                 'cooking_time': recipe.cooking_time,
                 'servings': recipe.servings,
@@ -324,50 +325,8 @@ def list_recipes(
     }
 
 
-@router.get("/{recipe_id}", response=RecipeDetailSchema)
-def get_recipe_detail(request, recipe_id: int):
-    """
-    레시피 상세 조회
-
-    Args:
-        recipe_id: 레시피 ID
-    """
-    try:
-        recipe = Recipe.objects.prefetch_related('ingredients').get(id=recipe_id)
-    except Recipe.DoesNotExist:
-        return JsonResponse(
-            {'error': 'NotFound', 'message': '레시피를 찾을 수 없습니다.'},
-            status=404
-        )
-
-    # 재료 목록
-    ingredients = []
-    for ingredient in recipe.ingredients.all():
-        ingredients.append({
-            'original_name': ingredient.original_name,
-            'normalized_name': ingredient.normalized_name,
-            'is_essential': ingredient.is_essential,
-            'category': ingredient.category.name if ingredient.category else None
-        })
-
-    return {
-        'id': recipe.id,
-        'recipe_sno': recipe.recipe_sno,
-        'name': recipe.name,
-        'title': recipe.title,
-        'introduction': recipe.introduction,
-        'ingredients': ingredients,
-        'servings': recipe.servings,
-        'difficulty': recipe.difficulty,
-        'cooking_time': recipe.cooking_time,
-        'method': recipe.method,
-        'situation': recipe.situation,
-        'recipe_type': recipe.recipe_type,
-        'image_url': recipe.image_url,
-    }
-
-
 # ==================== 냉장고 관리 API ====================
+# 주의: 경로 충돌 방지를 위해 /fridge 엔드포인트를 /{recipe_id} 앞에 배치
 
 def get_or_create_fridge(request):
     """회원/비회원 냉장고 조회 또는 생성"""
@@ -481,3 +440,47 @@ def clear_fridge(request):
     fridge = get_or_create_fridge(request)
     FridgeIngredient.objects.filter(fridge=fridge).delete()
     return {'message': '냉장고가 비워졌습니다.'}
+
+
+@router.get("/{recipe_id}", response=RecipeDetailSchema)
+def get_recipe_detail(request, recipe_id: int):
+    """
+    레시피 상세 조회
+
+    Args:
+        recipe_id: 레시피 ID
+    """
+    try:
+        recipe = Recipe.objects.prefetch_related('ingredients').get(id=recipe_id)
+    except Recipe.DoesNotExist:
+        return JsonResponse(
+            {'error': 'NotFound', 'message': '레시피를 찾을 수 없습니다.'},
+            status=404
+        )
+
+    # 재료 목록
+    ingredients = []
+    for ingredient in recipe.ingredients.all():
+        ingredients.append({
+            'original_name': ingredient.original_name,
+            'normalized_name': ingredient.normalized_name,
+            'is_essential': ingredient.is_essential,
+            'category': ingredient.category.name if ingredient.category else None
+        })
+
+    return {
+        'id': recipe.id,
+        'recipe_sno': recipe.recipe_sno,
+        'name': recipe.name,
+        'title': recipe.title,
+        'introduction': recipe.introduction,
+        'ingredients': ingredients,
+        'servings': recipe.servings,
+        'difficulty': recipe.difficulty,
+        'cooking_time': recipe.cooking_time,
+        'method': recipe.method,
+        'situation': recipe.situation,
+        'recipe_type': recipe.recipe_type,
+        'image_url': recipe.image_url,
+        'recipe_url': recipe.recipe_url,
+    }

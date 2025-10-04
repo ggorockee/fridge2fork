@@ -13,6 +13,16 @@ api = NinjaAPI(
     urls_namespace="api_v1",
     docs_url="/docs",
     openapi_url="/openapi.json",
+    servers=[
+        {
+            "url": "https://api-dev.woohalabs.com/fridge2fork/v1",
+            "description": "Development Server"
+        },
+        {
+            "url": "https://api.woohalabs.com/fridge2fork/v1",
+            "description": "Production Server"
+        }
+    ]
 )
 
 # 라우터 등록

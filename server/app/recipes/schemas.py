@@ -93,6 +93,7 @@ class RecipeListItemSchema(Schema):
     name: str
     title: str
     image_url: Optional[str] = None
+    recipe_url: Optional[str] = None
     difficulty: str
     cooking_time: str
     servings: str
@@ -121,6 +122,7 @@ class RecipeDetailSchema(Schema):
     situation: Optional[str] = None
     recipe_type: Optional[str] = None
     image_url: Optional[str] = None
+    recipe_url: Optional[str] = None
 
 
 class PaginatedRecipesSchema(Schema):
