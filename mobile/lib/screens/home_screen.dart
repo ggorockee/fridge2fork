@@ -265,13 +265,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         minHeight: MediaQuery.of(context).size.height - 350,
                       ),
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
+                          const SizedBox(height: AppTheme.spacingXL),
                           const _FridgeIcon(),
                           const SizedBox(height: AppTheme.spacingM),
                           selectedIngredients.isEmpty
                               ? const _EmptyStateMessage()
                               : Column(
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
                                     _SelectedIngredientsSection(
                                       ingredients: selectedIngredients,
