@@ -10,7 +10,7 @@ import uvicorn
 from apps.config import settings
 from apps.logging_config import setup_logging, get_logger, AccessLogMiddleware
 from apps.database import init_db
-from apps.routers import ingredients, recipes, health, system, normalization, audit
+from apps.routers import ingredients, recipes, system, normalization, audit, batch, search, dashboard, analytics, export
 
 # 로깅 시스템 초기화
 setup_logging()
@@ -64,25 +64,10 @@ app.add_middleware(
 )
 
 
-# 헬스체크 엔드포인트 (기존)
-@app.get("/health", tags=["🏥 헬스체크"], summary="서버 상태 확인")
-async def health_check():
-    """서버 상태를 확인합니다."""
-    logger.info("🏥 헬스체크 요청")
-    return {
-        "status": "healthy",
-        "app_name": settings.app_name,
-        "version": settings.app_version,
-        "message": "Fridge2Fork Admin API가 정상적으로 동작 중입니다! 🚀"
-    }
+# 루트 레벨 헬스체크 엔드포인트 제거됨 (중복 방지)
 
 
-# API 라우터 등록
-app.include_router(
-    health.router,
-    prefix=settings.api_prefix,
-    responses={404: {"description": "Not found"}}
-)
+# API 라우터 등록 (health 라우터 제거됨)
 
 app.include_router(
     system.router,
@@ -110,6 +95,37 @@ app.include_router(
 
 app.include_router(
     audit.router,
+    prefix=settings.api_prefix,
+    responses={404: {"description": "Not found"}}
+)
+
+# Phase 1 API 확장 라우터 등록
+app.include_router(
+    batch.router,
+    prefix=settings.api_prefix,
+    responses={404: {"description": "Not found"}}
+)
+
+app.include_router(
+    search.router,
+    prefix=settings.api_prefix,
+    responses={404: {"description": "Not found"}}
+)
+
+app.include_router(
+    dashboard.router,
+    prefix=settings.api_prefix,
+    responses={404: {"description": "Not found"}}
+)
+
+app.include_router(
+    analytics.router,
+    prefix=settings.api_prefix,
+    responses={404: {"description": "Not found"}}
+)
+
+app.include_router(
+    export.router,
     prefix=settings.api_prefix,
     responses={404: {"description": "Not found"}}
 )

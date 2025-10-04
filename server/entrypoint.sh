@@ -1,136 +1,89 @@
 #!/bin/bash
-
-# Exit on any error
 set -e
 
-# Default values
-APP_ENV=${APP_ENV:-production}
-ENVIRONMENT=${ENVIRONMENT:-production}
-HOST=${HOST:-0.0.0.0}
-PORT=${PORT:-8000}
-WORKERS=${WORKERS:-4}
-TIMEOUT=${TIMEOUT:-120}
-KEEPALIVE=${KEEPALIVE:-5}
+# Ensure uv is in PATH
+export PATH="/usr/local/bin:$PATH"
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+echo "🚀 Starting entrypoint script..."
+echo "Environment: ${ENVIRONMENT:-development}"
 
-# Logging function
-log() {
-    echo -e "${BLUE}[$(date +'%Y-%m-%d %H:%M:%S')] $1${NC}"
-}
+# Wait for PostgreSQL to be ready
+if [ -n "$POSTGRES_SERVER" ]; then
+    echo "⏳ Waiting for PostgreSQL at $POSTGRES_SERVER:${POSTGRES_PORT:-5432}..."
 
-error() {
-    echo -e "${RED}[ERROR] $1${NC}" >&2
-}
+    max_attempts=30
+    attempt=0
 
-warn() {
-    echo -e "${YELLOW}[WARNING] $1${NC}"
-}
+    while ! pg_isready -h "$POSTGRES_SERVER" -p "${POSTGRES_PORT:-5432}" -U "${POSTGRES_USER:-postgres}" > /dev/null 2>&1; do
+        attempt=$((attempt + 1))
+        if [ $attempt -eq $max_attempts ]; then
+            echo "❌ PostgreSQL is not available after $max_attempts attempts"
+            exit 1
+        fi
+        echo "Attempt $attempt/$max_attempts: PostgreSQL is unavailable - sleeping"
+        sleep 2
+    done
 
-success() {
-    echo -e "${GREEN}[SUCCESS] $1${NC}"
-}
-
-# Check if running as root (should not be in production)
-if [ "$(id -u)" = "0" ]; then
-    warn "Running as root user. This is not recommended for production."
+    echo "✅ PostgreSQL is ready!"
 fi
 
-# Validate environment
-log "🚀 Starting Fridge2Fork API"
-log "Environment: $ENVIRONMENT"
-log "App Environment: $APP_ENV"
-log "Host: $HOST"
-log "Port: $PORT"
+# Run migrations (only in init container for k8s, but safe to run here too)
+if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
+    echo "📦 Running database migrations..."
+    cd /app/app
 
-# Wait for database (if DATABASE_URL is set)
-if [ -n "$DATABASE_URL" ]; then
-    log "Checking database connection..."
-    python -c "
-import asyncio
-import asyncpg
-import os
-import sys
-from urllib.parse import urlparse
+    # Create migrations if AUTO_MIGRATE is true
+    if [ "${AUTO_MIGRATE:-false}" = "true" ]; then
+        echo "🔧 Creating migrations..."
+        uv run --frozen python manage.py makemigrations --noinput || {
+            echo "⚠️  makemigrations failed, but continuing..."
+        }
+    fi
 
-async def check_db():
-    try:
-        db_url = os.getenv('DATABASE_URL')
-        if db_url.startswith('postgresql://'):
-            db_url = db_url.replace('postgresql://', 'postgresql+asyncpg://', 1)
-        
-        # Parse URL to get connection params
-        parsed = urlparse(db_url)
-        
-        conn = await asyncpg.connect(
-            host=parsed.hostname,
-            port=parsed.port or 5432,
-            user=parsed.username,
-            password=parsed.password,
-            database=parsed.path.lstrip('/')
-        )
-        await conn.close()
-        print('Database connection successful')
-    except Exception as e:
-        print(f'Database connection failed: {e}')
-        sys.exit(1)
-
-asyncio.run(check_db())
-" || {
-        error "Database connection failed. Exiting..."
+    # Apply migrations
+    echo "🔧 Applying migrations..."
+    uv run --frozen python manage.py migrate --noinput || {
+        echo "❌ Migration failed!"
         exit 1
     }
-    success "Database connection successful"
+
+    echo "✅ Migrations completed successfully"
+    cd /app
 fi
 
-# Run database migrations if in production
-if [ "$APP_ENV" = "production" ] && [ -f "alembic.ini" ]; then
-    log "Running database migrations..."
-    python -m alembic upgrade head || {
-        error "Database migration failed. Exiting..."
-        exit 1
+# Collect static files for production
+if [ "${ENVIRONMENT}" = "production" ] && [ "${COLLECT_STATIC:-true}" = "true" ]; then
+    echo "📦 Collecting static files..."
+    cd /app/app
+    uv run --frozen python manage.py collectstatic --noinput || {
+        echo "⚠️  collectstatic failed, but continuing..."
     }
-    success "Database migrations completed"
+    cd /app
+    echo "✅ Static files collected"
 fi
 
-# Check if any arguments are passed to the container
-if [ $# -gt 0 ]; then
-    log "Executing custom command: $*"
-    exec "$@"
+# Create superuser for development (optional)
+if [ "${ENVIRONMENT}" = "development" ] && [ "${CREATE_SUPERUSER:-false}" = "true" ]; then
+    echo "👤 Creating superuser..."
+    cd /app/app
+    uv run --frozen python manage.py shell << EOF
+from django.contrib.auth import get_user_model
+User = get_user_model()
+if not User.objects.filter(username='${DJANGO_SUPERUSER_USERNAME:-admin}').exists():
+    User.objects.create_superuser(
+        username='${DJANGO_SUPERUSER_USERNAME:-admin}',
+        email='${DJANGO_SUPERUSER_EMAIL:-admin@example.com}',
+        password='${DJANGO_SUPERUSER_PASSWORD:-admin}'
+    )
+    print('✅ Superuser created successfully')
+else:
+    print('ℹ️  Superuser already exists')
+EOF
+    cd /app
 fi
 
-# Check APP_ENV and run appropriate server
-if [ "$APP_ENV" = "production" ]; then
-    log "🔥 Running Gunicorn for production..."
-    log "Workers: $WORKERS"
-    log "Timeout: $TIMEOUT seconds"
-    log "Keep-alive: $KEEPALIVE seconds"
-    
-    exec gunicorn main:app \
-        -k uvicorn.workers.UvicornWorker \
-        --bind $HOST:$PORT \
-        --workers $WORKERS \
-        --timeout $TIMEOUT \
-        --keepalive $KEEPALIVE \
-        --max-requests 1000 \
-        --max-requests-jitter 100 \
-        --preload \
-        --access-logfile - \
-        --error-logfile - \
-        --log-level info
-elif [ "$APP_ENV" = "development" ]; then
-    log "🔧 Running Uvicorn for development..."
-    exec uvicorn main:app \
-        --host $HOST \
-        --port $PORT \
-        --reload \
-        --log-level debug
-else
-    error "Invalid APP_ENV: $APP_ENV. Must be 'production' or 'development'"
-    exit 1
-fi
+echo "🎉 Entrypoint script completed!"
+echo "🚀 Starting application..."
+
+# Execute the main command
+exec "$@"

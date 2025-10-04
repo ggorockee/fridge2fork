@@ -259,3 +259,5 @@ firebase_options.dart
 # 디버그 심볼
 *.dSYM/
 *.dSYM.zip
+
+my_request.txt

@@ -1,91 +1,71 @@
-# Git
-.git
-.gitignore
-
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
 *.egg-info/
-.installed.cfg
+dist/
+build/
 *.egg
 
 # Virtual environments
-.env
-.venv
-env/
 venv/
+env/
 ENV/
-env.bak/
-venv.bak/
+.venv
 
-# Environment files
-.env.*
-!.env.example
+# Django
+*.log
+db.sqlite3
+db.sqlite3-journal
+/staticfiles/
+/media/
+
+# Development
+.env
+.env.local
+.env.*.local
+*.bak
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
 # Testing
 .coverage
 htmlcov/
 .pytest_cache/
 .tox/
-coverage.xml
-*.cover
-.hypothesis/
-
-# Development tools
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Logs
-logs/
-*.log
-
-# Database
-*.db
-*.sqlite
-*.sqlite3
 
 # Documentation
-doc/
-docs/
+docs/_build/
+
+# macOS
+.DS_Store
+
+# Git
+.git/
+.gitignore
+
+# Kubernetes
+k8s/
+
+# CI/CD
+.github/
+
+# Misc
+README.md
 *.md
-!README.md
+!pyproject.toml
+!uv.lock
 
-# Scripts (except entrypoint.sh)
-scripts/
-!entrypoint.sh
-
-# Tests
+# Test data
 tests/
-pytest.ini
-
-# Temporary files
-tmp/
-temp/
-.tmp/
-
+*.json
+validation_report.json
+suggestions.json
+common_seasonings.json

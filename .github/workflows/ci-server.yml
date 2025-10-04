@@ -3,7 +3,11 @@ name: CI/CD for Server
 on:
   push:
     branches:
+      # Production branches
       - main
+      - prod
+      - production
+      # Development branches
       - dev
       - develop
       - development
@@ -12,27 +16,132 @@ on:
       - '.github/workflows/ci-server.yml'
   pull_request:
     branches:
+      # Production branches
       - main
+      - prod
+      - production
+      # Development branches
       - dev
+      - develop
+      - development
     paths:
       - 'server/**'
       - '.github/workflows/ci-server.yml'
 
 jobs:
+  # 테스트 단계 추가
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: test_db
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        working-directory: ./server
+        run: |
+          uv sync
+
+      - name: Run migrations
+        working-directory: ./server/app
+        env:
+          POSTGRES_DB: test_db
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_SERVER: localhost
+          POSTGRES_PORT: '5432'
+          SECRET_KEY: test-secret-key-for-ci
+          DEBUG: 'False'
+        run: |
+          uv run python manage.py migrate --noinput
+
+      - name: Run tests
+        working-directory: ./server/app
+        env:
+          POSTGRES_DB: test_db
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_SERVER: localhost
+          POSTGRES_PORT: '5432'
+          SECRET_KEY: test-secret-key-for-ci
+          DEBUG: 'False'
+        run: |
+          uv run python manage.py test users recipes system.tests.test_version_api system.tests.test_health_api
+
+      - name: Check Django deployment settings
+        working-directory: ./server/app
+        env:
+          POSTGRES_DB: test_db
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_SERVER: localhost
+          POSTGRES_PORT: '5432'
+          SECRET_KEY: test-secret-key-for-ci
+          DEBUG: 'False'
+        run: |
+          uv run python manage.py check --deploy || true
+
   build-and-push:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push'
     permissions:
       contents: read
       packages: write
     outputs:
       sha: ${{ steps.vars.outputs.sha }}
       environment: ${{ steps.vars.outputs.environment }}
-    env:
-      BUILD_ENVIRONMENT: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Determine build environment from branch name
+        id: determine_env
+        run: |
+          BRANCH_NAME="${{ github.ref_name }}"
+          echo "Branch name: $BRANCH_NAME"
+
+          # Production branches: main, prod, production
+          if [[ "$BRANCH_NAME" == "main" ]] || [[ "$BRANCH_NAME" == "prod" ]] || [[ "$BRANCH_NAME" == "production" ]]; then
+            BUILD_MODE="prod"
+            echo "🔥 Detected PRODUCTION environment"
+          # Development branches: dev, develop, development
+          elif [[ "$BRANCH_NAME" == "dev" ]] || [[ "$BRANCH_NAME" == "develop" ]] || [[ "$BRANCH_NAME" == "development" ]]; then
+            BUILD_MODE="dev"
+            echo "🔧 Detected DEVELOPMENT environment"
+          else
+            echo "⚠️ Unknown branch: $BRANCH_NAME, defaulting to dev"
+            BUILD_MODE="dev"
+          fi
+
+          echo "build_mode=$BUILD_MODE" >> $GITHUB_OUTPUT
+          echo "Final BUILD_MODE: $BUILD_MODE"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -47,24 +156,25 @@ jobs:
         id: vars
         run: |
           echo "sha=$(git rev-parse --short=8 HEAD)" >> $GITHUB_OUTPUT
-          echo "environment=${{ env.BUILD_ENVIRONMENT }}" >> $GITHUB_OUTPUT
+          echo "environment=${{ steps.determine_env.outputs.build_mode }}" >> $GITHUB_OUTPUT
+          echo "Building image with environment: ${{ steps.determine_env.outputs.build_mode }}"
 
-      - name: Build and push Docker image
+      - name: Build and push Docker image (uv-based)
         uses: docker/build-push-action@v5
         with:
           context: ./server
           push: true
+          target: ${{ steps.determine_env.outputs.build_mode }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/fridge2fork-${{ steps.vars.outputs.environment }}-server:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/fridge2fork-${{ steps.vars.outputs.environment }}-server:sha-${{ steps.vars.outputs.sha }}
-          build-args: |
-            BUILD_MODE=${{ env.BUILD_ENVIRONMENT }}
+          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/fridge2fork-${{ steps.vars.outputs.environment }}-server:latest
+          cache-to: type=inline
 
   update-infra-repository:
     name: Update Infrastructure Repository
     runs-on: ubuntu-latest
     needs: build-and-push
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'  # Update infra on push or manual trigger, not on PR
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -80,4 +190,8 @@ jobs:
 
       - name: Update infra repository
         run: |
-          python .github/workflows/scripts/update_infra_values.py sha-${{ needs.build-and-push.outputs.sha }} ${{ secrets.INFRA_GITHUB_TOKEN }} server ${{ needs.build-and-push.outputs.environment }}
+          python .github/workflows/scripts/update_infra_values.py \
+            sha-${{ needs.build-and-push.outputs.sha }} \
+            ${{ secrets.INFRA_GITHUB_TOKEN }} \
+            server \
+            ${{ needs.build-and-push.outputs.environment }}

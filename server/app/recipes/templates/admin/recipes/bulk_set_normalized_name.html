@@ -1,0 +1,382 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrahead %}
+{{ block.super }}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    .bulk-normalize-container {
+        max-width: 1000px;
+        margin: 30px auto;
+    }
+
+    .card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+        margin-bottom: 20px;
+        overflow: hidden;
+    }
+
+    .card-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 24px 30px;
+        border-bottom: none;
+    }
+
+    .card-header h1 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .card-body {
+        padding: 30px;
+    }
+
+    .info-card {
+        background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+        border-left: 4px solid #667eea;
+        border-radius: 8px;
+        padding: 20px 24px;
+        margin-bottom: 30px;
+    }
+
+    .info-card h3 {
+        margin: 0 0 16px 0;
+        color: #667eea;
+        font-size: 18px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .selected-items {
+        max-height: 400px;
+        overflow-y: auto;
+        background: #f7fafc;
+        border-radius: 8px;
+        padding: 16px;
+        margin: 20px 0;
+    }
+
+    .item-row {
+        padding: 12px 16px;
+        background: white;
+        border-radius: 6px;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .item-original {
+        flex: 1;
+        font-weight: 500;
+        color: #2d3748;
+    }
+
+    .item-current {
+        flex: 1;
+        color: #718096;
+        font-size: 14px;
+    }
+
+    .arrow-icon {
+        color: #667eea;
+        font-size: 18px;
+    }
+
+    .form-section {
+        margin-bottom: 28px;
+    }
+
+    .form-label {
+        display: block;
+        font-weight: 600;
+        color: #2d3748;
+        margin-bottom: 12px;
+        font-size: 15px;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 14px 18px;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: all 0.3s ease;
+        font-family: inherit;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .help-text {
+        font-size: 13px;
+        color: #718096;
+        margin-top: 10px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 12px;
+        margin-top: 30px;
+        padding-top: 24px;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .btn {
+        padding: 14px 32px;
+        border: none;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+    }
+
+    .btn-secondary {
+        background: #e2e8f0;
+        color: #4a5568;
+    }
+
+    .btn-secondary:hover {
+        background: #cbd5e0;
+        transform: translateY(-2px);
+    }
+
+    .count-badge {
+        display: inline-block;
+        background: white;
+        color: #667eea;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-weight: 700;
+        font-size: 16px;
+    }
+
+    .preview-section {
+        background: #edf2f7;
+        border-radius: 8px;
+        padding: 20px;
+        margin-top: 20px;
+    }
+
+    .preview-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 0;
+        color: #2d3748;
+        font-size: 15px;
+    }
+
+    .preview-old {
+        text-decoration: line-through;
+        color: #718096;
+    }
+
+    .preview-new {
+        font-weight: 600;
+        color: #667eea;
+    }
+
+    .checkbox-wrapper {
+        background: #f7fafc;
+        padding: 18px 20px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        accent-color: #667eea;
+    }
+
+    .checkbox-group label {
+        margin: 0;
+        font-weight: 500;
+        color: #2d3748;
+        cursor: pointer;
+        user-select: none;
+    }
+</style>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const input = document.getElementById('normalized_name');
+        const previewItems = document.querySelectorAll('.preview-new-value');
+
+        input.addEventListener('input', function(e) {
+            const newValue = e.target.value || '(입력 필요)';
+            previewItems.forEach(item => {
+                item.textContent = newValue;
+            });
+        });
+    });
+</script>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}"><i class="fas fa-home"></i> {% trans 'Home' %}</a>
+    &rsaquo; <a href="{% url 'admin:recipes_ingredient_changelist' %}"><i class="fas fa-carrot"></i> 재료</a>
+    &rsaquo; <i class="fas fa-edit"></i> 일괄 정규화명 변경
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="bulk-normalize-container">
+    <div class="card">
+        <div class="card-header">
+            <h1>
+                <i class="fas fa-sync-alt"></i>
+                일괄 정규화명 변경
+            </h1>
+        </div>
+
+        <div class="card-body">
+            <div class="info-card">
+                <h3>
+                    <i class="fas fa-info-circle"></i>
+                    선택된 재료 <span class="count-badge">{{ queryset.count }}</span>개
+                </h3>
+                <p style="margin: 0; color: #4a5568; line-height: 1.6;">
+                    아래 재료들의 <strong>정규화명(normalized_name)</strong>을 동일한 값으로 일괄 변경합니다.
+                    이 작업은 재료 검색 및 필터링 성능을 향상시킵니다.
+                </p>
+            </div>
+
+            <div class="selected-items">
+                {% for obj in queryset %}
+                <div class="item-row">
+                    <div class="item-original">
+                        <i class="fas fa-leaf" style="color: #48bb78;"></i>
+                        {{ obj.original_name }}
+                    </div>
+                    <i class="fas fa-arrow-right arrow-icon"></i>
+                    <div class="item-current">
+                        현재: {{ obj.normalized_name|default:"(없음)" }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+
+                <!-- 선택된 항목 정보 전달 -->
+                {% for obj in queryset %}
+                <input type="hidden" name="{{ action_checkbox_name }}" value="{{ obj.pk }}" />
+                {% endfor %}
+                <input type="hidden" name="action" value="bulk_set_normalized_name" />
+
+                <div class="form-section">
+                    <label class="form-label" for="normalized_name">
+                        <i class="fas fa-pen"></i>
+                        새로운 정규화 재료명
+                    </label>
+                    <input type="text"
+                           id="normalized_name"
+                           name="normalized_name"
+                           class="form-input"
+                           placeholder="예: 청양고추"
+                           required
+                           autofocus>
+                    <p class="help-text">
+                        <i class="fas fa-lightbulb"></i>
+                        위 모든 재료가 이 이름으로 정규화됩니다. 예: "청양고추 개", "홍 청양고추 개" → "청양고추"
+                    </p>
+                </div>
+
+                <div class="form-section">
+                    <div class="checkbox-wrapper">
+                        <div class="checkbox-group">
+                            <input type="checkbox"
+                                   id="auto_link"
+                                   name="auto_link"
+                                   checked>
+                            <label for="auto_link">
+                                <i class="fas fa-link"></i>
+                                <strong>정규화 재료 자동 연결</strong>
+                            </label>
+                        </div>
+                        <p class="help-text" style="margin-left: 32px; margin-top: 8px;">
+                            <i class="fas fa-info-circle"></i>
+                            체크 시: <strong>normalized_name</strong> 변경 + <strong>NormalizedIngredient</strong> 연결 (자동 생성 또는 기존 연결)
+                        </p>
+                        <p class="help-text" style="margin-left: 32px; color: #718096;">
+                            체크 해제 시: <strong>normalized_name</strong>만 변경 (NormalizedIngredient는 연결 안함)
+                        </p>
+                    </div>
+                </div>
+
+                <div class="preview-section">
+                    <h4 style="margin: 0 0 12px 0; color: #2d3748; font-size: 16px;">
+                        <i class="fas fa-eye"></i> 미리보기 (처음 3개)
+                    </h4>
+                    {% for obj in queryset|slice:":3" %}
+                    <div class="preview-item">
+                        <span class="preview-old">{{ obj.normalized_name|default:obj.original_name }}</span>
+                        <i class="fas fa-arrow-right" style="color: #667eea;"></i>
+                        <span class="preview-new preview-new-value">(입력 필요)</span>
+                    </div>
+                    {% endfor %}
+                    {% if queryset.count > 3 %}
+                    <p style="margin: 8px 0 0 0; color: #718096; font-size: 13px;">
+                        ... 외 {{ queryset.count|add:"-3" }}개
+                    </p>
+                    {% endif %}
+                </div>
+
+                <div class="action-buttons">
+                    <button type="submit" name="apply" class="btn btn-primary">
+                        <i class="fas fa-check"></i>
+                        변경 적용 ({{ queryset.count }}개)
+                    </button>
+                    <a href="{% url 'admin:recipes_ingredient_changelist' %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i>
+                        취소
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../theme/app_theme.dart';
 import '../widgets/widgets.dart';
+import '../models/feedback.dart' as feedback_model;
+import '../providers/feedback_provider.dart';
 
 /// 의견보내기 화면
 class FeedbackScreen extends ConsumerStatefulWidget {
@@ -69,7 +70,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                   color: AppTheme.lightOrange,
                   borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                   border: Border.all(
-                    color: AppTheme.primaryOrange.withOpacity(0.3),
+                    color: AppTheme.primaryOrange.withValues(alpha: 0.3),
                     width: 1,
                   ),
                 ),
@@ -125,7 +126,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
           borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -180,7 +181,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
 }
 
 /// 피드백 폼 모달
-class FeedbackFormModal extends StatefulWidget {
+class FeedbackFormModal extends ConsumerStatefulWidget {
   final String category;
 
   const FeedbackFormModal({
@@ -189,17 +190,34 @@ class FeedbackFormModal extends StatefulWidget {
   });
 
   @override
-  State<FeedbackFormModal> createState() => _FeedbackFormModalState();
+  ConsumerState<FeedbackFormModal> createState() => _FeedbackFormModalState();
 }
 
-class _FeedbackFormModalState extends State<FeedbackFormModal> {
+class _FeedbackFormModalState extends ConsumerState<FeedbackFormModal> {
+  final TextEditingController _titleController = TextEditingController();
   final TextEditingController _feedbackController = TextEditingController();
-  bool _isSubmitting = false;
+  final TextEditingController _emailController = TextEditingController();
 
   @override
   void dispose() {
+    _titleController.dispose();
     _feedbackController.dispose();
+    _emailController.dispose();
     super.dispose();
+  }
+
+  /// 카테고리를 피드백 타입으로 변환
+  String _getFeedbackType() {
+    switch (widget.category) {
+      case '식재료 추가 요청':
+        return feedback_model.FeedbackType.feature;
+      case '레시피 추가 요청':
+        return feedback_model.FeedbackType.feature;
+      case '의견 보내기':
+        return feedback_model.FeedbackType.improvement;
+      default:
+        return feedback_model.FeedbackType.other;
+    }
   }
 
   @override
@@ -221,7 +239,7 @@ class _FeedbackFormModalState extends State<FeedbackFormModal> {
             height: 4,
             margin: const EdgeInsets.symmetric(vertical: AppTheme.spacingM),
             decoration: BoxDecoration(
-              color: AppTheme.textSecondary.withOpacity(0.3),
+              color: AppTheme.textSecondary.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -261,8 +279,9 @@ class _FeedbackFormModalState extends State<FeedbackFormModal> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // 제목 입력 필드
                   const Text(
-                    '의견을 자세히 적어주세요',
+                    '제목',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -270,16 +289,44 @@ class _FeedbackFormModalState extends State<FeedbackFormModal> {
                     ),
                   ),
                   const SizedBox(height: AppTheme.spacingS),
-                  const Text(
-                    '여러분의 소중한 의견이 더 나은 서비스를 만드는데 큰 도움이 됩니다.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppTheme.textSecondary,
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingM),
+                    decoration: BoxDecoration(
+                      color: AppTheme.backgroundGray,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                      border: Border.all(
+                        color: AppTheme.textPlaceholder.withValues(alpha: 0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: TextField(
+                      controller: _titleController,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppTheme.textPrimary,
+                      ),
+                      decoration: const InputDecoration(
+                        hintText: '제목을 입력해주세요',
+                        hintStyle: TextStyle(
+                          color: AppTheme.textPlaceholder,
+                        ),
+                        border: InputBorder.none,
+                      ),
                     ),
                   ),
+
                   const SizedBox(height: AppTheme.spacingL),
-                  
-                  // 텍스트 입력 필드
+
+                  // 내용 입력 필드
+                  const Text(
+                    '내용',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: AppTheme.spacingS),
                   Expanded(
                     child: Container(
                       padding: const EdgeInsets.all(AppTheme.spacingM),
@@ -287,7 +334,7 @@ class _FeedbackFormModalState extends State<FeedbackFormModal> {
                         color: AppTheme.backgroundGray,
                         borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                         border: Border.all(
-                          color: AppTheme.textPlaceholder.withOpacity(0.3),
+                          color: AppTheme.textPlaceholder.withValues(alpha: 0.3),
                           width: 1,
                         ),
                       ),
@@ -301,7 +348,7 @@ class _FeedbackFormModalState extends State<FeedbackFormModal> {
                           color: AppTheme.textPrimary,
                         ),
                         decoration: const InputDecoration(
-                          hintText: '의견을 입력해주세요...',
+                          hintText: '의견을 자세히 적어주세요...',
                           hintStyle: TextStyle(
                             color: AppTheme.textPlaceholder,
                           ),
@@ -310,21 +357,67 @@ class _FeedbackFormModalState extends State<FeedbackFormModal> {
                       ),
                     ),
                   ),
+
+                  const SizedBox(height: AppTheme.spacingL),
+
+                  // 이메일 입력 필드 (선택사항)
+                  const Text(
+                    '답변 받을 이메일 (선택)',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: AppTheme.spacingS),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingM),
+                    decoration: BoxDecoration(
+                      color: AppTheme.backgroundGray,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                      border: Border.all(
+                        color: AppTheme.textPlaceholder.withValues(alpha: 0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: TextField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppTheme.textPrimary,
+                      ),
+                      decoration: const InputDecoration(
+                        hintText: 'example@email.com',
+                        hintStyle: TextStyle(
+                          color: AppTheme.textPlaceholder,
+                        ),
+                        border: InputBorder.none,
+                      ),
+                    ),
+                  ),
                   
                   const SizedBox(height: AppTheme.spacingL),
                   
                   // 제출 버튼
-                  SizedBox(
-                    width: double.infinity,
-                    child: CustomButton(
-                      text: _isSubmitting ? '전송 중...' : '의견 보내기',
-                      onPressed: _isSubmitting ? null : _submitFeedback,
-                      type: ButtonType.primary,
-                      height: 56,
-                      icon: Icons.send,
-                    ),
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final feedbackState = ref.watch(feedbackProvider);
+                      final isSubmitting = feedbackState.isSubmitting;
+
+                      return SizedBox(
+                        width: double.infinity,
+                        child: CustomButton(
+                          text: isSubmitting ? '전송 중...' : '의견 보내기',
+                          onPressed: isSubmitting ? null : _submitFeedback,
+                          type: ButtonType.primary,
+                          height: 56,
+                          icon: Icons.send,
+                        ),
+                      );
+                    },
                   ),
-                  
+
                   // 하단 안전 영역
                   SizedBox(height: MediaQuery.of(context).padding.bottom + AppTheme.spacingM),
                 ],
@@ -338,6 +431,18 @@ class _FeedbackFormModalState extends State<FeedbackFormModal> {
 
   /// 피드백 제출
   Future<void> _submitFeedback() async {
+    // 제목 유효성 검사
+    if (_titleController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('제목을 입력해주세요.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // 내용 유효성 검사
     if (_feedbackController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -348,26 +453,38 @@ class _FeedbackFormModalState extends State<FeedbackFormModal> {
       return;
     }
 
-    setState(() {
-      _isSubmitting = true;
-    });
+    // Feedback 객체 생성
+    final feedback = feedback_model.Feedback(
+      feedbackType: _getFeedbackType(),
+      title: _titleController.text.trim(),
+      content: _feedbackController.text.trim(),
+      contactEmail: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
+    );
 
-    // 실제 API 호출 시뮬레이션
-    await Future.delayed(const Duration(seconds: 2));
+    // API 호출
+    final success = await ref.read(feedbackProvider.notifier).submitFeedback(feedback);
 
     if (mounted) {
-      setState(() {
-        _isSubmitting = false;
-      });
+      if (success) {
+        // 성공 시 모달 닫고 성공 메시지 표시
+        Navigator.of(context).pop();
 
-      Navigator.of(context).pop();
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('소중한 의견 감사합니다! 🙏'),
-          backgroundColor: AppTheme.primaryOrange,
-        ),
-      );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('소중한 의견 감사합니다! 🙏'),
+            backgroundColor: AppTheme.primaryOrange,
+          ),
+        );
+      } else {
+        // 실패 시 에러 메시지 표시
+        final feedbackState = ref.read(feedbackProvider);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(feedbackState.errorMessage ?? '피드백 전송에 실패했습니다.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 }

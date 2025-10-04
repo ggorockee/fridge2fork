@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../theme/app_theme.dart';
 import '../widgets/widgets.dart';
-import '../providers/ingredients_provider.dart';
+import '../providers/fridge_provider.dart';
+import '../models/api/api_fridge.dart';
 import 'add_ingredient_screen.dart';
 import '../services/analytics_service.dart';
 
-/// 나의냉장고 화면
-/// 사용자가 보유한 모든 식재료를 카테고리별로 관리할 수 있는 화면
+/// 나의냉장고 화면 (API 기반)
 class MyFridgeScreen extends ConsumerStatefulWidget {
   const MyFridgeScreen({super.key});
 
@@ -16,6 +15,7 @@ class MyFridgeScreen extends ConsumerStatefulWidget {
 }
 
 class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
+  String _searchText = '';
 
   @override
   void initState() {
@@ -26,25 +26,43 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
   void _onAddButtonPressed() async {
     // 식재료 추가 Modal Bottom Sheet 표시
     final result = await AddIngredientScreen.showModal(context);
-    
-    // 선택된 식재료가 있으면 처리
+
+    // 선택된 식재료가 있으면 API로 추가
     if (result != null && result.isNotEmpty) {
-      ref.read(selectedIngredientsProvider.notifier).addIngredients(result);
-      SnackBarHelper.showSnackBar(
-        context,
-        '${result.length}개의 식재료가 추가되었습니다!',
-        backgroundColor: AppTheme.primaryOrange,
-      );
+      int successCount = 0;
+      for (final ingredient in result) {
+        final success = await ref.read(fridgeProvider.notifier).addIngredient(ingredient);
+        if (success) successCount++;
+      }
+
+      if (mounted) {
+        SnackBarHelper.showSnackBar(
+          context,
+          '$successCount개의 식재료가 추가되었습니다!',
+          backgroundColor: AppTheme.primaryOrange,
+        );
+      }
     }
   }
 
-  void _removeIngredient(String ingredient) {
-    ref.read(selectedIngredientsProvider.notifier).removeIngredient(ingredient);
-    SnackBarHelper.showSnackBar(
-      context,
-      '$ingredient이(가) 제거되었습니다',
-      backgroundColor: AppTheme.textPrimary.withOpacity(0.85),
-    );
+  void _removeIngredient(ApiFridgeIngredient ingredient) async {
+    final success = await ref.read(fridgeProvider.notifier).removeIngredient(ingredient.id);
+
+    if (mounted) {
+      if (success) {
+        SnackBarHelper.showSnackBar(
+          context,
+          '${ingredient.name}이(가) 제거되었습니다',
+          backgroundColor: AppTheme.textPrimary.withValues(alpha: 0.85),
+        );
+      } else {
+        SnackBarHelper.showSnackBar(
+          context,
+          '재료 제거에 실패했습니다',
+          backgroundColor: Colors.red,
+        );
+      }
+    }
   }
 
   void _clearAllIngredients() {
@@ -59,14 +77,29 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
             child: const Text('취소'),
           ),
           TextButton(
-            onPressed: () {
-              ref.read(selectedIngredientsProvider.notifier).clearAllIngredients();
-              Navigator.of(context).pop();
-              SnackBarHelper.showSnackBar(
-                context,
-                '모든 식재료가 삭제되었습니다',
-                backgroundColor: AppTheme.textPrimary.withOpacity(0.85),
-              );
+            onPressed: () async {
+              final navigator = Navigator.of(context);
+              final messenger = ScaffoldMessenger.of(context);
+              navigator.pop();
+              final success = await ref.read(fridgeProvider.notifier).clearFridge();
+
+              if (mounted) {
+                if (success) {
+                  messenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('모든 식재료가 삭제되었습니다'),
+                      backgroundColor: Color(0xD9333333),
+                    ),
+                  );
+                } else {
+                  messenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('삭제에 실패했습니다'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
             },
             child: const Text(
               '삭제',
@@ -80,28 +113,7 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final selectedIngredients = ref.watch(selectedIngredientsProvider);
-    final categories = ref.watch(categoriesProvider);
-    
-
-    // 카테고리별로 식재료 그룹화
-    Map<String, List<String>> categorizedIngredients = {};
-    for (final category in categories.skip(1)) { // '전체' 제외
-      final categoryIngredients = selectedIngredients
-          .where((ingredient) {
-            final ingredientsData = ref.read(ingredientsDataProvider);
-            return ingredientsData[category]?.contains(ingredient) ?? false;
-          })
-          .where((ingredient) {
-            final searchText = ref.watch(searchTextProvider);
-            return searchText.isEmpty || ingredient.contains(searchText);
-          })
-          .toList();
-      
-      if (categoryIngredients.isNotEmpty) {
-        categorizedIngredients[category] = categoryIngredients;
-      }
-    }
+    final fridgeState = ref.watch(fridgeProvider);
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundWhite,
@@ -118,43 +130,100 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
           ),
         ),
         actions: [
-          if (selectedIngredients.isNotEmpty)
-            IconButton(
-              onPressed: _clearAllIngredients,
-              icon: const Icon(
-                Icons.delete_outline,
-                color: AppTheme.textSecondary,
-              ),
-              tooltip: '모든 식재료 삭제',
-            ),
+          fridgeState.when(
+            data: (fridge) => fridge.ingredients.isNotEmpty
+                ? IconButton(
+                    onPressed: _clearAllIngredients,
+                    icon: const Icon(
+                      Icons.delete_outline,
+                      color: AppTheme.textSecondary,
+                    ),
+                    tooltip: '모든 식재료 삭제',
+                  )
+                : const SizedBox.shrink(),
+            loading: () => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
+          ),
         ],
       ),
-      body: selectedIngredients.isEmpty 
-        ? _buildEmptyState()
-        : _buildBodyWithSearch(categorizedIngredients),
-      floatingActionButton: selectedIngredients.isEmpty
-        ? null
-        : FloatingActionButton(
-            onPressed: _onAddButtonPressed,
-            backgroundColor: Colors.white,
-            elevation: 0,
-            heroTag: "fridge_fab", // Hero 애니메이션 방지
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: const BorderSide(
-                color: AppTheme.primaryOrange,
-                width: 2,
+      body: fridgeState.when(
+        data: (fridge) => fridge.ingredients.isEmpty
+            ? _buildEmptyState()
+            : _buildBodyWithSearch(fridge),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, _) => _buildErrorState(error.toString()),
+      ),
+      floatingActionButton: fridgeState.when(
+        data: (fridge) => fridge.ingredients.isEmpty
+            ? null
+            : SizedBox(
+                width: 45,
+                height: 45,
+                child: FloatingActionButton(
+                  onPressed: _onAddButtonPressed,
+                  backgroundColor: Colors.white,
+                  elevation: 0,
+                  heroTag: "fridge_fab",
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(13),
+                    side: const BorderSide(
+                      color: AppTheme.primaryOrange,
+                      width: 2,
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.add,
+                    color: AppTheme.primaryOrange,
+                    size: 26,
+                  ),
+                ),
+              ),
+        loading: () => null,
+        error: (_, __) => null,
+      ),
+    );
+  }
+
+  /// 에러 상태 위젯
+  Widget _buildErrorState(String error) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppTheme.spacingXL),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.error_outline,
+              size: 64,
+              color: Colors.red,
+            ),
+            const SizedBox(height: AppTheme.spacingM),
+            const Text(
+              '냉장고를 불러올 수 없습니다',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textPrimary,
               ),
             ),
-            child: const Padding(
-              padding: EdgeInsets.all(4),
-              child: Icon(
-                Icons.add,
-                color: AppTheme.primaryOrange,
-                size: 32,
+            const SizedBox(height: AppTheme.spacingS),
+            Text(
+              error,
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppTheme.textSecondary,
               ),
+              textAlign: TextAlign.center,
             ),
-          ),
+            const SizedBox(height: AppTheme.spacingL),
+            CustomButton(
+              text: '다시 시도',
+              onPressed: () => ref.read(fridgeProvider.notifier).loadFridge(),
+              type: ButtonType.primary,
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -166,7 +235,6 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // 빈 냉장고 아이콘 - 앱 로고 사용
             Container(
               width: 120,
               height: 120,
@@ -184,10 +252,7 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
                 ),
               ),
             ),
-            
             const SizedBox(height: AppTheme.spacingL),
-            
-            // 메시지
             const Text(
               '냉장고가 비어있어요',
               style: TextStyle(
@@ -196,9 +261,7 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
                 color: AppTheme.textPrimary,
               ),
             ),
-            
             const SizedBox(height: AppTheme.spacingS),
-            
             const Text(
               '식재료를 추가해서 냉장고를 채워보세요!',
               style: TextStyle(
@@ -207,10 +270,7 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
               ),
               textAlign: TextAlign.center,
             ),
-            
             const SizedBox(height: AppTheme.spacingXL),
-            
-            // 추가 버튼
             SizedBox(
               width: double.infinity,
               child: CustomButton(
@@ -228,7 +288,19 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
   }
 
   /// 검색바를 포함한 Body 위젯
-  Widget _buildBodyWithSearch(Map<String, List<String>> categorizedIngredients) {
+  Widget _buildBodyWithSearch(ApiFridge fridge) {
+    // 카테고리별로 그룹화
+    final categorizedIngredients = <String, List<ApiFridgeIngredient>>{};
+    for (final ingredient in fridge.ingredients) {
+      if (_searchText.isNotEmpty && !ingredient.name.contains(_searchText)) {
+        continue;
+      }
+      if (!categorizedIngredients.containsKey(ingredient.category)) {
+        categorizedIngredients[ingredient.category] = [];
+      }
+      categorizedIngredients[ingredient.category]!.add(ingredient);
+    }
+
     return Column(
       children: [
         // 검색바
@@ -237,104 +309,90 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
           child: SearchTextField(
             hintText: '식재료 검색...',
             onChanged: (value) {
-              ref.read(searchTextProvider.notifier).state = value;
+              setState(() {
+                _searchText = value;
+              });
             },
           ),
         ),
-        
-        // 구분선
         Container(
           height: 1,
           color: AppTheme.borderGray,
         ),
-        
         // 냉장고 콘텐츠
         Expanded(
-          child: _buildFridgeContent(categorizedIngredients),
+          child: _buildFridgeContent(fridge, categorizedIngredients),
         ),
       ],
     );
   }
 
   /// 냉장고 콘텐츠 위젯
-  Widget _buildFridgeContent(Map<String, List<String>> categorizedIngredients) {
-    final selectedIngredients = ref.watch(selectedIngredientsProvider);
-    
+  Widget _buildFridgeContent(ApiFridge fridge, Map<String, List<ApiFridgeIngredient>> categorizedIngredients) {
     return Column(
       children: [
-        // 상단 통계 및 검색
+        // 상단 통계
         Padding(
           padding: const EdgeInsets.all(AppTheme.spacingM),
-          child: Column(
-            children: [
-              // 통계 카드
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(AppTheme.spacingM),
-                decoration: BoxDecoration(
-                  color: AppTheme.lightOrange,
-                  borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                  border: Border.all(
-                    color: AppTheme.primaryOrange.withOpacity(0.2),
-                    width: 1,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(AppTheme.spacingM),
+            decoration: BoxDecoration(
+              color: AppTheme.lightOrange,
+              borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+              border: Border.all(
+                color: AppTheme.primaryOrange.withValues(alpha: 0.2),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryOrange,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                  ),
+                  child: const Icon(
+                    Icons.inventory_2,
+                    color: Colors.white,
+                    size: 24,
                   ),
                 ),
-                child: Row(
-                  children: [
-                    // 아이콘
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryOrange,
-                        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                const SizedBox(width: AppTheme.spacingM),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '총 ${fridge.ingredients.length}개의 식재료',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.textPrimary,
+                        ),
                       ),
-                      child: const Icon(
-                        Icons.inventory_2,
-                        color: Colors.white,
-                        size: 24,
+                      const SizedBox(height: 4),
+                      Text(
+                        '${categorizedIngredients.length}개 카테고리',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: AppTheme.textSecondary,
+                        ),
                       ),
-                    ),
-                    
-                    const SizedBox(width: AppTheme.spacingM),
-                    
-                    // 통계 정보
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '총 ${selectedIngredients.length}개의 식재료',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.textPrimary,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${categorizedIngredients.length}개 카테고리',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: AppTheme.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              
-            ],
+              ],
+            ),
           ),
         ),
-        
         // 카테고리별 식재료 목록
         Expanded(
-          child: categorizedIngredients.isEmpty 
-            ? _buildNoResultsState()
-            : _buildCategoryList(categorizedIngredients),
+          child: categorizedIngredients.isEmpty
+              ? _buildNoResultsState()
+              : _buildCategoryList(categorizedIngredients),
         ),
       ],
     );
@@ -377,14 +435,14 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
   }
 
   /// 카테고리별 목록
-  Widget _buildCategoryList(Map<String, List<String>> categorizedIngredients) {
+  Widget _buildCategoryList(Map<String, List<ApiFridgeIngredient>> categorizedIngredients) {
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingM),
       itemCount: categorizedIngredients.length,
       itemBuilder: (context, index) {
         final category = categorizedIngredients.keys.elementAt(index);
         final ingredients = categorizedIngredients[category]!;
-        
+
         return _CategorySection(
           category: category,
           ingredients: ingredients,
@@ -398,8 +456,8 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
 /// 카테고리 섹션 위젯
 class _CategorySection extends StatelessWidget {
   final String category;
-  final List<String> ingredients;
-  final Function(String) onRemoveIngredient;
+  final List<ApiFridgeIngredient> ingredients;
+  final Function(ApiFridgeIngredient) onRemoveIngredient;
 
   const _CategorySection({
     required this.category,
@@ -416,7 +474,7 @@ class _CategorySection extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -430,7 +488,6 @@ class _CategorySection extends StatelessWidget {
             padding: const EdgeInsets.all(AppTheme.spacingM),
             child: Row(
               children: [
-                // 카테고리 아이콘
                 Container(
                   width: 32,
                   height: 32,
@@ -444,10 +501,7 @@ class _CategorySection extends StatelessWidget {
                     size: 18,
                   ),
                 ),
-                
                 const SizedBox(width: AppTheme.spacingS),
-                
-                // 카테고리 이름
                 Text(
                   category,
                   style: const TextStyle(
@@ -456,10 +510,7 @@ class _CategorySection extends StatelessWidget {
                     color: AppTheme.textPrimary,
                   ),
                 ),
-                
                 const SizedBox(width: AppTheme.spacingS),
-                
-                // 개수 뱃지
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppTheme.spacingS,
@@ -481,14 +532,13 @@ class _CategorySection extends StatelessWidget {
               ],
             ),
           ),
-          
           // 식재료 그리드
           Padding(
             padding: const EdgeInsets.fromLTRB(
-              AppTheme.spacingM, 
-              0, 
-              AppTheme.spacingM, 
-              AppTheme.spacingM
+              AppTheme.spacingM,
+              0,
+              AppTheme.spacingM,
+              AppTheme.spacingM,
             ),
             child: GridView.builder(
               shrinkWrap: true,
@@ -515,39 +565,36 @@ class _CategorySection extends StatelessWidget {
   }
 
   Color _getCategoryColor(String category) {
-    switch (category) {
-      case '정육/계란':
-        return Colors.red.shade400;
-      case '수산물':
-        return Colors.blue.shade400;
-      case '채소':
-        return Colors.green.shade400;
-      case '장/양념/오일':
-        return Colors.orange.shade400;
-      default:
-        return AppTheme.primaryOrange;
+    // 서버에서 오는 카테고리명에 맞게 조정
+    if (category.contains('육') || category.contains('계란')) {
+      return Colors.red.shade400;
+    } else if (category.contains('수산') || category.contains('해산')) {
+      return Colors.blue.shade400;
+    } else if (category.contains('채소')) {
+      return Colors.green.shade400;
+    } else if (category.contains('양념') || category.contains('조미')) {
+      return Colors.orange.shade400;
     }
+    return AppTheme.primaryOrange;
   }
 
   IconData _getCategoryIcon(String category) {
-    switch (category) {
-      case '정육/계란':
-        return Icons.egg;
-      case '수산물':
-        return Icons.set_meal;
-      case '채소':
-        return Icons.grass;
-      case '장/양념/오일':
-        return Icons.local_dining;
-      default:
-        return Icons.category;
+    if (category.contains('육') || category.contains('계란')) {
+      return Icons.egg;
+    } else if (category.contains('수산') || category.contains('해산')) {
+      return Icons.set_meal;
+    } else if (category.contains('채소')) {
+      return Icons.grass;
+    } else if (category.contains('양념') || category.contains('조미')) {
+      return Icons.local_dining;
     }
+    return Icons.category;
   }
 }
 
 /// 개별 식재료 칩 위젯
 class _IngredientChip extends StatelessWidget {
-  final String ingredient;
+  final ApiFridgeIngredient ingredient;
   final VoidCallback onRemove;
 
   const _IngredientChip({
@@ -558,7 +605,7 @@ class _IngredientChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Tooltip(
-      message: ingredient,
+      message: ingredient.name,
       child: Container(
         padding: const EdgeInsets.symmetric(
           horizontal: 12,
@@ -577,7 +624,7 @@ class _IngredientChip extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                ingredient,
+                ingredient.name,
                 style: const TextStyle(
                   fontSize: 14,
                   color: AppTheme.textPrimary,
