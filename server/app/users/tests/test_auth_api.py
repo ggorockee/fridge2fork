@@ -15,9 +15,9 @@ class AuthAPITest(TestCase):
     def setUp(self):
         """테스트 설정"""
         self.client = Client()
-        self.register_url = '/fridge2fork/v1/auth/register'
-        self.login_url = '/fridge2fork/v1/auth/login'
-        self.me_url = '/fridge2fork/v1/auth/me'
+        self.register_url = '/auth/register'
+        self.login_url = '/auth/login'
+        self.me_url = '/auth/me'
 
     def test_register_with_email_password(self):
         """이메일과 비밀번호로 회원가입 성공"""

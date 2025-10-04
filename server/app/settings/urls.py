@@ -24,7 +24,8 @@ from core.views import health_check, readiness_check, liveness_check
 
 urlpatterns = [
     path('fridge2fork/admin/', admin.site.urls),
-    path('fridge2fork/v1/', api.urls),
+    # API는 루트 경로에 마운트 (Nginx가 /fridge2fork/v1/ -> / 프록시)
+    path('', api.urls),
     # /admin/ 경로를 /fridge2fork/admin/으로 리다이렉트
     path('admin/', RedirectView.as_view(url='/fridge2fork/admin/', permanent=True)),
     path('admin/<path:path>', RedirectView.as_view(url='/fridge2fork/admin/%(path)s', permanent=True)),

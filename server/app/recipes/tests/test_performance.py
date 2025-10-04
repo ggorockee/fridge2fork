@@ -71,7 +71,7 @@ class SearchPerformanceTest(TestCase):
 
     def test_autocomplete_performance(self):
         """재료 자동완성 성능 테스트 (<100ms 목표)"""
-        url = '/fridge2fork/v1/recipes/ingredients/autocomplete'
+        url = '/recipes/ingredients/autocomplete'
 
         # 10회 실행 평균
         times = []
@@ -91,7 +91,7 @@ class SearchPerformanceTest(TestCase):
 
     def test_recipe_list_performance(self):
         """레시피 목록 조회 성능 테스트 (<200ms 목표)"""
-        url = '/fridge2fork/v1/recipes'
+        url = '/recipes'
 
         # 10회 실행 평균
         times = []
@@ -111,7 +111,7 @@ class SearchPerformanceTest(TestCase):
 
     def test_recommendation_performance(self):
         """레시피 추천 성능 테스트 (<1000ms 목표)"""
-        url = '/fridge2fork/v1/recipes/recommend'
+        url = '/recipes/recommend'
 
         # 재료 5개로 추천 요청
         data = {
@@ -142,7 +142,7 @@ class SearchPerformanceTest(TestCase):
     def test_recipe_detail_performance(self):
         """레시피 상세 조회 성능 테스트 (<150ms 목표)"""
         recipe = self.recipes[0]
-        url = f'/fridge2fork/v1/recipes/{recipe.id}'
+        url = f'/recipes/{recipe.id}'
 
         # 10회 실행 평균
         times = []
@@ -169,7 +169,7 @@ class SearchPerformanceTest(TestCase):
         # 재료 자동완성 쿼리 횟수 체크
         with CaptureQueriesContext(connection) as context:
             response = self.client.get(
-                '/fridge2fork/v1/recipes/ingredients/autocomplete',
+                '/recipes/ingredients/autocomplete',
                 {'q': '재료'}
             )
             self.assertEqual(response.status_code, 200)
@@ -186,7 +186,7 @@ class SearchPerformanceTest(TestCase):
         }
         with CaptureQueriesContext(connection) as context:
             response = self.client.post(
-                '/fridge2fork/v1/recipes/recommend',
+                '/recipes/recommend',
                 data=json.dumps(data),
                 content_type='application/json'
             )
