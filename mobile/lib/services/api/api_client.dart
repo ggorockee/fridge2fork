@@ -327,17 +327,16 @@ class ApiClient {
     final baseUri = Uri.parse('$baseUrl$endpoint');
 
     if (queryParams != null && queryParams.isNotEmpty) {
-      // 한글 및 특수문자를 올바르게 인코딩
-      final encodedParams = <String, String>{};
+      // queryParameters가 자동으로 URL 인코딩 처리 (이중 인코딩 방지)
+      final params = <String, String>{};
       for (final entry in queryParams.entries) {
-        final value = entry.value.toString();
-        encodedParams[entry.key] = Uri.encodeComponent(value);
+        params[entry.key] = entry.value.toString();
       }
 
       return baseUri.replace(
         queryParameters: {
           ...baseUri.queryParameters,
-          ...encodedParams,
+          ...params,
         },
       );
     }
