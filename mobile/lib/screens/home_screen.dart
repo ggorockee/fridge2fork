@@ -272,21 +272,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           const SizedBox(height: AppTheme.spacingM),
                           selectedIngredients.isEmpty
                               ? const _EmptyStateMessage()
-                              : Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    _SelectedIngredientsSection(
-                                      ingredients: selectedIngredients,
-                                      showAll: showAllIngredients,
-                                      onRemove: _removeIngredient,
-                                      onToggleShowAll: _toggleShowAllIngredients,
-                                    ),
-                                    const SizedBox(height: AppTheme.spacingL),
-                                    // 레시피 추천 섹션
-                                    _RecipeRecommendationsSection(
-                                      ingredients: selectedIngredients,
-                                    ),
-                                  ],
+                              : _SelectedIngredientsSection(
+                                  ingredients: selectedIngredients,
+                                  showAll: showAllIngredients,
+                                  onRemove: _removeIngredient,
+                                  onToggleShowAll: _toggleShowAllIngredients,
                                 ),
                         ],
                       ),
@@ -488,9 +478,9 @@ class _RecipeRecommendationSection extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              isApiOnline ? Icons.error_outline : Icons.wifi_off,
+              Icons.restaurant_menu,
               size: 48,
-              color: AppTheme.textSecondary,
+              color: AppTheme.primaryOrange.withValues(alpha: 0.5),
             ),
             const SizedBox(height: AppTheme.spacingS),
             Text(
@@ -499,46 +489,6 @@ class _RecipeRecommendationSection extends ConsumerWidget {
                 color: AppTheme.textSecondary,
               ),
               textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppTheme.spacingM),
-            // 재시도 버튼 추가
-            GestureDetector(
-              onTap: () async {
-                if (kDebugMode) debugPrint('🔄 [Home Screen] Manual retry requested');
-                await ref.read(randomRecipeProvider.notifier).refresh();
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppTheme.spacingM,
-                  vertical: AppTheme.spacingS,
-                ),
-                decoration: BoxDecoration(
-                  color: AppTheme.lightOrange,
-                  borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                  border: Border.all(
-                    color: AppTheme.primaryOrange,
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.refresh,
-                      size: 16,
-                      color: AppTheme.primaryOrange,
-                    ),
-                    const SizedBox(width: AppTheme.spacingS),
-                    Text(
-                      '다시 시도',
-                      style: AppTheme.bodySmall.copyWith(
-                        color: AppTheme.primaryOrange,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ),
           ],
         ),
@@ -614,20 +564,20 @@ class _RecipeRecommendationSection extends ConsumerWidget {
   /// 에러 메시지 생성 (상황별 맞춤 메시지)
   String _getErrorMessage(String? error, bool isApiOnline) {
     if (!isApiOnline) {
-      return '네트워크 연결이 필요합니다\n연결 상태를 확인해주세요';
+      return '냉장고에 재료를 추가하면\n맛있는 레시피를 추천해드려요!';
     }
 
     if (error != null) {
       if (error.contains('timeout')) {
-        return '서버 응답 시간이 초과되었습니다\n잠시 후 다시 시도해주세요';
+        return '냉장고에 재료를 추가하면\n맛있는 레시피를 추천해드려요!';
       } else if (error.contains('not found') || error.contains('404')) {
-        return '레시피 데이터를 찾을 수 없습니다';
+        return '냉장고에 재료를 추가하면\n맛있는 레시피를 추천해드려요!';
       } else if (error.contains('server') || error.contains('500')) {
-        return '서버에 일시적인 문제가 있습니다\n잠시 후 다시 시도해주세요';
+        return '냉장고에 재료를 추가하면\n맛있는 레시피를 추천해드려요!';
       }
     }
 
-    return error ?? '레시피를 불러올 수 없습니다\n잠시 후 다시 시도해주세요';
+    return '냉장고에 재료를 추가하면\n맛있는 레시피를 추천해드려요!';
   }
 
   /// 맞춤 레시피 목록 위젯 빌드
@@ -773,54 +723,42 @@ class _RecipeCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 140,
-        height: 160, // 카드 높이를 160으로 고정
+        width: 160,
+        height: 160,
         margin: EdgeInsets.only(
-          right: isLast ? 0 : AppTheme.spacingM, // 마지막 아이템은 우측 마진 없음
+          right: isLast ? 0 : AppTheme.spacingM,
         ),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(AppTheme.radiusCard),
-          border: Border.all(
-            color: Colors.grey.withValues(alpha: 0.2),
-            width: 1,
-          ),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 레시피 이미지
-            Container(
-              height: 100, // 이미지 높이를 카드에 맞게 조정
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(AppTheme.radiusCard),
-                  topRight: Radius.circular(AppTheme.radiusCard),
-                ),
+            ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
               ),
-              child: ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(AppTheme.radiusCard),
-                  topRight: Radius.circular(AppTheme.radiusCard),
-                ),
-                child: Image.network(
-                  recipe.imageUrl ?? 'https://picsum.photos/300/200?random=${recipe.id.hashCode.abs() % 1000}',
-                  width: double.infinity,
-                  height: 100,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: AppTheme.backgroundGray,
-                      child: const Center(
-                        child: Icon(
-                          Icons.restaurant,
-                          size: 36,
-                          color: AppTheme.textSecondary,
-                        ),
+              child: Image.network(
+                recipe.imageUrl ?? 'https://picsum.photos/300/200?random=${recipe.id.hashCode.abs() % 1000}',
+                width: double.infinity,
+                height: 110,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    height: 110,
+                    color: AppTheme.backgroundGray,
+                    child: const Center(
+                      child: Icon(
+                        Icons.restaurant,
+                        size: 36,
+                        color: AppTheme.textSecondary,
                       ),
-                    );
-                  },
-                ),
+                    ),
+                  );
+                },
               ),
             ),
 
