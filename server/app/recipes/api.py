@@ -702,12 +702,19 @@ async def get_or_create_fridge(request):
         # 회원
         fridge, created = await Fridge.objects.aget_or_create(user=user)
     else:
-        # 비회원 - 세션 키 사용
-        session_key = request.session.session_key
+        # 비회원 - X-Session-ID 헤더에서 세션 키 추출
+        session_key = request.headers.get('X-Session-ID')
+
         if not session_key:
-            # Django 세션 생성은 동기 메서드이므로 sync_to_async 사용
-            await sync_to_async(request.session.create)()
-            session_key = request.session.session_key
+            # 세션 ID가 없으면 에러 반환
+            from django.http import JsonResponse
+            return JsonResponse(
+                {
+                    'error': 'SessionRequired',
+                    'message': '세션 ID가 필요합니다. X-Session-ID 헤더를 확인하세요.'
+                },
+                status=400
+            )
 
         fridge, created = await Fridge.objects.aget_or_create(session_key=session_key)
 
