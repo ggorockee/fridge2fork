@@ -746,7 +746,7 @@ def _get_fridge_sync(fridge):
     }
 
 
-@router.get("/fridge", response=FridgeSchema)
+@router.get("/fridge")
 async def get_fridge(request):
     """
     냉장고 조회 (회원/비회원 모두 가능)
@@ -757,17 +757,19 @@ async def get_fridge(request):
 
     X-Session-ID 헤더가 없으면 자동으로 새 세션 생성 및 반환
     """
+    from django.http import JsonResponse
+
     fridge, session_key = await get_or_create_fridge(request, auto_create=True)
     result = await sync_to_async(_get_fridge_sync)(fridge)
 
+    # JSON 응답 생성
+    response = JsonResponse(result)
+
     # 새로 생성된 세션 키가 있으면 헤더에 포함
     if session_key:
-        from django.http import JsonResponse
-        response = JsonResponse(result)
         response['X-Session-ID'] = session_key
-        return response
 
-    return result
+    return response
 
 
 def _add_ingredient_to_fridge_sync(fridge, ingredient_name: str):
@@ -796,13 +798,20 @@ async def add_ingredient_to_fridge(request, data: AddIngredientSchema):
     """
     냉장고에 재료 추가
     """
+    import logging
+    logger = logging.getLogger(__name__)
+
     fridge, session_key = await get_or_create_fridge(request)
+    logger.info(f"Adding ingredient '{data.ingredient_name}' to fridge {fridge.id} (session: {fridge.session_key})")
 
     # 재료 추가 처리
     error_response = await sync_to_async(_add_ingredient_to_fridge_sync)(fridge, data.ingredient_name)
 
     if error_response is not None:
+        logger.error(f"Failed to add ingredient: {error_response}")
         return error_response
+
+    logger.info(f"Successfully added ingredient '{data.ingredient_name}'")
 
     # 냉장고 재조회
     return await get_fridge(request)
