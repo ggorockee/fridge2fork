@@ -961,6 +961,7 @@ class _RecommendedRecipeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: 160,
+      height: 200, // 고정 높이 추가로 overflow 방지
       margin: const EdgeInsets.only(right: AppTheme.spacingM),
       child: Card(
         elevation: 2,
@@ -991,7 +992,7 @@ class _RecommendedRecipeCard extends StatelessWidget {
                       child: const Icon(Icons.restaurant, size: 40, color: Colors.grey),
                     ),
             ),
-            // 정보 - 전체 영역 차지
+            // 정보 - 남은 공간 사용
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(12.0),
