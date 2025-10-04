@@ -80,6 +80,7 @@ class JWTAuth(HttpBearer):
             return None
 
         try:
+            # Django Ninja가 비동기 뷰에서 동기 ORM을 자동으로 처리
             user = User.objects.get(id=user_id, is_active=True)
             return user
         except User.DoesNotExist:

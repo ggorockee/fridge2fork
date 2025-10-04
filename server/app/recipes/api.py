@@ -7,6 +7,7 @@ from typing import List, Optional
 from django.db.models import Q, Count
 from django.http import JsonResponse
 from django.contrib.auth import get_user_model
+from asgiref.sync import sync_to_async
 from .models import Recipe, Ingredient, NormalizedIngredient, Fridge, FridgeIngredient, IngredientCategory, RecommendationSettings
 from .schemas import (
     RecipeSearchResponseSchema,
@@ -37,7 +38,7 @@ User = get_user_model()
 router = Router()
 
 
-def get_user_from_request(request):
+async def get_user_from_request(request):
     """요청에서 사용자 추출 (Optional)"""
     auth_header = request.headers.get('Authorization', '')
     if auth_header.startswith('Bearer '):
@@ -47,25 +48,14 @@ def get_user_from_request(request):
             user_id = payload.get('user_id')
             if user_id:
                 try:
-                    return User.objects.get(id=user_id, is_active=True)
+                    return await User.objects.aget(id=user_id, is_active=True)
                 except User.DoesNotExist:
                     pass
     return None
 
 
-@router.get("/search", response=RecipeSearchResponseSchema)
-def search_recipes(
-    request,
-    ingredients: Optional[str] = None,
-    exclude_seasonings: bool = False
-):
-    """
-    재료명으로 레시피 검색
-
-    Args:
-        ingredients: 쉼표로 구분된 재료명 (예: "돼지고기,배추")
-        exclude_seasonings: 범용 조미료 제외 여부
-    """
+def _search_recipes_sync(ingredients: Optional[str], exclude_seasonings: bool):
+    """레시피 검색 동기 로직"""
     if not ingredients:
         return {
             'recipes': [],
@@ -89,7 +79,7 @@ def search_recipes(
             queryset = queryset.exclude_seasonings()
 
         # 레시피 ID 수집
-        ingredient_recipe_ids = queryset.values_list('recipe_id', flat=True)
+        ingredient_recipe_ids = list(queryset.values_list('recipe_id', flat=True))
 
         if ingredient_recipe_ids:
             if not recipe_ids:
@@ -110,18 +100,24 @@ def search_recipes(
     }
 
 
-@router.post("/recommend", response=RecipeRecommendResponseSchema)
-def recommend_recipes(request, data: RecipeRecommendRequestSchema):
+@router.get("/search", response=RecipeSearchResponseSchema)
+async def search_recipes(
+    request,
+    ingredients: Optional[str] = None,
+    exclude_seasonings: bool = False
+):
     """
-    냉장고 재료 기반 레시피 추천
+    재료명으로 레시피 검색
 
-    사용자의 냉장고 재료로 만들 수 있는 레시피를 매칭률 순으로 추천
-
-    최적화:
-    - prefetch_related로 N+1 쿼리 해결
-    - 인덱스 활용한 빠른 검색
-    - Prefetch 객체로 조건부 prefetch (exclude_seasonings)
+    Args:
+        ingredients: 쉼표로 구분된 재료명 (예: "돼지고기,배추")
+        exclude_seasonings: 범용 조미료 제외 여부
     """
+    return await sync_to_async(_search_recipes_sync)(ingredients, exclude_seasonings)
+
+
+def _recommend_recipes_sync(data: RecipeRecommendRequestSchema):
+    """레시피 추천 동기 로직"""
     from django.db.models import Prefetch
 
     user_ingredients = data.ingredients
@@ -152,15 +148,15 @@ def recommend_recipes(request, data: RecipeRecommendRequestSchema):
         )
 
     # 모든 레시피 조회 (N+1 방지: Prefetch 객체로 최적화된 prefetch)
-    recipes = Recipe.objects.prefetch_related(
+    recipes = list(Recipe.objects.prefetch_related(
         Prefetch('ingredients', queryset=ingredient_qs)
-    ).all()
+    ).all())
 
     recipe_matches = []
 
     for recipe in recipes:
         # prefetch된 재료들 (이미 필터링됨)
-        essential_ingredients = recipe.ingredients.all()
+        essential_ingredients = list(recipe.ingredients.all())
 
         # 정규화 재료 ID 추출 (추가 쿼리 없이 메모리에서 처리)
         recipe_ingredient_ids = set()
@@ -220,33 +216,29 @@ def recommend_recipes(request, data: RecipeRecommendRequestSchema):
     }
 
 
-@router.get("/recommendations", response=RecipeRecommendationsResponseSchema)
-def get_recipe_recommendations(
-    request,
+@router.post("/recommend", response=RecipeRecommendResponseSchema)
+async def recommend_recipes(request, data: RecipeRecommendRequestSchema):
+    """
+    냉장고 재료 기반 레시피 추천
+
+    사용자의 냉장고 재료로 만들 수 있는 레시피를 매칭률 순으로 추천
+
+    최적화:
+    - prefetch_related로 N+1 쿼리 해결
+    - 인덱스 활용한 빠른 검색
+    - Prefetch 객체로 조건부 prefetch (exclude_seasonings)
+    """
+    return await sync_to_async(_recommend_recipes_sync)(data)
+
+
+def _get_recipe_recommendations_sync(
     ingredients: str,
-    limit: Optional[int] = None,
-    algorithm: Optional[str] = None,
-    exclude_seasonings: Optional[bool] = None,
-    min_match_rate: Optional[float] = None
+    limit: Optional[int],
+    algorithm: Optional[str],
+    exclude_seasonings: Optional[bool],
+    min_match_rate: Optional[float]
 ):
-    """
-    레시피 추천 (GET 방식, 유사도 알고리즘 선택 가능)
-
-    Args:
-        ingredients: 쉼표로 구분된 정규화 재료명 (예: "돼지고기,배추,두부")
-        limit: 추천 레시피 최대 개수 (미지정 시 관리자 설정값 사용, 범위: 1-100)
-        algorithm: 유사도 알고리즘 (미지정 시 관리자 설정값 사용, "jaccard" or "cosine")
-        exclude_seasonings: 범용 조미료 제외 여부 (미지정 시 관리자 설정값 사용)
-        min_match_rate: 최소 매칭률 (미지정 시 관리자 설정값 사용, 범위: 0.0-1.0)
-
-    Returns:
-        RecipeRecommendationsResponseSchema: {
-            recipes: 추천 레시피 목록,
-            total: 전체 추천 개수,
-            algorithm: 사용된 알고리즘,
-            summary: 매칭률 요약
-        }
-    """
+    """레시피 추천 동기 로직"""
     from django.db.models import Prefetch
 
     # 관리자 설정 조회
@@ -280,10 +272,10 @@ def get_recipe_recommendations(
         }
 
     # 사용자가 가진 정규화 재료 찾기
-    user_normalized_ingredients = NormalizedIngredient.objects.filter(
+    user_normalized_ingredients = list(NormalizedIngredient.objects.filter(
         name__in=ingredient_names
-    )
-    user_normalized_ids = set(user_normalized_ingredients.values_list('id', flat=True))
+    ))
+    user_normalized_ids = set(ing.id for ing in user_normalized_ingredients)
 
     if not user_normalized_ids:
         return {
@@ -305,15 +297,15 @@ def get_recipe_recommendations(
         )
 
     # 모든 레시피 조회
-    recipes = Recipe.objects.prefetch_related(
+    recipes = list(Recipe.objects.prefetch_related(
         Prefetch('ingredients', queryset=ingredient_qs)
-    ).all()
+    ).all())
 
     recipe_matches = []
 
     for recipe in recipes:
         # prefetch된 재료들
-        essential_ingredients = recipe.ingredients.all()
+        essential_ingredients = list(recipe.ingredients.all())
 
         # 정규화 재료 ID 추출
         recipe_ingredient_ids = set()
@@ -389,25 +381,46 @@ def get_recipe_recommendations(
     }
 
 
-@router.get("/ingredients/autocomplete", response=IngredientAutocompleteResponseSchema)
-def autocomplete_ingredients(request, q: str):
+@router.get("/recommendations", response=RecipeRecommendationsResponseSchema)
+async def get_recipe_recommendations(
+    request,
+    ingredients: str,
+    limit: Optional[int] = None,
+    algorithm: Optional[str] = None,
+    exclude_seasonings: Optional[bool] = None,
+    min_match_rate: Optional[float] = None
+):
     """
-    재료 자동완성
+    레시피 추천 (GET 방식, 유사도 알고리즘 선택 가능)
 
     Args:
-        q: 검색 쿼리
+        ingredients: 쉼표로 구분된 정규화 재료명 (예: "돼지고기,배추,두부")
+        limit: 추천 레시피 최대 개수 (미지정 시 관리자 설정값 사용, 범위: 1-100)
+        algorithm: 유사도 알고리즘 (미지정 시 관리자 설정값 사용, "jaccard" or "cosine")
+        exclude_seasonings: 범용 조미료 제외 여부 (미지정 시 관리자 설정값 사용)
+        min_match_rate: 최소 매칭률 (미지정 시 관리자 설정값 사용, 범위: 0.0-1.0)
 
-    최적화:
-    - select_related로 N+1 쿼리 방지
-    - name 인덱스 활용한 빠른 검색
-    - ILIKE 대신 startswith 우선 (더 빠름)
+    Returns:
+        RecipeRecommendationsResponseSchema: {
+            recipes: 추천 레시피 목록,
+            total: 전체 추천 개수,
+            algorithm: 사용된 알고리즘,
+            summary: 매칭률 요약
+        }
     """
+    return await sync_to_async(_get_recipe_recommendations_sync)(
+        ingredients, limit, algorithm, exclude_seasonings, min_match_rate
+    )
+
+
+def _autocomplete_ingredients_sync(q: str):
+    """재료 자동완성 동기 로직"""
     if not q or len(q) < 1:
         return {'suggestions': []}
 
     # 정규화 재료에서 검색 (N+1 방지: select_related, 인덱스 활용)
     # startswith 우선 검색 후 contains 검색
-    normalized_ingredients = (
+    normalized_ingredients = list(
         NormalizedIngredient.objects
         .select_related('category')
         .filter(name__istartswith=q)
@@ -415,15 +428,15 @@ def autocomplete_ingredients(request, q: str):
     )
 
     # startswith로 결과가 부족하면 contains로 추가 검색
-    if normalized_ingredients.count() < 10:
-        contains_results = (
+    if len(normalized_ingredients) < 10:
+        contains_results = list(
             NormalizedIngredient.objects
             .select_related('category')
             .filter(name__icontains=q)
             .exclude(name__istartswith=q)
-            .order_by('name')[:(10 - normalized_ingredients.count())]
+            .order_by('name')[:(10 - len(normalized_ingredients))]
         )
-        normalized_ingredients = list(normalized_ingredients) + list(contains_results)
+        normalized_ingredients = normalized_ingredients + contains_results
 
     suggestions = []
     for ingredient in normalized_ingredients:
@@ -436,8 +449,54 @@ def autocomplete_ingredients(request, q: str):
     return {'suggestions': suggestions}
 
 
+@router.get("/ingredients/autocomplete", response=IngredientAutocompleteResponseSchema)
+async def autocomplete_ingredients(request, q: str):
+    """
+    재료 자동완성
+
+    Args:
+        q: 검색 쿼리
+
+    최적화:
+    - select_related로 N+1 쿼리 방지
+    - name 인덱스 활용한 빠른 검색
+    - ILIKE 대신 startswith 우선 (더 빠름)
+    """
+    return await sync_to_async(_autocomplete_ingredients_sync)(q)
+
+
+def _get_categories_sync(category_type: str):
+    """카테고리 목록 조회 동기 로직"""
+    # 카테고리 조회 (활성화된 것만)
+    queryset = IngredientCategory.objects.filter(
+        category_type=category_type,
+        is_active=True
+    ).order_by('display_order', 'name')
+
+    # QuerySet 평가 및 전체 개수
+    category_list = list(queryset)
+    total = len(category_list)
+
+    # 카테고리 목록 변환
+    categories = [
+        IngredientCategorySchema(
+            id=cat.id,
+            name=cat.name,
+            code=cat.code,
+            icon=cat.icon,
+            display_order=cat.display_order
+        )
+        for cat in category_list
+    ]
+
+    return {
+        'categories': categories,
+        'total': total
+    }
+
+
 @router.get("/categories", response=CategoryListResponseSchema)
-def get_categories(
+async def get_categories(
     request,
     category_type: str = "normalized"
 ):
@@ -453,17 +512,65 @@ def get_categories(
             total: 전체 개수
         }
     """
-    # 카테고리 조회 (활성화된 것만)
-    queryset = IngredientCategory.objects.filter(
-        category_type=category_type,
+    return await sync_to_async(_get_categories_sync)(category_type)
+
+
+def _get_normalized_ingredients_sync(
+    category: Optional[str],
+    exclude_seasonings: bool,
+    search: Optional[str],
+    limit: int
+):
+    """정규화된 재료 목록 조회 동기 로직"""
+    # 정규화된 재료 조회 (카테고리 정보 포함)
+    queryset = NormalizedIngredient.objects.select_related('category')
+
+    # 필터링: 카테고리
+    if category:
+        queryset = queryset.filter(category__code=category)
+
+    # 필터링: 범용 조미료 제외
+    if exclude_seasonings:
+        queryset = queryset.filter(is_common_seasoning=False)
+
+    # 검색: 재료명
+    if search:
+        queryset = queryset.filter(name__icontains=search)
+
+    # 정렬: 카테고리 순서 → 재료명
+    queryset = queryset.order_by('category__display_order', 'name')[:limit]
+
+    # 전체 개수 (필터링 적용된) - QuerySet 평가 강제
+    ingredient_list = list(queryset)
+    total = len(ingredient_list)
+
+    # 재료 목록 변환
+    ingredients = []
+    for ingredient in ingredient_list:
+        category_data = None
+        if ingredient.category:
+            category_data = IngredientCategorySchema(
+                id=ingredient.category.id,
+                name=ingredient.category.name,
+                code=ingredient.category.code,
+                icon=ingredient.category.icon,
+                display_order=ingredient.category.display_order
+            )
+
+        ingredients.append(NormalizedIngredientSchema(
+            id=ingredient.id,
+            name=ingredient.name,
+            category=category_data,
+            is_common_seasoning=ingredient.is_common_seasoning
+        ))
+
+    # 사용 가능한 카테고리 목록 (정규화 재료용)
+    categories = list(IngredientCategory.objects.filter(
+        category_type='normalized',
         is_active=True
-    ).order_by('display_order', 'name')
+    ).order_by('display_order'))
 
-    # 전체 개수
-    total = queryset.count()
-
-    # 카테고리 목록 변환
-    categories = [
+    category_list = [
         IngredientCategorySchema(
             id=cat.id,
             name=cat.name,
@@ -471,17 +578,18 @@ def get_categories(
             icon=cat.icon,
             display_order=cat.display_order
         )
-        for cat in queryset
+        for cat in categories
     ]
 
     return {
-        'categories': categories,
-        'total': total
+        'ingredients': ingredients,
+        'total': total,
+        'categories': category_list
     }
 
 
 @router.get("/ingredients", response=NormalizedIngredientListResponseSchema)
-def get_normalized_ingredients(
+async def get_normalized_ingredients(
     request,
     category: Optional[str] = None,
     exclude_seasonings: bool = False,
@@ -504,90 +612,20 @@ def get_normalized_ingredients(
             categories: 사용 가능한 카테고리 목록
         }
     """
-    # 정규화된 재료 조회 (카테고리 정보 포함)
-    queryset = NormalizedIngredient.objects.select_related('category')
-
-    # 필터링: 카테고리
-    if category:
-        queryset = queryset.filter(category__code=category)
-
-    # 필터링: 범용 조미료 제외
-    if exclude_seasonings:
-        queryset = queryset.filter(is_common_seasoning=False)
-
-    # 검색: 재료명
-    if search:
-        queryset = queryset.filter(name__icontains=search)
-
-    # 정렬: 카테고리 순서 → 재료명
-    queryset = queryset.order_by('category__display_order', 'name')[:limit]
-
-    # 전체 개수 (필터링 적용된)
-    total = queryset.count()
-
-    # 재료 목록 변환
-    ingredients = []
-    for ingredient in queryset:
-        category_data = None
-        if ingredient.category:
-            category_data = IngredientCategorySchema(
-                id=ingredient.category.id,
-                name=ingredient.category.name,
-                code=ingredient.category.code,
-                icon=ingredient.category.icon,
-                display_order=ingredient.category.display_order
-            )
-
-        ingredients.append(NormalizedIngredientSchema(
-            id=ingredient.id,
-            name=ingredient.name,
-            category=category_data,
-            is_common_seasoning=ingredient.is_common_seasoning
-        ))
-
-    # 사용 가능한 카테고리 목록 (정규화 재료용)
-    categories = IngredientCategory.objects.filter(
-        category_type='normalized',
-        is_active=True
-    ).order_by('display_order')
-
-    category_list = [
-        IngredientCategorySchema(
-            id=cat.id,
-            name=cat.name,
-            code=cat.code,
-            icon=cat.icon,
-            display_order=cat.display_order
-        )
-        for cat in categories
-    ]
-
-    return {
-        'ingredients': ingredients,
-        'total': total,
-        'categories': category_list
-    }
+    return await sync_to_async(_get_normalized_ingredients_sync)(
+        category, exclude_seasonings, search, limit
+    )
 
 
 # ==================== 레시피 목록/상세 API ====================
 
-@router.get("", response=PaginatedRecipesSchema)
-def list_recipes(
-    request,
-    page: int = 1,
-    limit: int = 20,
-    difficulty: Optional[str] = None,
-    search: Optional[str] = None
+def _list_recipes_sync(
+    page: int,
+    limit: int,
+    difficulty: Optional[str],
+    search: Optional[str]
 ):
-    """
-    레시피 목록 조회 (페이지네이션)
-
-    Args:
-        page: 페이지 번호 (기본: 1)
-        limit: 페이지 크기 (기본: 20, 최대: 100)
-        difficulty: 난이도 필터
-        search: 검색어 (name, title)
-    """
+    """레시피 목록 조회 동기 로직"""
     # Limit 제한
     limit = min(limit, 100)
 
@@ -603,13 +641,13 @@ def list_recipes(
             Q(name__icontains=search) | Q(title__icontains=search)
         )
 
-    # 총 개수
-    total = queryset.count()
-    total_pages = ceil(total / limit) if total > 0 else 0
-
     # 페이지네이션
     offset = (page - 1) * limit
-    recipes = queryset[offset:offset + limit]
+    recipe_list = list(queryset[offset:offset + limit])
+
+    # 총 개수 (필터링 적용된 전체 쿼리셋의 개수)
+    total = queryset.count()
+    total_pages = ceil(total / limit) if total > 0 else 0
 
     return {
         'recipes': [
@@ -624,7 +662,7 @@ def list_recipes(
                 'cooking_time': recipe.cooking_time,
                 'servings': recipe.servings,
             }
-            for recipe in recipes
+            for recipe in recipe_list
         ],
         'total': total,
         'page': page,
@@ -633,16 +671,36 @@ def list_recipes(
     }
 
 
+@router.get("", response=PaginatedRecipesSchema)
+async def list_recipes(
+    request,
+    page: int = 1,
+    limit: int = 20,
+    difficulty: Optional[str] = None,
+    search: Optional[str] = None
+):
+    """
+    레시피 목록 조회 (페이지네이션)
+
+    Args:
+        page: 페이지 번호 (기본: 1)
+        limit: 페이지 크기 (기본: 20, 최대: 100)
+        difficulty: 난이도 필터
+        search: 검색어 (name, title)
+    """
+    return await sync_to_async(_list_recipes_sync)(page, limit, difficulty, search)
+
+
 # ==================== 냉장고 관리 API ====================
 # 주의: 경로 충돌 방지를 위해 /fridge 엔드포인트를 /{recipe_id} 앞에 배치
 
-def get_or_create_fridge(request):
+async def get_or_create_fridge(request):
     """회원/비회원 냉장고 조회 또는 생성"""
-    user = get_user_from_request(request)
+    user = await get_user_from_request(request)
 
     if user:
         # 회원
-        fridge, created = Fridge.objects.get_or_create(user=user)
+        fridge, created = await Fridge.objects.aget_or_create(user=user)
     else:
         # 비회원 - 세션 키 사용
         session_key = request.session.session_key
@@ -650,24 +708,15 @@ def get_or_create_fridge(request):
             request.session.create()
             session_key = request.session.session_key
 
-        fridge, created = Fridge.objects.get_or_create(session_key=session_key)
+        fridge, created = await Fridge.objects.aget_or_create(session_key=session_key)
 
     return fridge
 
 
-@router.get("/fridge", response=FridgeSchema)
-def get_fridge(request):
-    """
-    냉장고 조회 (회원/비회원 모두 가능)
-
-    최적화:
-    - select_related로 N+1 쿼리 방지
-    - order_by로 일관된 정렬
-    """
-    fridge = get_or_create_fridge(request)
-
+def _get_fridge_sync(fridge):
+    """냉장고 조회 동기 로직"""
     # 냉장고 재료 목록 (N+1 방지: select_related 사용)
-    fridge_ingredients = (
+    fridge_ingredients = list(
         FridgeIngredient.objects
         .filter(fridge=fridge)
         .select_related('normalized_ingredient', 'normalized_ingredient__category')
@@ -690,19 +739,27 @@ def get_fridge(request):
     }
 
 
-@router.post("/fridge/ingredients", response=FridgeSchema)
-def add_ingredient_to_fridge(request, data: AddIngredientSchema):
+@router.get("/fridge", response=FridgeSchema)
+async def get_fridge(request):
     """
-    냉장고에 재료 추가
-    """
-    fridge = get_or_create_fridge(request)
+    냉장고 조회 (회원/비회원 모두 가능)
 
+    최적화:
+    - select_related로 N+1 쿼리 방지
+    - order_by로 일관된 정렬
+    """
+    fridge = await get_or_create_fridge(request)
+    return await sync_to_async(_get_fridge_sync)(fridge)
+
+
+def _add_ingredient_to_fridge_sync(fridge, ingredient_name: str):
+    """냉장고에 재료 추가 동기 로직"""
     # 정규화 재료 찾기
     try:
-        normalized_ingredient = NormalizedIngredient.objects.get(name=data.ingredient_name)
+        normalized_ingredient = NormalizedIngredient.objects.get(name=ingredient_name)
     except NormalizedIngredient.DoesNotExist:
         return JsonResponse(
-            {'error': 'IngredientNotFound', 'message': f'재료를 찾을 수 없습니다: {data.ingredient_name}'},
+            {'error': 'IngredientNotFound', 'message': f'재료를 찾을 수 없습니다: {ingredient_name}'},
             status=404
         )
 
@@ -718,17 +775,29 @@ def add_ingredient_to_fridge(request, data: AddIngredientSchema):
             status=400
         )
 
+    # 성공 시 None 반환 (재조회는 async 함수에서)
+    return None
+
+
+@router.post("/fridge/ingredients", response=FridgeSchema)
+async def add_ingredient_to_fridge(request, data: AddIngredientSchema):
+    """
+    냉장고에 재료 추가
+    """
+    fridge = await get_or_create_fridge(request)
+
+    # 재료 추가 처리
+    error_response = await sync_to_async(_add_ingredient_to_fridge_sync)(fridge, data.ingredient_name)
+
+    if error_response is not None:
+        return error_response
+
     # 냉장고 재조회
-    return get_fridge(request)
+    return await get_fridge(request)
 
 
-@router.delete("/fridge/ingredients/{ingredient_id}", response=SuccessSchema)
-def remove_ingredient_from_fridge(request, ingredient_id: int):
-    """
-    냉장고에서 재료 제거
-    """
-    fridge = get_or_create_fridge(request)
-
+def _remove_ingredient_from_fridge_sync(fridge, ingredient_id: int):
+    """냉장고에서 재료 제거 동기 로직"""
     try:
         fi = FridgeIngredient.objects.get(id=ingredient_id, fridge=fridge)
         fi.delete()
@@ -740,24 +809,32 @@ def remove_ingredient_from_fridge(request, ingredient_id: int):
         )
 
 
-@router.delete("/fridge/clear", response=SuccessSchema)
-def clear_fridge(request):
+@router.delete("/fridge/ingredients/{ingredient_id}", response=SuccessSchema)
+async def remove_ingredient_from_fridge(request, ingredient_id: int):
     """
-    냉장고 비우기 (모든 재료 제거)
+    냉장고에서 재료 제거
     """
-    fridge = get_or_create_fridge(request)
+    fridge = await get_or_create_fridge(request)
+    return await sync_to_async(_remove_ingredient_from_fridge_sync)(fridge, ingredient_id)
+
+
+def _clear_fridge_sync(fridge):
+    """냉장고 비우기 동기 로직"""
     FridgeIngredient.objects.filter(fridge=fridge).delete()
     return {'message': '냉장고가 비워졌습니다.'}
 
 
-@router.get("/{recipe_id}", response=RecipeDetailSchema)
-def get_recipe_detail(request, recipe_id: int):
+@router.delete("/fridge/clear", response=SuccessSchema)
+async def clear_fridge(request):
     """
-    레시피 상세 조회
+    냉장고 비우기 (모든 재료 제거)
+    """
+    fridge = await get_or_create_fridge(request)
+    return await sync_to_async(_clear_fridge_sync)(fridge)
 
-    Args:
-        recipe_id: 레시피 ID
-    """
+
+def _get_recipe_detail_sync(recipe_id: int):
+    """레시피 상세 조회 동기 로직"""
     try:
         recipe = Recipe.objects.prefetch_related('ingredients').get(id=recipe_id)
     except Recipe.DoesNotExist:
@@ -768,7 +845,7 @@ def get_recipe_detail(request, recipe_id: int):
 
     # 재료 목록
     ingredients = []
-    for ingredient in recipe.ingredients.all():
+    for ingredient in list(recipe.ingredients.all()):
         ingredients.append({
             'original_name': ingredient.original_name,
             'normalized_name': ingredient.normalized_name,
@@ -792,3 +869,14 @@ def get_recipe_detail(request, recipe_id: int):
         'image_url': recipe.image_url,
         'recipe_url': recipe.recipe_url,
     }
+
+
+@router.get("/{recipe_id}", response=RecipeDetailSchema)
+async def get_recipe_detail(request, recipe_id: int):
+    """
+    레시피 상세 조회
+
+    Args:
+        recipe_id: 레시피 ID
+    """
+    return await sync_to_async(_get_recipe_detail_sync)(recipe_id)
