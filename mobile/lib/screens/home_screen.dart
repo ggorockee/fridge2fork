@@ -921,7 +921,7 @@ class _RecipeRecommendationsSectionState extends ConsumerState<_RecipeRecommenda
               const SizedBox(height: AppTheme.spacingM),
               // 레시피 카드 리스트 (가로 스크롤)
               SizedBox(
-                height: 200,
+                height: 220,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   itemCount: response.recipes.take(10).length,
@@ -975,56 +975,55 @@ class _RecommendedRecipeCard extends StatelessWidget {
               child: recipe.imageUrl != null && recipe.imageUrl!.isNotEmpty
                   ? Image.network(
                       recipe.imageUrl!,
-                      height: 100,
+                      height: 110,
                       width: double.infinity,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) => Container(
-                        height: 100,
+                        height: 110,
                         color: Colors.grey[200],
                         child: const Icon(Icons.restaurant, size: 40, color: Colors.grey),
                       ),
                     )
                   : Container(
-                      height: 100,
+                      height: 110,
                       color: Colors.grey[200],
                       child: const Icon(Icons.restaurant, size: 40, color: Colors.grey),
                     ),
             ),
             // 정보
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      recipe.title,
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    recipe.title,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  // 매칭률
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppTheme.lightOrange,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      '${(recipe.matchScore * 100).toInt()}% 일치',
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: 11,
+                        color: AppTheme.primaryOrange,
                         fontWeight: FontWeight.w600,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                    const Spacer(),
-                    // 매칭률
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: AppTheme.lightOrange,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        '${(recipe.matchScore * 100).toInt()}% 일치',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppTheme.primaryOrange,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ],
