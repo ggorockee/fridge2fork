@@ -1212,22 +1212,70 @@ class RecommendationSettingsAdmin(admin.ModelAdmin):
     """RecommendationSettings Admin - 레시피 추천 설정 관리"""
 
     list_display = ('min_match_rate', 'default_algorithm', 'default_limit', 'exclude_seasonings_default', 'updated_at')
-    readonly_fields = ('updated_at',)
+    readonly_fields = ('updated_at', 'get_algorithm_explanation')
 
     fieldsets = (
-        ('추천 알고리즘 설정', {
-            'fields': ('default_algorithm', 'min_match_rate'),
-            'description': '레시피 추천 API의 기본 알고리즘 및 최소 매칭률 설정'
+        ('📊 추천 알고리즘 설정', {
+            'fields': ('default_algorithm', 'get_algorithm_explanation', 'min_match_rate'),
+            'description': (
+                '<strong>레시피 추천 API의 기본 알고리즘 및 최소 매칭률 설정</strong><br>'
+                '사용자가 API 호출 시 알고리즘을 지정하지 않으면 여기 설정된 값을 사용합니다.'
+            )
         }),
-        ('기본 옵션', {
+        ('⚙️ 기본 옵션', {
             'fields': ('default_limit', 'exclude_seasonings_default'),
-            'description': '추천 레시피 기본 개수 및 조미료 제외 여부'
+            'description': '추천 레시피 기본 개수 및 조미료 제외 여부 설정'
         }),
-        ('시스템 정보', {
+        ('🕐 시스템 정보', {
             'fields': ('updated_at',),
             'classes': ('collapse',)
         }),
     )
+
+    def get_algorithm_explanation(self, obj):
+        """알고리즘 설명 표시"""
+        explanations = {
+            'jaccard': (
+                '<div style="background: #f0f8ff; padding: 15px; border-left: 4px solid #2196F3; margin: 10px 0;">'
+                '<h3 style="margin-top: 0; color: #1976D2;">🔵 Jaccard (자카드 유사도)</h3>'
+                '<p><strong>계산 방식:</strong> 교집합 / 합집합</p>'
+                '<p><strong>수식:</strong> |매칭된 재료| / |전체 재료(사용자 + 레시피 - 중복)|</p>'
+                '<p><strong>예시:</strong></p>'
+                '<ul style="margin: 5px 0;">'
+                '<li>사용자 재료: 돼지고기, 배추, 두부 (3개)</li>'
+                '<li>레시피 재료: 돼지고기, 배추, 김치, 고춧가루 (4개)</li>'
+                '<li>매칭: 돼지고기, 배추 (2개)</li>'
+                '<li><strong>유사도: 2 / 5 = 0.4 (40%)</strong></li>'
+                '</ul>'
+                '<p><strong>✅ 장점:</strong> 직관적이고 이해하기 쉬움. 재료가 얼마나 겹치는지 명확</p>'
+                '<p><strong>⚠️ 단점:</strong> 레시피 재료가 많을수록 유사도가 낮아지는 경향</p>'
+                '<p><strong>💡 권장:</strong> 간단한 레시피 위주 추천, 재료 낭비 최소화 목적</p>'
+                '</div>'
+            ),
+            'cosine': (
+                '<div style="background: #fff3e0; padding: 15px; border-left: 4px solid #FF9800; margin: 10px 0;">'
+                '<h3 style="margin-top: 0; color: #F57C00;">🟠 Cosine (코사인 유사도)</h3>'
+                '<p><strong>계산 방식:</strong> 벡터 간 각도 (방향성)</p>'
+                '<p><strong>수식:</strong> |매칭된 재료| / (√사용자_재료_수 × √레시피_재료_수)</p>'
+                '<p><strong>예시:</strong></p>'
+                '<ul style="margin: 5px 0;">'
+                '<li>사용자 재료: 돼지고기, 배추, 두부 (3개)</li>'
+                '<li>레시피 재료: 돼지고기, 배추, 김치, 고춧가루 (4개)</li>'
+                '<li>매칭: 돼지고기, 배추 (2개)</li>'
+                '<li><strong>유사도: 2 / (√3 × √4) = 0.577 (57.7%)</strong></li>'
+                '</ul>'
+                '<p><strong>✅ 장점:</strong> 재료 개수에 덜 민감. 복잡한 레시피도 공평하게 평가</p>'
+                '<p><strong>⚠️ 단점:</strong> 수학적으로 다소 복잡함</p>'
+                '<p><strong>💡 권장:</strong> 다양한 복잡도의 레시피 균형있게 추천</p>'
+                '</div>'
+            )
+        }
+
+        if obj and obj.default_algorithm:
+            return format_html(explanations.get(obj.default_algorithm, ''))
+        return format_html(explanations['jaccard'])  # 기본값
+
+    get_algorithm_explanation.short_description = '선택한 알고리즘 설명'
 
     def has_add_permission(self, request):
         """추가 불가 (Singleton)"""

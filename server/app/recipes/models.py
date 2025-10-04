@@ -439,22 +439,22 @@ class RecommendationSettings(models.Model):
     """
 
     ALGORITHM_CHOICES = [
-        ('jaccard', 'Jaccard Similarity'),
-        ('cosine', 'Cosine Similarity'),
+        ('jaccard', 'Jaccard (자카드) - 교집합/합집합 방식, 직관적이고 간단함 (권장)'),
+        ('cosine', 'Cosine (코사인) - 벡터 각도 방식, 재료 개수 차이에 덜 민감함'),
     ]
 
     min_match_rate = models.FloatField(
         default=0.3,
         validators=[MinValueValidator(0.0), MaxValueValidator(1.0)],
         verbose_name="최소 매칭률",
-        help_text="추천 레시피의 최소 매칭률 (0.0-1.0)"
+        help_text="추천 레시피의 최소 매칭률 (0.0-1.0). 낮을수록 다양한 레시피 추천, 높을수록 엄격한 매칭"
     )
     default_algorithm = models.CharField(
         max_length=20,
         choices=ALGORITHM_CHOICES,
         default='jaccard',
         verbose_name="기본 알고리즘",
-        help_text="추천에 사용할 기본 유사도 알고리즘"
+        help_text="추천에 사용할 유사도 알고리즘. 사용자가 지정하지 않으면 이 값을 사용"
     )
     default_limit = models.IntegerField(
         default=20,
