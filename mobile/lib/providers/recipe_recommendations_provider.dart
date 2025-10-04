@@ -19,7 +19,7 @@ class RecipeRecommendationsNotifier extends StateNotifier<AsyncValue<RecipeRecom
         recipes: [],
         total: 0,
         algorithm: 'jaccard',
-        summary: '냉장고에 재료를 추가해주세요',
+        summary: '냉장고에 식재료를 추가하면 맞춤 레시피를 추천해드려요!',
       ));
       return;
     }

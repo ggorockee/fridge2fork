@@ -253,13 +253,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           children: [
             // 냉장고 영역 - 나머지 공간 전부 차지
             Positioned.fill(
-              child: Column(
-                children: [
-                  const AdBannerWidget(isTop: true),
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Column(
+                  children: [
+                    const AdBannerWidget(isTop: true),
 
-                  // 냉장고 + 상태
-                  Expanded(
-                    child: Center(
+                    // 냉장고 + 상태
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: MediaQuery.of(context).size.height - 350,
+                      ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -285,9 +289,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ],
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 280), // 레시피 영역 차지할 공간 확보
-                ],
+                    const SizedBox(height: 280), // 레시피 영역 차지할 공간 확보
+                  ],
+                ),
               ),
             ),
 
@@ -414,28 +418,6 @@ class _RecipeRecommendationSection extends ConsumerWidget {
 
     // API 클라이언트가 초기화되고 보유 재료가 있을 때 API 호출
     if (kDebugMode) debugPrint('🏠 [Home Screen] API Client Initialized: $isApiClientInitialized, Selected Ingredients: ${selectedIngredients.length}');
-
-    // API 클라이언트 초기화 상태 변화 감지
-    ref.listen(apiClientInitializedProvider, (previous, next) {
-      if (kDebugMode) debugPrint('🏠 [Home Screen] API Client initialization changed: $previous → $next');
-      if (next && selectedIngredients.isNotEmpty) {
-        if (kDebugMode) debugPrint('🚀 [Home Screen] API initialized, triggering recipe call');
-        ref.read(recipeApiProvider.notifier).loadRecipesByIngredients(selectedIngredients);
-      }
-    });
-
-    if (isApiClientInitialized && selectedIngredients.isNotEmpty) {
-      ref.listen(selectedIngredientsProvider, (previous, next) {
-        if (kDebugMode) debugPrint('👂 [Home Screen] Ingredients changed from ${previous?.length ?? 0} to ${next.length}');
-        if (next.isNotEmpty && (previous == null || previous.isEmpty || previous.length != next.length)) {
-          // 재료가 새로 추가되거나 변경되었을 때 API 호출
-          if (kDebugMode) debugPrint('🚀 [Home Screen] Triggering recipe API call with ingredients: $next');
-          ref.read(recipeApiProvider.notifier).loadRecipesByIngredients(next);
-        }
-      });
-    } else {
-      if (kDebugMode) debugPrint('⚠️ [Home Screen] API call conditions not met - API Initialized: $isApiClientInitialized, Has Ingredients: ${selectedIngredients.isNotEmpty}');
-    }
 
     return Container(
       padding: const EdgeInsets.only(left: AppTheme.spacingM, top: AppTheme.spacingM),
@@ -701,7 +683,7 @@ class _RecipeRecommendationSection extends ConsumerWidget {
             ),
             SizedBox(height: AppTheme.spacingS),
             Text(
-              '당신만을 위한 레시피를 찾고 있어요!',
+              '맛있는 레시피를 찾고 있어요!',
               style: TextStyle(
                 fontSize: 12,
                 color: AppTheme.textSecondary,
