@@ -460,7 +460,7 @@ class RecommendationSettings(models.Model):
         default=20,
         validators=[MinValueValidator(1), MaxValueValidator(100)],
         verbose_name="기본 추천 개수",
-        help_text="기본으로 반환할 추천 레시피 개수 (1-100)"
+        help_text="API에서 기본으로 반환할 레시피 개수 (1-100). 사용자가 limit 파라미터를 지정하지 않으면 이 값을 사용합니다."
     )
     exclude_seasonings_default = models.BooleanField(
         default=True,

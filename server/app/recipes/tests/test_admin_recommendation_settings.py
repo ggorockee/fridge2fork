@@ -59,3 +59,26 @@ class AdminRecommendationSettingsTest(TestCase):
         settings = RecommendationSettings.objects.get(pk=1)
         self.assertEqual(settings.min_match_rate, 0.5)
         self.assertEqual(settings.default_algorithm, 'cosine')
+        self.assertEqual(settings.default_limit, 30)
+
+    def test_default_limit_field(self):
+        """
+        기본 추천 개수 필드가 올바르게 설정되어 있는지 확인
+        """
+        settings = RecommendationSettings.objects.get(pk=1)
+
+        # 기본값 확인
+        self.assertEqual(settings.default_limit, 20)
+
+        # 필드 메타 정보 확인
+        field = RecommendationSettings._meta.get_field('default_limit')
+        self.assertEqual(field.verbose_name, '기본 추천 개수')
+        self.assertIn('limit', field.help_text)
+        self.assertIn('사용자가', field.help_text)
+
+        # 값 변경 테스트
+        settings.default_limit = 50
+        settings.save()
+
+        updated_settings = RecommendationSettings.objects.get(pk=1)
+        self.assertEqual(updated_settings.default_limit, 50)

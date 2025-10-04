@@ -1211,7 +1211,7 @@ class IngredientCategoryAdmin(admin.ModelAdmin):
 class RecommendationSettingsAdmin(admin.ModelAdmin):
     """RecommendationSettings Admin - 레시피 추천 설정 관리"""
 
-    list_display = ('min_match_rate', 'default_algorithm', 'default_limit', 'exclude_seasonings_default', 'updated_at')
+    list_display = ('get_limit_display', 'min_match_rate', 'default_algorithm', 'exclude_seasonings_default', 'updated_at')
     readonly_fields = ('updated_at', 'get_algorithm_explanation')
 
     fieldsets = (
@@ -1222,9 +1222,13 @@ class RecommendationSettingsAdmin(admin.ModelAdmin):
                 '사용자가 API 호출 시 알고리즘을 지정하지 않으면 여기 설정된 값을 사용합니다.'
             )
         }),
-        ('⚙️ 기본 옵션', {
+        ('🎯 기본 추천 옵션', {
             'fields': ('default_limit', 'exclude_seasonings_default'),
-            'description': '추천 레시피 기본 개수 및 조미료 제외 여부 설정'
+            'description': (
+                '<strong>추천 레시피 기본 개수 및 조미료 제외 여부 설정</strong><br>'
+                '• <strong>기본 추천 개수</strong>: 사용자가 limit을 지정하지 않으면 이 개수만큼 레시피를 반환합니다 (1-100개)<br>'
+                '• <strong>조미료 제외</strong>: 범용 조미료(소금, 후추 등)를 추천 계산에서 제외할지 여부'
+            )
         }),
         ('🕐 시스템 정보', {
             'fields': ('updated_at',),
@@ -1311,6 +1315,17 @@ class RecommendationSettingsAdmin(admin.ModelAdmin):
         )
 
     get_algorithm_explanation.short_description = '알고리즘 상세 설명'
+
+    def get_limit_display(self, obj):
+        """기본 추천 개수를 강조하여 표시"""
+        if obj and obj.default_limit:
+            return format_html(
+                '<span style="font-size: 14px; font-weight: bold; color: #2196F3;">📊 {} 개</span>',
+                obj.default_limit
+            )
+        return format_html('<span style="color: gray;">-</span>')
+    get_limit_display.short_description = '기본 추천 개수'
+    get_limit_display.admin_order_field = 'default_limit'
 
     def has_add_permission(self, request):
         """추가 불가 (Singleton)"""

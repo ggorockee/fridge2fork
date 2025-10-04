@@ -163,3 +163,36 @@ class AlgorithmExplanationTest(TestCase):
         self.assertEqual(fields[0], 'default_algorithm')
         self.assertEqual(fields[1], 'get_algorithm_explanation')
         self.assertEqual(fields[2], 'min_match_rate')
+
+    def test_admin_limit_display(self):
+        """
+        Admin의 get_limit_display 메서드가 올바르게 동작하는지 확인
+        """
+        settings = RecommendationSettings(default_limit=20)
+        limit_display = self.admin.get_limit_display(settings)
+
+        # HTML 포맷 확인
+        self.assertIn('20', limit_display)
+        self.assertIn('개', limit_display)
+        self.assertIn('📊', limit_display)
+
+    def test_admin_list_display_includes_limit(self):
+        """
+        Admin의 list_display에 기본 추천 개수가 포함되어 있는지 확인
+        """
+        self.assertIn('get_limit_display', self.admin.list_display)
+
+    def test_admin_default_limit_fieldset(self):
+        """
+        Admin의 fieldsets에 default_limit이 올바른 위치에 있는지 확인
+        """
+        # 두 번째 fieldset (기본 추천 옵션)
+        options_fieldset = self.admin.fieldsets[1]
+
+        # 제목 확인
+        self.assertIn('기본', options_fieldset[0])
+
+        # 필드 확인
+        fields = options_fieldset[1]['fields']
+        self.assertIn('default_limit', fields)
+        self.assertIn('exclude_seasonings_default', fields)
