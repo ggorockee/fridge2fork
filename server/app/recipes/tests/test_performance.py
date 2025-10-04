@@ -19,11 +19,13 @@ class SearchPerformanceTest(TestCase):
     @classmethod
     def setUpTestData(cls):
         """테스트 데이터 생성 (한 번만 실행)"""
-        # 카테고리 생성
-        cls.category = IngredientCategory.objects.create(
-            name="채소류",
+        # 카테고리 생성 (get_or_create로 중복 방지)
+        cls.category, _ = IngredientCategory.objects.get_or_create(
             code="vegetable",
-            category_type="normalized"
+            category_type="normalized",
+            defaults={
+                "name": "채소류",
+            }
         )
 
         # 정규화 재료 생성 (100개)

@@ -114,7 +114,10 @@ def recommend_recipes(request, data: RecipeRecommendRequestSchema):
     최적화:
     - prefetch_related로 N+1 쿼리 해결
     - 인덱스 활용한 빠른 검색
+    - Prefetch 객체로 조건부 prefetch (exclude_seasonings)
     """
+    from django.db.models import Prefetch
+
     user_ingredients = data.ingredients
     exclude_seasonings = data.exclude_seasonings
 
@@ -131,27 +134,33 @@ def recommend_recipes(request, data: RecipeRecommendRequestSchema):
             'match_rate': '매칭 불가'
         }
 
-    # 모든 레시피 조회 (N+1 방지: prefetch_related 사용)
-    recipes = Recipe.objects.all().prefetch_related(
-        'ingredients__normalized_ingredient',
-        'ingredients__normalized_ingredient__category'
+    # Ingredient queryset 생성 (조미료 제외 옵션 적용)
+    ingredient_qs = Ingredient.objects.select_related(
+        'normalized_ingredient',
+        'normalized_ingredient__category'
     )
+
+    if exclude_seasonings:
+        ingredient_qs = ingredient_qs.exclude(
+            normalized_ingredient__is_common_seasoning=True
+        )
+
+    # 모든 레시피 조회 (N+1 방지: Prefetch 객체로 최적화된 prefetch)
+    recipes = Recipe.objects.prefetch_related(
+        Prefetch('ingredients', queryset=ingredient_qs)
+    ).all()
 
     recipe_matches = []
 
     for recipe in recipes:
-        # 레시피의 필수 재료 (범용 조미료 제외 옵션)
+        # prefetch된 재료들 (이미 필터링됨)
         essential_ingredients = recipe.ingredients.all()
 
-        if exclude_seasonings:
-            essential_ingredients = essential_ingredients.exclude_seasonings()
-
-        # 정규화 재료 ID 추출
-        recipe_ingredient_ids = set(
-            essential_ingredients
-            .filter(normalized_ingredient__isnull=False)
-            .values_list('normalized_ingredient_id', flat=True)
-        )
+        # 정규화 재료 ID 추출 (추가 쿼리 없이 메모리에서 처리)
+        recipe_ingredient_ids = set()
+        for ing in essential_ingredients:
+            if ing.normalized_ingredient_id:
+                recipe_ingredient_ids.add(ing.normalized_ingredient_id)
 
         if not recipe_ingredient_ids:
             continue
