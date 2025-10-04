@@ -1,11 +1,13 @@
 """
-레시피 검색 API
+레시피 및 냉장고 API
 """
 
 from ninja import Router
 from typing import List, Optional
 from django.db.models import Q, Count
-from .models import Recipe, Ingredient, NormalizedIngredient
+from django.http import JsonResponse
+from django.contrib.auth import get_user_model
+from .models import Recipe, Ingredient, NormalizedIngredient, Fridge, FridgeIngredient
 from .schemas import (
     RecipeSearchResponseSchema,
     RecipeRecommendRequestSchema,
@@ -13,10 +15,36 @@ from .schemas import (
     IngredientAutocompleteResponseSchema,
     RecipeSchema,
     RecipeWithMatchRateSchema,
-    IngredientSuggestionSchema
+    IngredientSuggestionSchema,
+    RecipeListItemSchema,
+    RecipeDetailSchema,
+    PaginatedRecipesSchema,
+    FridgeSchema,
+    FridgeIngredientSchema,
+    AddIngredientSchema,
+    SuccessSchema,
 )
+from users.auth import OptionalJWTAuth, decode_access_token
+from math import ceil
 
+User = get_user_model()
 router = Router()
+
+
+def get_user_from_request(request):
+    """요청에서 사용자 추출 (Optional)"""
+    auth_header = request.headers.get('Authorization', '')
+    if auth_header.startswith('Bearer '):
+        token = auth_header[7:]
+        payload = decode_access_token(token)
+        if payload:
+            user_id = payload.get('user_id')
+            if user_id:
+                try:
+                    return User.objects.get(id=user_id, is_active=True)
+                except User.DoesNotExist:
+                    pass
+    return None
 
 
 @router.get("/search", response=RecipeSearchResponseSchema)
@@ -197,3 +225,218 @@ def autocomplete_ingredients(request, q: str):
         ))
 
     return {'suggestions': suggestions}
+
+
+# ==================== 레시피 목록/상세 API ====================
+
+@router.get("", response=PaginatedRecipesSchema)
+def list_recipes(
+    request,
+    page: int = 1,
+    limit: int = 20,
+    difficulty: Optional[str] = None,
+    search: Optional[str] = None
+):
+    """
+    레시피 목록 조회 (페이지네이션)
+
+    Args:
+        page: 페이지 번호 (기본: 1)
+        limit: 페이지 크기 (기본: 20, 최대: 100)
+        difficulty: 난이도 필터
+        search: 검색어 (name, title)
+    """
+    # Limit 제한
+    limit = min(limit, 100)
+
+    # 기본 쿼리셋
+    queryset = Recipe.objects.all()
+
+    # 필터 적용
+    if difficulty:
+        queryset = queryset.filter(difficulty__icontains=difficulty)
+
+    if search:
+        queryset = queryset.filter(
+            Q(name__icontains=search) | Q(title__icontains=search)
+        )
+
+    # 총 개수
+    total = queryset.count()
+    total_pages = ceil(total / limit) if total > 0 else 0
+
+    # 페이지네이션
+    offset = (page - 1) * limit
+    recipes = queryset[offset:offset + limit]
+
+    return {
+        'recipes': [
+            {
+                'id': recipe.id,
+                'recipe_sno': recipe.recipe_sno,
+                'name': recipe.name,
+                'title': recipe.title,
+                'image_url': recipe.image_url,
+                'difficulty': recipe.difficulty,
+                'cooking_time': recipe.cooking_time,
+                'servings': recipe.servings,
+            }
+            for recipe in recipes
+        ],
+        'total': total,
+        'page': page,
+        'page_size': limit,
+        'total_pages': total_pages
+    }
+
+
+@router.get("/{recipe_id}", response=RecipeDetailSchema)
+def get_recipe_detail(request, recipe_id: int):
+    """
+    레시피 상세 조회
+
+    Args:
+        recipe_id: 레시피 ID
+    """
+    try:
+        recipe = Recipe.objects.prefetch_related('ingredients').get(id=recipe_id)
+    except Recipe.DoesNotExist:
+        return JsonResponse(
+            {'error': 'NotFound', 'message': '레시피를 찾을 수 없습니다.'},
+            status=404
+        )
+
+    # 재료 목록
+    ingredients = []
+    for ingredient in recipe.ingredients.all():
+        ingredients.append({
+            'original_name': ingredient.original_name,
+            'normalized_name': ingredient.normalized_name,
+            'is_essential': ingredient.is_essential,
+            'category': ingredient.category.name if ingredient.category else None
+        })
+
+    return {
+        'id': recipe.id,
+        'recipe_sno': recipe.recipe_sno,
+        'name': recipe.name,
+        'title': recipe.title,
+        'introduction': recipe.introduction,
+        'ingredients': ingredients,
+        'servings': recipe.servings,
+        'difficulty': recipe.difficulty,
+        'cooking_time': recipe.cooking_time,
+        'method': recipe.method,
+        'situation': recipe.situation,
+        'recipe_type': recipe.recipe_type,
+        'image_url': recipe.image_url,
+    }
+
+
+# ==================== 냉장고 관리 API ====================
+
+def get_or_create_fridge(request):
+    """회원/비회원 냉장고 조회 또는 생성"""
+    user = get_user_from_request(request)
+
+    if user:
+        # 회원
+        fridge, created = Fridge.objects.get_or_create(user=user)
+    else:
+        # 비회원 - 세션 키 사용
+        session_key = request.session.session_key
+        if not session_key:
+            request.session.create()
+            session_key = request.session.session_key
+
+        fridge, created = Fridge.objects.get_or_create(session_key=session_key)
+
+    return fridge
+
+
+@router.get("/fridge", response=FridgeSchema)
+def get_fridge(request):
+    """
+    냉장고 조회 (회원/비회원 모두 가능)
+    """
+    fridge = get_or_create_fridge(request)
+
+    # 냉장고 재료 목록
+    fridge_ingredients = FridgeIngredient.objects.filter(fridge=fridge).select_related(
+        'normalized_ingredient', 'normalized_ingredient__category'
+    )
+
+    ingredients = []
+    for fi in fridge_ingredients:
+        ingredients.append({
+            'id': fi.id,
+            'name': fi.normalized_ingredient.name,
+            'category': fi.normalized_ingredient.category.name,
+            'added_at': fi.added_at
+        })
+
+    return {
+        'id': fridge.id,
+        'ingredients': ingredients,
+        'updated_at': fridge.updated_at
+    }
+
+
+@router.post("/fridge/ingredients", response=FridgeSchema)
+def add_ingredient_to_fridge(request, data: AddIngredientSchema):
+    """
+    냉장고에 재료 추가
+    """
+    fridge = get_or_create_fridge(request)
+
+    # 정규화 재료 찾기
+    try:
+        normalized_ingredient = NormalizedIngredient.objects.get(name=data.ingredient_name)
+    except NormalizedIngredient.DoesNotExist:
+        return JsonResponse(
+            {'error': 'IngredientNotFound', 'message': f'재료를 찾을 수 없습니다: {data.ingredient_name}'},
+            status=404
+        )
+
+    # 중복 체크 및 추가
+    fi, created = FridgeIngredient.objects.get_or_create(
+        fridge=fridge,
+        normalized_ingredient=normalized_ingredient
+    )
+
+    if not created:
+        return JsonResponse(
+            {'error': 'DuplicateIngredient', 'message': '이미 추가된 재료입니다.'},
+            status=400
+        )
+
+    # 냉장고 재조회
+    return get_fridge(request)
+
+
+@router.delete("/fridge/ingredients/{ingredient_id}", response=SuccessSchema)
+def remove_ingredient_from_fridge(request, ingredient_id: int):
+    """
+    냉장고에서 재료 제거
+    """
+    fridge = get_or_create_fridge(request)
+
+    try:
+        fi = FridgeIngredient.objects.get(id=ingredient_id, fridge=fridge)
+        fi.delete()
+        return {'message': '재료가 제거되었습니다.'}
+    except FridgeIngredient.DoesNotExist:
+        return JsonResponse(
+            {'error': 'NotFound', 'message': '재료를 찾을 수 없습니다.'},
+            status=404
+        )
+
+
+@router.delete("/fridge/clear", response=SuccessSchema)
+def clear_fridge(request):
+    """
+    냉장고 비우기 (모든 재료 제거)
+    """
+    fridge = get_or_create_fridge(request)
+    FridgeIngredient.objects.filter(fridge=fridge).delete()
+    return {'message': '냉장고가 비워졌습니다.'}

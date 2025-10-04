@@ -4,6 +4,7 @@
 
 from ninja import NinjaAPI
 from recipes.api import router as recipes_router
+from users.api import router as auth_router
 
 api = NinjaAPI(
     title="Fridge2Fork API",
@@ -11,8 +12,15 @@ api = NinjaAPI(
     description="냉장고 재료 기반 레시피 추천 API",
     urls_namespace="api_v1",
     docs_url="/docs",
-    openapi_url="/openapi.json"
+    openapi_url="/openapi.json",
+    servers=[
+        {
+            "url": "/fridge2fork/v1",
+            "description": "API Base URL"
+        }
+    ]
 )
 
-# 레시피 라우터 등록
+# 라우터 등록
+api.add_router("/auth", auth_router, tags=["Authentication"])
 api.add_router("/recipes", recipes_router, tags=["Recipes"])

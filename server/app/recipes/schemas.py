@@ -4,6 +4,7 @@
 
 from ninja import Schema
 from typing import List, Optional
+from datetime import datetime
 
 
 class RecipeSchema(Schema):
@@ -54,3 +55,92 @@ class IngredientSuggestionSchema(Schema):
 class IngredientAutocompleteResponseSchema(Schema):
     """재료 자동완성 응답 스키마"""
     suggestions: List[IngredientSuggestionSchema]
+
+
+# ==================== 냉장고 스키마 ====================
+
+class FridgeIngredientSchema(Schema):
+    """냉장고 재료 스키마"""
+    id: int
+    name: str  # normalized_ingredient.name
+    category: str
+    added_at: datetime
+
+
+class FridgeSchema(Schema):
+    """냉장고 응답 스키마"""
+    id: int
+    ingredients: List[FridgeIngredientSchema]
+    updated_at: datetime
+
+
+class AddIngredientSchema(Schema):
+    """냉장고 재료 추가 요청 스키마"""
+    ingredient_name: str  # 정규화 재료명
+
+
+class RemoveIngredientSchema(Schema):
+    """냉장고 재료 제거 요청 스키마"""
+    ingredient_id: int
+
+
+# ==================== 레시피 목록/상세 스키마 ====================
+
+class RecipeListItemSchema(Schema):
+    """레시피 목록 아이템 스키마"""
+    id: int
+    recipe_sno: str
+    name: str
+    title: str
+    image_url: Optional[str] = None
+    difficulty: str
+    cooking_time: str
+    servings: str
+
+
+class IngredientDetailSchema(Schema):
+    """레시피 상세 재료 스키마"""
+    original_name: str
+    normalized_name: str
+    is_essential: bool
+    category: Optional[str] = None
+
+
+class RecipeDetailSchema(Schema):
+    """레시피 상세 응답 스키마"""
+    id: int
+    recipe_sno: str
+    name: str
+    title: str
+    introduction: Optional[str] = None
+    ingredients: List[IngredientDetailSchema]
+    servings: str
+    difficulty: str
+    cooking_time: str
+    method: Optional[str] = None
+    situation: Optional[str] = None
+    recipe_type: Optional[str] = None
+    image_url: Optional[str] = None
+
+
+class PaginatedRecipesSchema(Schema):
+    """페이지네이션 레시피 목록 응답 스키마"""
+    recipes: List[RecipeListItemSchema]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+
+
+# ==================== 공통 응답 스키마 ====================
+
+class SuccessSchema(Schema):
+    """성공 응답 스키마"""
+    message: str
+
+
+class ErrorSchema(Schema):
+    """에러 응답 스키마"""
+    error: str
+    message: str
+    detail: Optional[dict] = None
