@@ -961,7 +961,7 @@ class _RecommendedRecipeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: 160,
-      height: 200, // 고정 높이 추가로 overflow 방지
+      height: 220, // 높이를 220px로 증가하여 overflow 방지
       margin: const EdgeInsets.only(right: AppTheme.spacingM),
       child: Card(
         elevation: 2,
@@ -1009,8 +1009,9 @@ class _RecommendedRecipeCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const Spacer(),
+                    const SizedBox(height: 8), // Spacer 대신 고정 간격 사용
                     // 매칭률 (하단 배치)
+                    const Spacer(), // 매칭률을 하단에 고정
                     Align(
                       alignment: Alignment.centerRight,
                       child: Container(
