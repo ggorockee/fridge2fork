@@ -266,11 +266,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ),
 
-            // 하단 레시피 영역 고정 (바텀 네비게이션 바 바로 위)
+            // 하단 레시피 영역 고정 (바텀 네비게이션 바 위로 16px)
             Positioned(
               left: 0,
               right: 0,
-              bottom: 56, // 바텀 네비게이션 바 높이(56)
+              bottom: 16, // 바텀 네비게이션 바와 16px 간격
               child: Container(
                 height: 295,
                 color: AppTheme.backgroundWhite,
@@ -283,7 +283,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             // 플로팅 액션 버튼 - 냉장고 영역 하단에 위치
             Positioned(
               right: 16,
-              bottom: 295 + 56 + 16, // 레시피 영역 높이 + 바텀바 높이 + 버튼 여백
+              bottom: 295 + 16 + 16, // 레시피 영역 높이 + 바텀 간격 + 버튼 여백
               child: Showcase(
                 key: homeScreenAddButtonKey,
                 description: '냉장고에 식재료를 추가하려면 이 버튼을 누르세요!',
