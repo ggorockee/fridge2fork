@@ -297,39 +297,43 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ),
 
-            // 플로팅 액션 버튼 - 냉장고 영역 하단에 위치
-            Positioned(
-              right: 16,
-              bottom: 295 + 16 + 16, // 레시피 영역 높이 + 바텀 간격 + 버튼 여백
-              child: Showcase(
-                key: homeScreenAddButtonKey,
-                description: '냉장고에 식재료를 추가하려면 이 버튼을 누르세요!',
-                onTargetClick: _onAddButtonPressed,
-                disposeOnTap: true,
-                child: SizedBox(
-                  width: 45,
-                  height: 45,
-                  child: FloatingActionButton(
-                    onPressed: _onAddButtonPressed,
-                    backgroundColor: Colors.white,
-                    elevation: 0,
-                    heroTag: "home_fab",
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(13),
-                      side: const BorderSide(
-                        color: AppTheme.primaryOrange,
-                        width: 2,
+            // 플로팅 액션 버튼 - 냉장고가 비어있을 때만 표시
+            if (fridgeState.maybeWhen(
+              data: (fridge) => fridge.ingredients.isEmpty,
+              orElse: () => true,
+            ))
+              Positioned(
+                right: 16,
+                bottom: 295 + 16 + 16, // 레시피 영역 높이 + 바텀 간격 + 버튼 여백
+                child: Showcase(
+                  key: homeScreenAddButtonKey,
+                  description: '냉장고에 식재료를 추가하려면 이 버튼을 누르세요!',
+                  onTargetClick: _onAddButtonPressed,
+                  disposeOnTap: true,
+                  child: SizedBox(
+                    width: 45,
+                    height: 45,
+                    child: FloatingActionButton(
+                      onPressed: _onAddButtonPressed,
+                      backgroundColor: Colors.white,
+                      elevation: 0,
+                      heroTag: "home_fab",
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(13),
+                        side: const BorderSide(
+                          color: AppTheme.primaryOrange,
+                          width: 2,
+                        ),
                       ),
-                    ),
-                    child: const Icon(
-                      Icons.add,
-                      color: AppTheme.primaryOrange,
-                      size: 26,
+                      child: const Icon(
+                        Icons.add,
+                        color: AppTheme.primaryOrange,
+                        size: 26,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
           ],
         ),
       ),
@@ -475,14 +479,56 @@ class _SelectedIngredientsSection extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingM),
       child: Column(
         children: [
-          // 냉장고 상태 제목
-          const Text(
-            '냉장고 현황',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textPrimary,
-            ),
+          // 냉장고 상태 제목 + [+] 버튼
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                '냉장고 현황',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Showcase(
+                key: homeScreenAddButtonKey,
+                description: '냉장고에 식재료를 추가하려면 이 버튼을 누르세요!',
+                onTargetClick: () {
+                  // Showcase에서 클릭 시 부모 위젯의 콜백 호출
+                  final homeState = context.findAncestorStateOfType<_HomeScreenState>();
+                  homeState?._onAddButtonPressed();
+                },
+                disposeOnTap: true,
+                child: SizedBox(
+                  width: 32,
+                  height: 32,
+                  child: Material(
+                    color: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      side: const BorderSide(
+                        color: AppTheme.primaryOrange,
+                        width: 2,
+                      ),
+                    ),
+                    child: InkWell(
+                      onTap: () {
+                        final homeState = context.findAncestorStateOfType<_HomeScreenState>();
+                        homeState?._onAddButtonPressed();
+                      },
+                      borderRadius: BorderRadius.circular(10),
+                      child: const Icon(
+                        Icons.add,
+                        color: AppTheme.primaryOrange,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
 
           const SizedBox(height: AppTheme.spacingM),
