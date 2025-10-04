@@ -970,57 +970,61 @@ class _RecommendedRecipeCard extends StatelessWidget {
         width: 160,
         height: cardHeight,
         margin: const EdgeInsets.only(right: AppTheme.spacingM),
-        clipBehavior: Clip.hardEdge, // 카드 외부로 넘치는 콘텐츠 강제 클리핑
+        clipBehavior: Clip.antiAlias, // 카드 외부로 넘치는 콘텐츠 강제 클리핑
         decoration: BoxDecoration(
+          color: Colors.white,
           borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
-        child: Card(
-          margin: EdgeInsets.zero, // Card 자체 margin 제거
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 이미지 영역 (2/3 = 130px)
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                child: SizedBox(
-                  height: imageHeight,
-                  width: 160,
-                  child: recipe.imageUrl != null && recipe.imageUrl!.isNotEmpty
-                      ? Image.network(
-                          recipe.imageUrl!,
-                          height: imageHeight,
-                          width: 160,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Container(
-                            height: imageHeight,
-                            width: 160,
-                            color: Colors.grey[200],
-                            child: const Icon(Icons.restaurant, size: 40, color: Colors.grey),
-                          ),
-                        )
-                      : Container(
+        child: Column(
+          mainAxisSize: MainAxisSize.max, // max로 변경하여 정확한 높이 보장
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 이미지 영역 (2/3 = 130px)
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+              child: SizedBox(
+                height: imageHeight,
+                width: 160,
+                child: recipe.imageUrl != null && recipe.imageUrl!.isNotEmpty
+                    ? Image.network(
+                        recipe.imageUrl!,
+                        height: imageHeight,
+                        width: 160,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Container(
                           height: imageHeight,
                           width: 160,
                           color: Colors.grey[200],
                           child: const Icon(Icons.restaurant, size: 40, color: Colors.grey),
                         ),
-                ),
+                      )
+                    : Container(
+                        height: imageHeight,
+                        width: 160,
+                        color: Colors.grey[200],
+                        child: const Icon(Icons.restaurant, size: 40, color: Colors.grey),
+                      ),
               ),
-              // 텍스트 영역 (1/3 = 65px)
-              Container(
-                height: textHeight,
+            ),
+            // 텍스트 영역 (1/3 = 65px)
+            SizedBox(
+              height: textHeight,
+              child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                 child: Column(
+                  mainAxisSize: MainAxisSize.max,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 제목 (flexible)
-                    Flexible(
+                    // 제목
+                    Expanded(
                       child: Text(
                         recipe.title,
                         style: const TextStyle(
@@ -1054,8 +1058,8 @@ class _RecommendedRecipeCard extends StatelessWidget {
                   ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
