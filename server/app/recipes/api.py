@@ -706,15 +706,9 @@ async def get_or_create_fridge(request):
         session_key = request.headers.get('X-Session-ID')
 
         if not session_key:
-            # 세션 ID가 없으면 에러 반환
-            from django.http import JsonResponse
-            return JsonResponse(
-                {
-                    'error': 'SessionRequired',
-                    'message': '세션 ID가 필요합니다. X-Session-ID 헤더를 확인하세요.'
-                },
-                status=400
-            )
+            # 세션 ID가 없으면 에러 발생
+            from ninja.errors import HttpError
+            raise HttpError(400, '세션 ID가 필요합니다. X-Session-ID 헤더를 확인하세요.')
 
         fridge, created = await Fridge.objects.aget_or_create(session_key=session_key)
 
@@ -736,7 +730,7 @@ def _get_fridge_sync(fridge):
         ingredients.append({
             'id': fi.id,
             'name': fi.normalized_ingredient.name,
-            'category': fi.normalized_ingredient.category.name,
+            'category': fi.normalized_ingredient.category.name if fi.normalized_ingredient.category else '기타',
             'added_at': fi.added_at
         })
 
