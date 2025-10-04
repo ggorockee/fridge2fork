@@ -7,7 +7,7 @@ from typing import List, Optional
 from django.db.models import Q, Count
 from django.http import JsonResponse
 from django.contrib.auth import get_user_model
-from .models import Recipe, Ingredient, NormalizedIngredient, Fridge, FridgeIngredient
+from .models import Recipe, Ingredient, NormalizedIngredient, Fridge, FridgeIngredient, IngredientCategory
 from .schemas import (
     RecipeSearchResponseSchema,
     RecipeRecommendRequestSchema,
@@ -23,6 +23,9 @@ from .schemas import (
     FridgeIngredientSchema,
     AddIngredientSchema,
     SuccessSchema,
+    NormalizedIngredientListResponseSchema,
+    NormalizedIngredientSchema,
+    IngredientCategorySchema,
 )
 from users.auth import OptionalJWTAuth, decode_access_token
 from math import ceil
@@ -259,6 +262,95 @@ def autocomplete_ingredients(request, q: str):
         ))
 
     return {'suggestions': suggestions}
+
+
+@router.get("/ingredients", response=NormalizedIngredientListResponseSchema)
+def get_normalized_ingredients(
+    request,
+    category: Optional[str] = None,
+    exclude_seasonings: bool = False,
+    search: Optional[str] = None,
+    limit: int = 100
+):
+    """
+    정규화된 재료 목록 조회 (앱에서 냉장고 재료 추가 시 사용)
+
+    Args:
+        category: 카테고리 코드 필터링 (예: meat, vegetable)
+        exclude_seasonings: 범용 조미료 제외 여부
+        search: 재료명 검색
+        limit: 최대 조회 개수 (기본 100)
+
+    Returns:
+        NormalizedIngredientListResponseSchema: {
+            ingredients: 정규화된 재료 목록,
+            total: 전체 개수,
+            categories: 사용 가능한 카테고리 목록
+        }
+    """
+    # 정규화된 재료 조회 (카테고리 정보 포함)
+    queryset = NormalizedIngredient.objects.select_related('category')
+
+    # 필터링: 카테고리
+    if category:
+        queryset = queryset.filter(category__code=category)
+
+    # 필터링: 범용 조미료 제외
+    if exclude_seasonings:
+        queryset = queryset.filter(is_common_seasoning=False)
+
+    # 검색: 재료명
+    if search:
+        queryset = queryset.filter(name__icontains=search)
+
+    # 정렬: 카테고리 순서 → 재료명
+    queryset = queryset.order_by('category__display_order', 'name')[:limit]
+
+    # 전체 개수 (필터링 적용된)
+    total = queryset.count()
+
+    # 재료 목록 변환
+    ingredients = []
+    for ingredient in queryset:
+        category_data = None
+        if ingredient.category:
+            category_data = IngredientCategorySchema(
+                id=ingredient.category.id,
+                name=ingredient.category.name,
+                code=ingredient.category.code,
+                icon=ingredient.category.icon,
+                display_order=ingredient.category.display_order
+            )
+
+        ingredients.append(NormalizedIngredientSchema(
+            id=ingredient.id,
+            name=ingredient.name,
+            category=category_data,
+            is_common_seasoning=ingredient.is_common_seasoning
+        ))
+
+    # 사용 가능한 카테고리 목록 (정규화 재료용)
+    categories = IngredientCategory.objects.filter(
+        category_type='normalized',
+        is_active=True
+    ).order_by('display_order')
+
+    category_list = [
+        IngredientCategorySchema(
+            id=cat.id,
+            name=cat.name,
+            code=cat.code,
+            icon=cat.icon,
+            display_order=cat.display_order
+        )
+        for cat in categories
+    ]
+
+    return {
+        'ingredients': ingredients,
+        'total': total,
+        'categories': category_list
+    }
 
 
 # ==================== 레시피 목록/상세 API ====================

@@ -223,3 +223,64 @@ class RecipeSearchAPITest(CategoryTestCase):
         if response.status_code == 200:
             data = response.json()
             self.assertEqual(data['total'], 0)
+
+    def test_get_normalized_ingredients(self):
+        """정규화된 재료 목록 조회 테스트"""
+        response = self.client.get('/fridge2fork/v1/recipes/ingredients')
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+
+        # 응답 구조 확인
+        self.assertIn('ingredients', data)
+        self.assertIn('total', data)
+        self.assertIn('categories', data)
+
+        # 재료 목록 확인 (돼지고기, 배추, 두부, 소금)
+        self.assertEqual(data['total'], 4)
+        self.assertEqual(len(data['ingredients']), 4)
+
+        # 카테고리 목록 확인
+        self.assertGreater(len(data['categories']), 0)
+
+        # 재료 필드 확인
+        ingredient = data['ingredients'][0]
+        self.assertIn('id', ingredient)
+        self.assertIn('name', ingredient)
+        self.assertIn('category', ingredient)
+        self.assertIn('is_common_seasoning', ingredient)
+
+    def test_get_normalized_ingredients_with_category_filter(self):
+        """카테고리 필터링 테스트"""
+        response = self.client.get('/fridge2fork/v1/recipes/ingredients', {'category': 'meat'})
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+
+        # 육류만 조회되어야 함 (돼지고기)
+        self.assertEqual(data['total'], 1)
+        self.assertEqual(data['ingredients'][0]['name'], '돼지고기')
+        self.assertEqual(data['ingredients'][0]['category']['code'], 'meat')
+
+    def test_get_normalized_ingredients_exclude_seasonings(self):
+        """범용 조미료 제외 테스트"""
+        response = self.client.get('/fridge2fork/v1/recipes/ingredients', {'exclude_seasonings': 'true'})
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+
+        # 소금 제외되어야 함 (돼지고기, 배추, 두부만)
+        self.assertEqual(data['total'], 3)
+        ingredient_names = [i['name'] for i in data['ingredients']]
+        self.assertNotIn('소금', ingredient_names)
+
+    def test_get_normalized_ingredients_with_search(self):
+        """재료명 검색 테스트"""
+        response = self.client.get('/fridge2fork/v1/recipes/ingredients', {'search': '돼지'})
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+
+        # "돼지"가 포함된 재료만 (돼지고기)
+        self.assertEqual(data['total'], 1)
+        self.assertEqual(data['ingredients'][0]['name'], '돼지고기')

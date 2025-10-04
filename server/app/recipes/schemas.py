@@ -45,6 +45,30 @@ class RecipeRecommendResponseSchema(Schema):
     match_rate: str  # 예: "80% 이상 매칭"
 
 
+class IngredientCategorySchema(Schema):
+    """재료 카테고리 스키마"""
+    id: int
+    name: str
+    code: str
+    icon: Optional[str] = None
+    display_order: int
+
+
+class NormalizedIngredientSchema(Schema):
+    """정규화된 재료 스키마"""
+    id: int
+    name: str
+    category: Optional[IngredientCategorySchema] = None
+    is_common_seasoning: bool
+
+
+class NormalizedIngredientListResponseSchema(Schema):
+    """정규화된 재료 목록 응답 스키마"""
+    ingredients: List[NormalizedIngredientSchema]
+    total: int
+    categories: List[IngredientCategorySchema]
+
+
 class IngredientSuggestionSchema(Schema):
     """재료 자동완성 제안 스키마"""
     name: str
