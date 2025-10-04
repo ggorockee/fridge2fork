@@ -46,17 +46,23 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     UV_SYSTEM_PYTHON=1 \
     UV_CACHE_DIR=/tmp/.uv-cache \
+    UV_NO_SYNC=1 \
     DJANGO_SETTINGS_MODULE=settings.settings \
     ENVIRONMENT=development
 
 # Create UV cache directory with write permissions
 RUN mkdir -p /tmp/.uv-cache && chmod -R 777 /tmp/.uv-cache
 
-# Install dependencies with uv
-RUN uv sync --frozen
+# Install dependencies with uv (frozen mode - no lock file updates)
+RUN uv sync --frozen --no-install-project
 
 # Copy application code
 COPY . .
+
+# Set proper permissions for /app directory
+RUN chmod -R 755 /app && \
+    mkdir -p /app/logs /app/staticfiles /app/mediafiles && \
+    chmod -R 777 /app/logs /app/staticfiles /app/mediafiles
 
 # Create entrypoint script
 COPY entrypoint.sh /entrypoint.sh
@@ -68,8 +74,8 @@ EXPOSE 8000
 # Set entrypoint
 ENTRYPOINT ["/entrypoint.sh"]
 
-# Default command for development
-CMD ["/usr/local/bin/uv", "run", "python", "app/manage.py", "runserver", "0.0.0.0:8000"]
+# Default command for development (use --frozen to prevent lock file updates)
+CMD ["/usr/local/bin/uv", "run", "--frozen", "python", "app/manage.py", "runserver", "0.0.0.0:8000"]
 
 
 # Production stage
@@ -80,24 +86,30 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     UV_SYSTEM_PYTHON=1 \
     UV_CACHE_DIR=/tmp/.uv-cache \
+    UV_NO_SYNC=1 \
     DJANGO_SETTINGS_MODULE=settings.settings \
     ENVIRONMENT=production
 
 # Create UV cache directory with write permissions
 RUN mkdir -p /tmp/.uv-cache && chmod -R 777 /tmp/.uv-cache
 
-# Install dependencies with uv (production only, no dev dependencies)
-RUN uv sync --frozen --no-dev
+# Install dependencies with uv (production only, no dev dependencies, frozen mode)
+RUN uv sync --frozen --no-dev --no-install-project
 
 # Copy application code
 COPY . .
+
+# Set proper permissions for /app directory
+RUN chmod -R 755 /app && \
+    mkdir -p /app/logs /app/staticfiles /app/mediafiles && \
+    chmod -R 777 /app/logs /app/staticfiles /app/mediafiles
 
 # Create entrypoint script
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 # Collect static files
-RUN uv run python app/manage.py collectstatic --noinput
+RUN uv run --frozen python app/manage.py collectstatic --noinput
 
 # Expose port
 EXPOSE 8000
@@ -105,5 +117,5 @@ EXPOSE 8000
 # Set entrypoint
 ENTRYPOINT ["/entrypoint.sh"]
 
-# Default command for production (gunicorn)
-CMD ["/usr/local/bin/uv", "run", "gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--chdir", "app", "settings.wsgi:application"]
+# Default command for production (gunicorn with --frozen flag)
+CMD ["/usr/local/bin/uv", "run", "--frozen", "gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--chdir", "app", "settings.wsgi:application"]

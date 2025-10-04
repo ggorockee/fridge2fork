@@ -208,6 +208,7 @@ class NormalizedIngredient(CommonModel):
     name = models.CharField(
         max_length=100,
         unique=True,
+        db_index=True,  # 검색 속도 최적화를 위한 인덱스
         verbose_name="정규화 재료명",
         help_text="통합된 재료명 (예: 돼지고기)"
     )

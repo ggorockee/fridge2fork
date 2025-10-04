@@ -35,14 +35,14 @@ if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
     # Create migrations if AUTO_MIGRATE is true
     if [ "${AUTO_MIGRATE:-false}" = "true" ]; then
         echo "🔧 Creating migrations..."
-        uv run python manage.py makemigrations --noinput || {
+        uv run --frozen python manage.py makemigrations --noinput || {
             echo "⚠️  makemigrations failed, but continuing..."
         }
     fi
 
     # Apply migrations
     echo "🔧 Applying migrations..."
-    uv run python manage.py migrate --noinput || {
+    uv run --frozen python manage.py migrate --noinput || {
         echo "❌ Migration failed!"
         exit 1
     }
@@ -55,7 +55,7 @@ fi
 if [ "${ENVIRONMENT}" = "production" ] && [ "${COLLECT_STATIC:-true}" = "true" ]; then
     echo "📦 Collecting static files..."
     cd /app/app
-    uv run python manage.py collectstatic --noinput || {
+    uv run --frozen python manage.py collectstatic --noinput || {
         echo "⚠️  collectstatic failed, but continuing..."
     }
     cd /app
@@ -66,7 +66,7 @@ fi
 if [ "${ENVIRONMENT}" = "development" ] && [ "${CREATE_SUPERUSER:-false}" = "true" ]; then
     echo "👤 Creating superuser..."
     cd /app/app
-    uv run python manage.py shell << EOF
+    uv run --frozen python manage.py shell << EOF
 from django.contrib.auth import get_user_model
 User = get_user_model()
 if not User.objects.filter(username='${DJANGO_SUPERUSER_USERNAME:-admin}').exists():

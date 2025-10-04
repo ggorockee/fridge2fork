@@ -110,11 +110,15 @@ def recommend_recipes(request, data: RecipeRecommendRequestSchema):
     냉장고 재료 기반 레시피 추천
 
     사용자의 냉장고 재료로 만들 수 있는 레시피를 매칭률 순으로 추천
+
+    최적화:
+    - prefetch_related로 N+1 쿼리 해결
+    - 인덱스 활용한 빠른 검색
     """
     user_ingredients = data.ingredients
     exclude_seasonings = data.exclude_seasonings
 
-    # 사용자가 가진 정규화 재료 찾기
+    # 사용자가 가진 정규화 재료 찾기 (인덱스 활용)
     user_normalized_ids = set(
         NormalizedIngredient.objects
         .filter(name__in=user_ingredients)
@@ -127,8 +131,11 @@ def recommend_recipes(request, data: RecipeRecommendRequestSchema):
             'match_rate': '매칭 불가'
         }
 
-    # 모든 레시피 조회
-    recipes = Recipe.objects.all().prefetch_related('ingredients__normalized_ingredient')
+    # 모든 레시피 조회 (N+1 방지: prefetch_related 사용)
+    recipes = Recipe.objects.all().prefetch_related(
+        'ingredients__normalized_ingredient',
+        'ingredients__normalized_ingredient__category'
+    )
 
     recipe_matches = []
 
@@ -205,16 +212,34 @@ def autocomplete_ingredients(request, q: str):
 
     Args:
         q: 검색 쿼리
+
+    최적화:
+    - select_related로 N+1 쿼리 방지
+    - name 인덱스 활용한 빠른 검색
+    - ILIKE 대신 startswith 우선 (더 빠름)
     """
     if not q or len(q) < 1:
         return {'suggestions': []}
 
-    # 정규화 재료에서 검색
+    # 정규화 재료에서 검색 (N+1 방지: select_related, 인덱스 활용)
+    # startswith 우선 검색 후 contains 검색
     normalized_ingredients = (
         NormalizedIngredient.objects
-        .filter(name__icontains=q)
+        .select_related('category')
+        .filter(name__istartswith=q)
         .order_by('name')[:10]
     )
+
+    # startswith로 결과가 부족하면 contains로 추가 검색
+    if normalized_ingredients.count() < 10:
+        contains_results = (
+            NormalizedIngredient.objects
+            .select_related('category')
+            .filter(name__icontains=q)
+            .exclude(name__istartswith=q)
+            .order_by('name')[:(10 - normalized_ingredients.count())]
+        )
+        normalized_ingredients = list(normalized_ingredients) + list(contains_results)
 
     suggestions = []
     for ingredient in normalized_ingredients:
@@ -358,12 +383,19 @@ def get_or_create_fridge(request):
 def get_fridge(request):
     """
     냉장고 조회 (회원/비회원 모두 가능)
+
+    최적화:
+    - select_related로 N+1 쿼리 방지
+    - order_by로 일관된 정렬
     """
     fridge = get_or_create_fridge(request)
 
-    # 냉장고 재료 목록
-    fridge_ingredients = FridgeIngredient.objects.filter(fridge=fridge).select_related(
-        'normalized_ingredient', 'normalized_ingredient__category'
+    # 냉장고 재료 목록 (N+1 방지: select_related 사용)
+    fridge_ingredients = (
+        FridgeIngredient.objects
+        .filter(fridge=fridge)
+        .select_related('normalized_ingredient', 'normalized_ingredient__category')
+        .order_by('-added_at')  # 최근 추가 순
     )
 
     ingredients = []

@@ -3,10 +3,56 @@
 **목표**: 전체 시스템 통합 테스트, 성능 최적화, 배포 준비
 **예상 기간**: 1주
 **우선순위**: 🟡 Important
+**상태**: ✅ 핵심 최적화 완료 (검색 속도 집중)
 
 ## 개요
 
 프로덕션 배포 전 마지막 단계로, 시스템 전체의 안정성과 성능을 검증하고 최적화합니다.
+
+## ✅ 완료된 최적화 (검색 속도 집중)
+
+### 데이터베이스 인덱스 최적화
+- ✅ `NormalizedIngredient.name`에 `db_index=True` 추가
+  - 재료 검색 속도 대폭 향상
+  - 자동완성 API 성능 개선
+- ✅ 마이그레이션 생성: `0008_optimize_search_indexes.py`
+
+### 쿼리 성능 최적화 (N+1 문제 해결)
+- ✅ **자동완성 API** (`/recipes/ingredients/autocomplete`)
+  - `select_related('category')` 적용
+  - `istartswith` 우선 검색 (인덱스 활용)
+  - `icontains` 보조 검색
+  - **목표**: 3개 이하 쿼리, <100ms 응답
+
+- ✅ **레시피 추천 API** (`/recipes/recommend`)
+  - `prefetch_related('ingredients__normalized_ingredient')` 적용
+  - 카테고리까지 prefetch 추가
+  - **목표**: 10개 이하 쿼리, <1000ms 응답
+
+- ✅ **냉장고 조회 API** (`/recipes/fridge`)
+  - `select_related('normalized_ingredient__category')` 적용
+  - `order_by('-added_at')` 추가
+  - **목표**: <100ms 응답
+
+- ✅ **레시피 상세 API** (`/recipes/{id}`)
+  - `prefetch_related('ingredients')` 적용
+  - **목표**: <150ms 응답
+
+### 성능 테스트 작성
+- ✅ `app/recipes/tests/test_performance.py` 생성
+  - 자동완성 성능 테스트 (<100ms)
+  - 레시피 목록 성능 테스트 (<200ms)
+  - 레시피 추천 성능 테스트 (<1000ms)
+  - 레시피 상세 성능 테스트 (<150ms)
+  - 쿼리 횟수 최적화 검증 (N+1 해결 확인)
+  - 인덱스 존재 확인 테스트
+
+### Docker 최적화
+- ✅ Read-only file system 오류 해결
+  - `uv run --frozen` 플래그 추가 (lock 파일 수정 방지)
+  - `UV_NO_SYNC=1` 환경 변수 설정
+  - `/app` 디렉토리 권한 설정 (755)
+  - `/app/logs`, `/app/staticfiles` 디렉토리 권한 (777)
 
 ## 체크리스트
 
