@@ -386,8 +386,15 @@ class ApiClient {
         // data 필드가 없으면 다른 가능한 필드들 확인
         if (data == null) {
           if (jsonResponse.containsKey('ingredients')) {
+            // 냉장고 API 응답 (id, ingredients, updated_at 구조)
+            if (jsonResponse.containsKey('id') && jsonResponse.containsKey('updated_at')) {
+              data = jsonResponse; // 전체 응답 그대로 전달 (ApiFridge.fromJson용)
+              if (kDebugMode && AppConfig.enableNetworkLogging) {
+                debugPrint('🧊 Using Fridge API structure: id=${jsonResponse['id']}, ${jsonResponse['ingredients'].length} ingredients');
+              }
+            }
             // RecipeIngredientsResponse의 경우 전체 응답 구조 유지
-            if (jsonResponse.containsKey('categories') || jsonResponse.containsKey('total')) {
+            else if (jsonResponse.containsKey('categories') || jsonResponse.containsKey('total')) {
               data = jsonResponse; // ingredients, categories, total을 모두 포함한 전체 응답
               if (kDebugMode && AppConfig.enableNetworkLogging) {
                 debugPrint('🥬 Using RecipeIngredientsResponse structure: ${jsonResponse['ingredients'].length} ingredients, ${jsonResponse['categories']?.length ?? 0} categories');
