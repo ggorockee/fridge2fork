@@ -4,7 +4,7 @@
 
 from ninja import Router
 from django.conf import settings
-from .schemas import SystemVersionResponseSchema
+from .schemas import SystemVersionResponseSchema, HealthCheckResponseSchema
 
 router = Router()
 
@@ -27,5 +27,20 @@ def get_version(request):
     return {
         'version': '1.0.0',
         'environment': environment,
+        'status': 'healthy'
+    }
+
+
+@router.get("/health", response=HealthCheckResponseSchema)
+def health_check(request):
+    """
+    헬스 체크 (순수 상태 확인만)
+
+    Returns:
+        HealthCheckResponseSchema: {
+            status: 서버 상태 (healthy)
+        }
+    """
+    return {
         'status': 'healthy'
     }

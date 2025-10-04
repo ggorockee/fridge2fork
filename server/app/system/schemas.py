@@ -10,3 +10,8 @@ class SystemVersionResponseSchema(Schema):
     version: str
     environment: str
     status: str
+
+
+class HealthCheckResponseSchema(Schema):
+    """헬스 체크 응답 스키마"""
+    status: str
