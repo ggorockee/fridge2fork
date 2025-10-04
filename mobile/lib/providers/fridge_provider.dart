@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/api/api_fridge.dart';
 import '../services/api/fridge_api_service.dart';
@@ -27,12 +28,29 @@ class FridgeNotifier extends StateNotifier<AsyncValue<ApiFridge>> {
 
   /// 재료 추가
   Future<bool> addIngredient(String ingredientName) async {
+    if (kDebugMode) {
+      debugPrint('🥬 [FridgeProvider] Adding ingredient: $ingredientName');
+    }
+
     final response = await FridgeApiService.addIngredient(ingredientName);
+
+    if (kDebugMode) {
+      debugPrint('🥬 [FridgeProvider] Response: success=${response.success}, hasData=${response.data != null}');
+      if (response.data != null) {
+        debugPrint('🥬 [FridgeProvider] Fridge after add: ${response.data!.ingredients.length} ingredients');
+      }
+    }
 
     if (response.success && response.data != null) {
       state = AsyncValue.data(response.data!);
+      if (kDebugMode) {
+        debugPrint('✅ [FridgeProvider] State updated with ${response.data!.ingredients.length} ingredients');
+      }
       return true;
     } else {
+      if (kDebugMode) {
+        debugPrint('❌ [FridgeProvider] Failed to add ingredient: ${response.message}');
+      }
       // 에러 상태로 변경하지 않고, 실패만 반환
       return false;
     }

@@ -756,16 +756,15 @@ async def get_fridge(request):
     - order_by로 일관된 정렬
 
     X-Session-ID 헤더가 없으면 자동으로 새 세션 생성 및 반환
+    Response Header: X-Session-ID (새 세션 생성 시)
     """
     from django.http import JsonResponse
 
     fridge, session_key = await get_or_create_fridge(request, auto_create=True)
     result = await sync_to_async(_get_fridge_sync)(fridge)
 
-    # JSON 응답 생성
+    # JsonResponse로 반환하면서 헤더 추가
     response = JsonResponse(result)
-
-    # 새로 생성된 세션 키가 있으면 헤더에 포함
     if session_key:
         response['X-Session-ID'] = session_key
 
