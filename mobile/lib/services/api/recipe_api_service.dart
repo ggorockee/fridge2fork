@@ -56,7 +56,7 @@ class RecipeApiService {
       }
 
       final response = await ApiClient.get<PaginatedResponse<ApiRecipe>>(
-        ApiEndpoints.recipesByIngredients,
+        ApiEndpoints.recipeRecommendations,
         queryParams: queryParams,
         fromJson: (json) => PaginatedResponse.fromJson(
           json,
