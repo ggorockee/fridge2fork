@@ -2,6 +2,7 @@
 메인 API 설정
 """
 
+import os
 from ninja import NinjaAPI
 
 def custom_openapi_schema(original_method):
@@ -33,6 +34,10 @@ api = NinjaAPI(
     docs_url="/docs",
     openapi_url="/openapi.json",
     servers=[
+        {
+            "url": "http://localhost:8000/fridge2fork/v1",
+            "description": "Local Development (Default)"
+        },
         {
             "url": "https://api-dev.woohalabs.com/fridge2fork/v1",
             "description": "Development Server"
