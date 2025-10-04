@@ -496,7 +496,7 @@ class _SelectedIngredientsSection extends StatelessWidget {
               ),
               // 오른쪽에 배치된 [+] 버튼
               Positioned(
-                right: 0,
+                right: 100,
                 top: 0,
                 bottom: 0,
                 child: Showcase(
@@ -513,9 +513,8 @@ class _SelectedIngredientsSection extends StatelessWidget {
                     height: 32,
                     child: Material(
                       color: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        side: const BorderSide(
+                      shape: const CircleBorder(
+                        side: BorderSide(
                           color: AppTheme.primaryOrange,
                           width: 2,
                         ),
@@ -525,7 +524,7 @@ class _SelectedIngredientsSection extends StatelessWidget {
                           final homeState = context.findAncestorStateOfType<_HomeScreenState>();
                           homeState?._onAddButtonPressed();
                         },
-                        borderRadius: BorderRadius.circular(10),
+                        customBorder: const CircleBorder(),
                         child: const Icon(
                           Icons.add,
                           color: AppTheme.primaryOrange,
