@@ -31,11 +31,12 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
   @override
   void initState() {
     super.initState();
-    // API에서 식재료 목록 로드 (새 API 사용)
+    // API에서 식재료 목록 로드 (새 API 사용, 캐시 무시하고 항상 최신 데이터 가져오기)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(ingredientApiProvider.notifier).loadRecipeIngredients(
         excludeSeasonings: false,
         limit: 100,
+        forceRefresh: true,
       );
     });
   }
