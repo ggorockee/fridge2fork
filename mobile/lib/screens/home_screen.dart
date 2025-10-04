@@ -9,7 +9,6 @@ import '../providers/ingredients_provider.dart';
 import '../providers/api/recipe_api_provider.dart';
 import '../providers/api/ingredient_api_provider.dart';
 import '../providers/api/api_connection_provider.dart';
-import '../providers/api/random_recipe_provider.dart';
 import '../providers/recipe_recommendations_provider.dart';
 import '../providers/async_state_manager.dart';
 import '../models/api/api_recipe.dart';
@@ -86,8 +85,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
       // 병렬 데이터 로딩 - 모든 요청을 동시에 시작
       final futures = [
-        // 랜덤 레시피 로드
-        _loadRandomRecipes(),
         // 식재료 목록 로드
         _loadIngredients(),
         // 연결 상태 확인
@@ -107,21 +104,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  /// 랜덤 레시피 로드 (독립적 실행 - 비동기 최적화)
-  Future<bool> _loadRandomRecipes() async {
-    return await AsyncStateManager.executeTask<bool>(
-      'home_random_recipes',
-      () async {
-        if (kDebugMode) debugPrint('🍳 [Home Screen] Loading random recipe recommendations...');
-        await ref.read(randomRecipeProvider.notifier).loadRandomRecipes(count: 10);
-        if (kDebugMode) debugPrint('✅ [Home Screen] Random recipes loaded successfully');
-        return true;
-      },
-      timeout: const Duration(seconds: 30),
-      maxRetries: 3,
-      retryDelay: const Duration(seconds: 2),
-    );
-  }
 
   /// 식재료 목록 로드 (독립적 실행 - 비동기 최적화)
   Future<bool> _loadIngredients() async {
@@ -175,10 +157,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Future<void> _onRefresh() async {
     if (kDebugMode) debugPrint('🔄 [Home Screen] Pull to refresh triggered');
 
-    // 랜덤 레시피 새로고침 (새로운 추천 목록 로드)
-    await ref.read(randomRecipeProvider.notifier).refresh();
-
-    // 식재료 목록도 새로고침 (옵션)
+    // 식재료 목록 새로고침
     await ref.read(ingredientApiProvider.notifier).refresh();
 
     if (kDebugMode) debugPrint('✅ [Home Screen] Refresh completed');
@@ -400,8 +379,6 @@ class _RecipeRecommendationSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedIngredients = ref.watch(selectedIngredientsProvider);
-    // Phase 2: 선택된 재료가 있으면 맞춤 레시피, 없으면 랜덤 레시피 추천
-    final randomRecipeState = ref.watch(randomRecipeProvider);
     final recipesState = selectedIngredients.isNotEmpty
         ? ref.watch(recipeApiProvider)
         : null;
@@ -433,151 +410,34 @@ class _RecipeRecommendationSection extends ConsumerWidget {
           SizedBox(
             height: 160, // 카드 높이와 동일하게 고정
             child: selectedIngredients.isEmpty
-                // 식재료가 없는 경우: 랜덤 레시피 추천 표시
-                ? _buildRandomRecipeList(context, randomRecipeState, isApiOnline, isApiClientInitialized, ref)
+                // 식재료가 없는 경우: 친근한 메시지 바로 표시
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.restaurant_menu,
+                          size: 48,
+                          color: AppTheme.primaryOrange.withValues(alpha: 0.5),
+                        ),
+                        const SizedBox(height: AppTheme.spacingS),
+                        const Text(
+                          '냉장고에 재료를 추가하면\n맛있는 레시피를 추천해드려요!',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.textSecondary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  )
                 // 식재료가 있는 경우: 맞춤 레시피 표시
                 : _buildCustomRecipeList(context, recipesState!, selectedIngredients, isApiOnline, isApiClientInitialized),
           ),
         ],
       ),
     );
-  }
-
-  /// 랜덤 레시피 목록 위젯 빌드 (개선된 오프라인 대응)
-  Widget _buildRandomRecipeList(
-    BuildContext context,
-    RandomRecipeState randomRecipeState,
-    bool isApiOnline,
-    bool isApiClientInitialized,
-    WidgetRef ref,
-  ) {
-    if (randomRecipeState.isLoading) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(
-              color: AppTheme.primaryOrange,
-            ),
-            SizedBox(height: AppTheme.spacingS),
-            Text(
-              '추천 레시피를 불러오고 있어요!',
-              style: TextStyle(
-                fontSize: 12,
-                color: AppTheme.textSecondary,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (randomRecipeState.hasError) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.restaurant_menu,
-              size: 48,
-              color: AppTheme.primaryOrange.withValues(alpha: 0.5),
-            ),
-            const SizedBox(height: AppTheme.spacingS),
-            Text(
-              _getErrorMessage(randomRecipeState.error, isApiOnline),
-              style: AppTheme.bodySmall.copyWith(
-                color: AppTheme.textSecondary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (randomRecipeState.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              isApiOnline ? Icons.restaurant_menu : Icons.signal_wifi_off,
-              size: 48,
-              color: AppTheme.textSecondary,
-            ),
-            const SizedBox(height: AppTheme.spacingS),
-            Text(
-              isApiOnline
-                ? '레시피를 준비하고 있습니다'
-                : '오프라인 상태입니다\n네트워크 연결을 확인해주세요',
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppTheme.textSecondary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            if (!isApiOnline) ...[
-              const SizedBox(height: AppTheme.spacingM),
-              GestureDetector(
-                onTap: () async {
-                  // 연결 재시도를 위한 랜덤 레시피 새로고침
-                  await ref.read(randomRecipeProvider.notifier).refresh();
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppTheme.spacingM,
-                    vertical: AppTheme.spacingS,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppTheme.lightOrange,
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                  ),
-                  child: Text(
-                    '연결 재시도',
-                    style: AppTheme.bodySmall.copyWith(
-                      color: AppTheme.primaryOrange,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      scrollDirection: Axis.horizontal,
-      itemCount: randomRecipeState.recipes.length,
-      itemBuilder: (context, index) {
-        final recipe = randomRecipeState.recipes[index];
-        return _RecipeCard(
-          recipe: recipe,
-          isLast: index == randomRecipeState.recipes.length - 1,
-          onTap: () => _handleRecipeTap(context, recipe),
-        );
-      },
-    );
-  }
-
-  /// 에러 메시지 생성 (상황별 맞춤 메시지)
-  String _getErrorMessage(String? error, bool isApiOnline) {
-    if (!isApiOnline) {
-      return '냉장고에 재료를 추가하면\n맛있는 레시피를 추천해드려요!';
-    }
-
-    if (error != null) {
-      if (error.contains('timeout')) {
-        return '냉장고에 재료를 추가하면\n맛있는 레시피를 추천해드려요!';
-      } else if (error.contains('not found') || error.contains('404')) {
-        return '냉장고에 재료를 추가하면\n맛있는 레시피를 추천해드려요!';
-      } else if (error.contains('server') || error.contains('500')) {
-        return '냉장고에 재료를 추가하면\n맛있는 레시피를 추천해드려요!';
-      }
-    }
-
-    return '냉장고에 재료를 추가하면\n맛있는 레시피를 추천해드려요!';
   }
 
   /// 맞춤 레시피 목록 위젯 빌드
