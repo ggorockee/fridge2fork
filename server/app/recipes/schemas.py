@@ -69,6 +69,12 @@ class NormalizedIngredientListResponseSchema(Schema):
     categories: List[IngredientCategorySchema]
 
 
+class CategoryListResponseSchema(Schema):
+    """카테고리 목록 응답 스키마"""
+    categories: List[IngredientCategorySchema]
+    total: int
+
+
 class IngredientSuggestionSchema(Schema):
     """재료 자동완성 제안 스키마"""
     name: str

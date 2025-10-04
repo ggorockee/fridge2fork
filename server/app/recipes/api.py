@@ -26,6 +26,7 @@ from .schemas import (
     NormalizedIngredientListResponseSchema,
     NormalizedIngredientSchema,
     IngredientCategorySchema,
+    CategoryListResponseSchema,
 )
 from users.auth import OptionalJWTAuth, decode_access_token
 from math import ceil
@@ -262,6 +263,50 @@ def autocomplete_ingredients(request, q: str):
         ))
 
     return {'suggestions': suggestions}
+
+
+@router.get("/categories", response=CategoryListResponseSchema)
+def get_categories(
+    request,
+    category_type: str = "normalized"
+):
+    """
+    카테고리 유니크 목록 조회
+
+    Args:
+        category_type: 카테고리 타입 ("normalized", "ingredient")
+
+    Returns:
+        CategoryListResponseSchema: {
+            categories: 카테고리 목록,
+            total: 전체 개수
+        }
+    """
+    # 카테고리 조회 (활성화된 것만)
+    queryset = IngredientCategory.objects.filter(
+        category_type=category_type,
+        is_active=True
+    ).order_by('display_order', 'name')
+
+    # 전체 개수
+    total = queryset.count()
+
+    # 카테고리 목록 변환
+    categories = [
+        IngredientCategorySchema(
+            id=cat.id,
+            name=cat.name,
+            code=cat.code,
+            icon=cat.icon,
+            display_order=cat.display_order
+        )
+        for cat in queryset
+    ]
+
+    return {
+        'categories': categories,
+        'total': total
+    }
 
 
 @router.get("/ingredients", response=NormalizedIngredientListResponseSchema)
