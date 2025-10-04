@@ -31,9 +31,12 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
   @override
   void initState() {
     super.initState();
-    // API에서 식재료 목록 로드
+    // API에서 식재료 목록 로드 (새 API 사용)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(ingredientApiProvider.notifier).loadActiveIngredients();
+      ref.read(ingredientApiProvider.notifier).loadRecipeIngredients(
+        excludeSeasonings: true,
+        limit: 100,
+      );
     });
   }
 
@@ -304,11 +307,8 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
                     child: TextFormField(
                       controller: _searchController,
                       onChanged: (value) {
+                        // 검색어 업데이트 (클라이언트 필터링)
                         ref.read(searchTextProvider.notifier).state = value;
-                        // API 검색 실행
-                        if (value.isNotEmpty) {
-                          ref.read(ingredientApiProvider.notifier).searchIngredients(value);
-                        }
                       },
                       style: const TextStyle(
                         fontSize: 14,

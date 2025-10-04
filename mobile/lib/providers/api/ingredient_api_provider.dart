@@ -14,7 +14,77 @@ class IngredientApiNotifier extends StateNotifier<AsyncValue<List<ApiIngredient>
   List<ApiIngredient> _cachedIngredients = [];
   IngredientSearchFilter? _lastFilter;
 
-  /// 식재료 목록 로드
+  /// 레시피 재료 목록 로드 (새 API 사용)
+  Future<void> loadRecipeIngredients({
+    bool excludeSeasonings = true,
+    int? limit,
+    bool forceRefresh = false,
+  }) async {
+    debugPrint('🥬 [Ingredient API] loadRecipeIngredients called (excludeSeasonings: $excludeSeasonings, limit: $limit)');
+
+    // API가 오프라인이면 캐시된 데이터 반환
+    final isOnline = _ref.read(isApiOnlineProvider);
+    debugPrint('📡 [Ingredient API] API Online Status: $isOnline');
+
+    if (!isOnline && _cachedIngredients.isNotEmpty) {
+      debugPrint('🔄 [Ingredient API] Using cached data (offline mode)');
+      state = AsyncValue.data(_cachedIngredients);
+      return;
+    }
+
+    // 강제 새로고침이 아니고 캐시된 데이터가 있으면 반환
+    if (!forceRefresh && _cachedIngredients.isNotEmpty) {
+      state = AsyncValue.data(_cachedIngredients);
+      return;
+    }
+
+    debugPrint('⏳ [Ingredient API] Setting loading state and calling API');
+    state = const AsyncValue.loading();
+
+    try {
+      final response = await IngredientApiService.getRecipeIngredients(
+        excludeSeasonings: excludeSeasonings,
+        limit: limit,
+      );
+
+      debugPrint('📥 [Ingredient API] API Response: success=${response.success}, message=${response.message}');
+      if (response.data != null) {
+        debugPrint('📊 [Ingredient API] API Response data: ${response.data!.ingredients.length} ingredients found');
+        debugPrint('📂 [Ingredient API] Categories: ${response.data!.categories.length} categories');
+      }
+
+      if (response.success && response.data != null) {
+        // 활성화된 식재료만 필터링 (빈 이름이나 이상한 이름 제외)
+        _cachedIngredients = response.data!.ingredients
+            .where((ingredient) =>
+                ingredient.isActive &&
+                ingredient.name.isNotEmpty &&
+                ingredient.name.length >= 2 &&
+                !ingredient.name.contains('알 수 없는 재료'))
+            .toList();
+        state = AsyncValue.data(_cachedIngredients);
+
+        // 성공적으로 로드된 데이터를 캐시에 저장
+        await _cacheIngredients(_cachedIngredients);
+
+        // Firebase Analytics 이벤트 로깅
+        _logAnalyticsEvent('ingredients_loaded', {
+          'count': _cachedIngredients.length,
+          'exclude_seasonings': excludeSeasonings,
+          'source': 'recipe_ingredients_api',
+        });
+      } else {
+        // API 실패 시 오프라인 데이터 시도
+        await _loadOfflineIngredients();
+      }
+    } catch (error) {
+      debugPrint('❌ [Ingredient API] Error: $error');
+      // 네트워크 오류 시 오프라인 데이터 시도
+      await _loadOfflineIngredients();
+    }
+  }
+
+  /// 식재료 목록 로드 (기존 API - 호환성 유지)
   Future<void> loadIngredients({
     IngredientSearchFilter? filter,
     bool forceRefresh = false,
@@ -32,9 +102,9 @@ class IngredientApiNotifier extends StateNotifier<AsyncValue<List<ApiIngredient>
     }
 
     // 같은 필터로 이미 로드했고 강제 새로고침이 아닌 경우 캐시된 데이터 반환
-    if (!forceRefresh && 
-        _lastFilter != null && 
-        _lastFilter == filter && 
+    if (!forceRefresh &&
+        _lastFilter != null &&
+        _lastFilter == filter &&
         _cachedIngredients.isNotEmpty) {
       state = AsyncValue.data(_cachedIngredients);
       return;
@@ -54,17 +124,18 @@ class IngredientApiNotifier extends StateNotifier<AsyncValue<List<ApiIngredient>
       if (response.success && response.data != null) {
         // 활성화된 식재료만 필터링 (빈 이름이나 이상한 이름 제외)
         _cachedIngredients = response.data!.items
-            .where((ingredient) => ingredient.isActive && 
-                   ingredient.name.isNotEmpty && 
-                   ingredient.name.length >= 2 &&
-                   !ingredient.name.contains('알 수 없는 재료'))
+            .where((ingredient) =>
+                ingredient.isActive &&
+                ingredient.name.isNotEmpty &&
+                ingredient.name.length >= 2 &&
+                !ingredient.name.contains('알 수 없는 재료'))
             .toList();
         _lastFilter = filter;
         state = AsyncValue.data(_cachedIngredients);
-        
+
         // 성공적으로 로드된 데이터를 캐시에 저장
         await _cacheIngredients(_cachedIngredients);
-        
+
         // Firebase Analytics 이벤트 로깅
         _logAnalyticsEvent('ingredients_loaded', {
           'count': _cachedIngredients.length,
@@ -75,7 +146,7 @@ class IngredientApiNotifier extends StateNotifier<AsyncValue<List<ApiIngredient>
         // API 실패 시 오프라인 데이터 시도
         await _loadOfflineIngredients();
       }
-    } catch (error, stackTrace) {
+    } catch (error) {
       // 네트워크 오류 시 오프라인 데이터 시도
       await _loadOfflineIngredients();
     }
@@ -169,10 +240,10 @@ class IngredientApiNotifier extends StateNotifier<AsyncValue<List<ApiIngredient>
   }
 
   /// 특정 식재료 조회
-  Future<ApiIngredient?> getIngredientById(String id) async {
+  Future<ApiIngredient?> getIngredientById(int id) async {
     try {
-      final response = await IngredientApiService.getIngredientById(id);
-      
+      final response = await IngredientApiService.getIngredientById(id.toString());
+
       if (response.success && response.data != null) {
         // 캐시 업데이트
         final index = _cachedIngredients.indexWhere((ingredient) => ingredient.id == id);
@@ -181,17 +252,20 @@ class IngredientApiNotifier extends StateNotifier<AsyncValue<List<ApiIngredient>
         } else {
           _cachedIngredients.add(response.data!);
         }
-        
+
         return response.data;
       }
-      
+
       return null;
     } catch (e) {
       // 캐시에서 찾기
-      return _cachedIngredients.firstWhere(
-        (ingredient) => ingredient.id == id,
-        orElse: () => throw Exception('Ingredient not found'),
-      );
+      try {
+        return _cachedIngredients.firstWhere(
+          (ingredient) => ingredient.id == id,
+        );
+      } catch (_) {
+        return null;
+      }
     }
   }
 
@@ -227,7 +301,9 @@ class IngredientApiNotifier extends StateNotifier<AsyncValue<List<ApiIngredient>
   /// Firebase Analytics 이벤트 로깅
   void _logAnalyticsEvent(String eventName, Map<String, dynamic> parameters) {
     // TODO: Firebase Analytics 이벤트 로깅 구현
-    print('📊 Analytics Event: $eventName - $parameters');
+    if (kDebugMode) {
+      debugPrint('📊 Analytics Event: $eventName - $parameters');
+    }
   }
 }
 
@@ -258,10 +334,10 @@ final ingredientsErrorProvider = Provider<String?>((ref) {
   return state.hasError ? state.error.toString() : null;
 });
 
-/// 카테고리별 식재료 Provider
-final ingredientsByCategoryProvider = Provider.family<List<ApiIngredient>, IngredientCategory>((ref, category) {
+/// 카테고리별 식재료 Provider (카테고리 이름으로 필터링)
+final ingredientsByCategoryProvider = Provider.family<List<ApiIngredient>, String>((ref, categoryName) {
   final ingredients = ref.watch(ingredientsProvider);
-  return ingredients.where((ingredient) => ingredient.category == category).toList();
+  return ingredients.where((ingredient) => ingredient.category.name == categoryName).toList();
 });
 
 /// 식재료 검색 Provider
@@ -293,17 +369,20 @@ final ingredientStatsProvider = FutureProvider<Map<String, dynamic>>((ref) async
   } catch (e) {
     // API 실패 시 로컬 계산
     final ingredients = ref.watch(ingredientsProvider);
-    
+
     final stats = <String, dynamic>{
       'total_count': ingredients.length,
       'active_count': ingredients.where((i) => i.isActive).length,
       'category_counts': {},
     };
 
-    for (final category in IngredientCategory.values) {
-      final count = ingredients.where((i) => i.category == category).length;
-      stats['category_counts'][category.name] = count;
+    // 카테고리별 개수 계산 (ApiCategory.code 기준으로 그룹화)
+    final categoryGroups = <String, int>{};
+    for (final ingredient in ingredients) {
+      final categoryCode = ingredient.category.code;
+      categoryGroups[categoryCode] = (categoryGroups[categoryCode] ?? 0) + 1;
     }
+    stats['category_counts'] = categoryGroups;
 
     return stats;
   }
