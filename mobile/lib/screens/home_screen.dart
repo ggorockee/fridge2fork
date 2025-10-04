@@ -262,7 +262,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           const SizedBox(height: AppTheme.spacingM),
                           fridgeState.when(
                             data: (fridge) => fridge.ingredients.isEmpty
-                                ? const _EmptyStateMessage()
+                                ? _EmptyStateMessage(onAddPressed: _onAddButtonPressed)
                                 : _SelectedIngredientsSection(
                                     ingredients: fridge.ingredients,
                                     showAll: _showAllIngredients,
@@ -272,7 +272,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             loading: () => const CircularProgressIndicator(
                               valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryOrange),
                             ),
-                            error: (_, __) => const _EmptyStateMessage(),
+                            error: (_, __) => _EmptyStateMessage(onAddPressed: _onAddButtonPressed),
                           ),
                         ],
                       ),
@@ -296,45 +296,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     : _RecipeRecommendationsSection(ingredients: selectedIngredients),
               ),
             ),
-
-            // 플로팅 액션 버튼 - 냉장고가 비어있을 때만 표시
-            if (fridgeState.maybeWhen(
-              data: (fridge) => fridge.ingredients.isEmpty,
-              orElse: () => true,
-            ))
-              Positioned(
-                right: 16,
-                bottom: 295 + 16 + 16, // 레시피 영역 높이 + 바텀 간격 + 버튼 여백
-                // bottom: 200, // 레시피 영역 높이 + 바텀 간격 + 버튼 여백
-                child: Showcase(
-                  key: homeScreenAddButtonKey,
-                  description: '냉장고에 식재료를 추가하려면 이 버튼을 누르세요!',
-                  onTargetClick: _onAddButtonPressed,
-                  disposeOnTap: true,
-                  child: SizedBox(
-                    width: 45,
-                    height: 45,
-                    child: Material(
-                      color: Colors.white,
-                      shape: const CircleBorder(
-                        side: BorderSide(
-                          color: AppTheme.primaryOrange,
-                          width: 2,
-                        ),
-                      ),
-                      child: InkWell(
-                        onTap: _onAddButtonPressed,
-                        customBorder: const CircleBorder(),
-                        child: const Icon(
-                          Icons.add,
-                          color: AppTheme.primaryOrange,
-                          size: 26,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
           ],
         ),
       ),
@@ -370,14 +331,16 @@ class _FridgeIcon extends StatelessWidget {
 
 /// 빈 상태 메시지 위젯 - 재빌드 시에도 안정적인 렌더링을 위한 정적 위젯
 class _EmptyStateMessage extends StatelessWidget {
-  const _EmptyStateMessage();
+  final VoidCallback onAddPressed;
+
+  const _EmptyStateMessage({required this.onAddPressed});
 
   @override
   Widget build(BuildContext context) {
-    return const Column(
+    return Column(
       children: [
         // 메인 메시지
-        Text(
+        const Text(
           '냉장고가 비어있어요',
           style: TextStyle(
             fontSize: 20,
@@ -387,16 +350,48 @@ class _EmptyStateMessage extends StatelessWidget {
           textAlign: TextAlign.center,
         ),
 
-        SizedBox(height: AppTheme.spacingM),
+        const SizedBox(height: AppTheme.spacingM),
 
         // 서브 메시지
-        Text(
+        const Text(
           '식재료를 추가해 보세요',
           style: TextStyle(
             fontSize: 14,
             color: AppTheme.textPrimary,
           ),
           textAlign: TextAlign.center,
+        ),
+
+        const SizedBox(height: AppTheme.spacingL),
+
+        // [+] 버튼
+        Showcase(
+          key: homeScreenAddButtonKey,
+          description: '냉장고에 식재료를 추가하려면 이 버튼을 누르세요!',
+          onTargetClick: onAddPressed,
+          disposeOnTap: true,
+          child: SizedBox(
+            width: 56,
+            height: 56,
+            child: Material(
+              color: Colors.white,
+              shape: const CircleBorder(
+                side: BorderSide(
+                  color: AppTheme.primaryOrange,
+                  width: 2,
+                ),
+              ),
+              child: InkWell(
+                onTap: onAddPressed,
+                customBorder: const CircleBorder(),
+                child: const Icon(
+                  Icons.add,
+                  color: AppTheme.primaryOrange,
+                  size: 32,
+                ),
+              ),
+            ),
+          ),
         ),
       ],
     );
