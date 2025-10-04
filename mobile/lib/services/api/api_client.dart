@@ -539,19 +539,20 @@ class ApiEndpoints {
   static const String systemPlatforms = '/fridge2fork/v1/system/platforms';
   static const String systemStats = '/fridge2fork/v1/system/stats';
 
-  // 냉장고 재료 관리
-  static const String ingredients = '/fridge2fork/v1/fridge/ingredients';
-  static const String myIngredients = '/fridge2fork/v1/fridge/my-ingredients';
-  static const String categories = '/fridge2fork/v1/fridge/categories';
-  static const String recipesByIngredients = '/fridge2fork/v1/fridge/recipes/by-ingredients';
+  // 냉장고 관리 (회원/비회원 모두 가능, 세션 기반)
+  static const String fridge = '/fridge2fork/v1/recipes/fridge'; // GET 냉장고 조회
+  static const String fridgeIngredients = '/fridge2fork/v1/recipes/fridge/ingredients'; // POST 재료 추가
+  static const String fridgeClear = '/fridge2fork/v1/recipes/fridge/clear'; // DELETE 전체 삭제
+
+  // 정규화 재료 관리
+  static const String ingredients = '/fridge2fork/v1/recipes/ingredients'; // GET 정규화 재료 목록
+  static const String ingredientsAutocomplete = '/fridge2fork/v1/recipes/ingredients/autocomplete'; // GET 재료 자동완성
+  static const String categories = '/fridge2fork/v1/recipes/categories'; // GET 카테고리 목록
 
   // 레시피
   static const String recipes = '/fridge2fork/v1/recipes/';
-  static const String recipeIngredients = '/fridge2fork/v1/recipes/ingredients'; // 레시피에 사용된 모든 재료 목록
-  static const String recipeCategories = '/fridge2fork/v1/recipes/categories'; // 레시피 카테고리 목록
-  static const String recipeRecommendations = '/fridge2fork/v1/recipes/recommendations'; // 레시피 추천 (유사도 알고리즘)
-  static const String randomRecommendations = '/fridge2fork/v1/recipes/random-recommendations';
-  static const String recipesByFridge = '/fridge2fork/v1/recipes/by-fridge';
+  static const String recipeRecommendations = '/fridge2fork/v1/recipes/recommendations'; // GET 레시피 추천 (유사도 알고리즘)
+  static const String recipeSearch = '/fridge2fork/v1/recipes/search'; // GET 레시피 검색
   static const String recipeStats = '/fridge2fork/v1/recipes/stats/summary';
 
   /// 특정 레시피 상세 조회
