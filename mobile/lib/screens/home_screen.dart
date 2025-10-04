@@ -961,7 +961,7 @@ class _RecommendedRecipeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     const double cardHeight = 195.0;
     const double imageHeight = cardHeight * 2 / 3; // 130px (2/3)
-    const double textHeight = cardHeight * 1 / 3;  // 65px (1/3)
+    const double textHeight = cardHeight - imageHeight;  // 65px (나머지)
 
     return MediaQuery.withClampedTextScaling(
       minScaleFactor: 1.0,
@@ -970,7 +970,7 @@ class _RecommendedRecipeCard extends StatelessWidget {
         width: 160,
         height: cardHeight,
         margin: const EdgeInsets.only(right: AppTheme.spacingM),
-        clipBehavior: Clip.antiAlias, // 카드 외부로 넘치는 콘텐츠 강제 클리핑
+        clipBehavior: Clip.hardEdge, // 하드 클리핑으로 변경
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -983,61 +983,56 @@ class _RecommendedRecipeCard extends StatelessWidget {
           ],
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.max, // max로 변경하여 정확한 높이 보장
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 이미지 영역 (2/3 = 130px)
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-              child: SizedBox(
-                height: imageHeight,
-                width: 160,
-                child: recipe.imageUrl != null && recipe.imageUrl!.isNotEmpty
-                    ? Image.network(
-                        recipe.imageUrl!,
-                        height: imageHeight,
-                        width: 160,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Container(
-                          height: imageHeight,
-                          width: 160,
-                          color: Colors.grey[200],
-                          child: const Icon(Icons.restaurant, size: 40, color: Colors.grey),
-                        ),
-                      )
-                    : Container(
+            SizedBox(
+              height: imageHeight,
+              width: 160,
+              child: recipe.imageUrl != null && recipe.imageUrl!.isNotEmpty
+                  ? Image.network(
+                      recipe.imageUrl!,
+                      height: imageHeight,
+                      width: 160,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
                         height: imageHeight,
                         width: 160,
                         color: Colors.grey[200],
                         child: const Icon(Icons.restaurant, size: 40, color: Colors.grey),
                       ),
-              ),
-            ),
-            // 텍스트 영역 (1/3 = 65px)
-            SizedBox(
-              height: textHeight,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                child: Column(
-                  mainAxisSize: MainAxisSize.max,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 제목
-                    Expanded(
-                      child: Text(
-                        recipe.title,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          height: 1.2,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                    )
+                  : Container(
+                      height: imageHeight,
+                      width: 160,
+                      color: Colors.grey[200],
+                      child: const Icon(Icons.restaurant, size: 40, color: Colors.grey),
                     ),
-                    // 매칭률
-                    Align(
+            ),
+            // 텍스트 영역 (나머지 = 65px)
+            Container(
+              height: textHeight,
+              padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 제목 (남은 공간 사용)
+                  Expanded(
+                    child: Text(
+                      recipe.title,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        height: 1.2,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  // 매칭률 (하단 고정)
+                  SizedBox(
+                    height: 18,
+                    child: Align(
                       alignment: Alignment.centerRight,
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -1048,15 +1043,15 @@ class _RecommendedRecipeCard extends StatelessWidget {
                         child: Text(
                           '${(recipe.matchScore * 100).toInt()}% 일치',
                           style: const TextStyle(
-                            fontSize: 10,
+                            fontSize: 9,
                             color: AppTheme.primaryOrange,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ],
