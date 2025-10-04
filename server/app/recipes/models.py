@@ -6,6 +6,7 @@ Recipe 모델 정의
 
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.core.validators import MinValueValidator, MaxValueValidator
 from core.models import CommonModel
 
 User = get_user_model()
@@ -428,3 +429,73 @@ class FridgeIngredient(models.Model):
     def __str__(self):
         """냉장고 재료 문자열 표현"""
         return f"{self.fridge} - {self.normalized_ingredient.name}"
+
+
+class RecommendationSettings(models.Model):
+    """
+    레시피 추천 설정 모델 (싱글톤)
+
+    관리자가 추천 API의 기본값을 설정할 수 있음
+    """
+
+    ALGORITHM_CHOICES = [
+        ('jaccard', 'Jaccard Similarity'),
+        ('cosine', 'Cosine Similarity'),
+    ]
+
+    min_match_rate = models.FloatField(
+        default=0.3,
+        validators=[MinValueValidator(0.0), MaxValueValidator(1.0)],
+        verbose_name="최소 매칭률",
+        help_text="추천 레시피의 최소 매칭률 (0.0-1.0)"
+    )
+    default_algorithm = models.CharField(
+        max_length=20,
+        choices=ALGORITHM_CHOICES,
+        default='jaccard',
+        verbose_name="기본 알고리즘",
+        help_text="추천에 사용할 기본 유사도 알고리즘"
+    )
+    default_limit = models.IntegerField(
+        default=20,
+        validators=[MinValueValidator(1), MaxValueValidator(100)],
+        verbose_name="기본 추천 개수",
+        help_text="기본으로 반환할 추천 레시피 개수 (1-100)"
+    )
+    exclude_seasonings_default = models.BooleanField(
+        default=True,
+        verbose_name="기본 조미료 제외",
+        help_text="기본으로 범용 조미료를 제외할지 여부"
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="수정 일시"
+    )
+
+    class Meta:
+        db_table = 'recipes_recommendation_settings'
+        verbose_name = "추천 설정"
+        verbose_name_plural = "추천 설정"
+
+    def __str__(self):
+        """설정 문자열 표현"""
+        return f"추천 설정 (최소 매칭률: {self.min_match_rate})"
+
+    def save(self, *args, **kwargs):
+        """싱글톤 패턴: ID를 1로 고정"""
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def get_settings(cls):
+        """설정 조회 (없으면 기본값으로 생성)"""
+        settings, created = cls.objects.get_or_create(
+            pk=1,
+            defaults={
+                'min_match_rate': 0.3,
+                'default_algorithm': 'jaccard',
+                'default_limit': 20,
+                'exclude_seasonings_default': True
+            }
+        )
+        return settings

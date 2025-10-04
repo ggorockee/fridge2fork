@@ -9,7 +9,7 @@ from django.utils.html import format_html
 from django.urls import path
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .models import Recipe, Ingredient, NormalizedIngredient, Fridge, FridgeIngredient, IngredientCategory
+from .models import Recipe, Ingredient, NormalizedIngredient, Fridge, FridgeIngredient, IngredientCategory, RecommendationSettings
 from .services.csv_import import import_csv_file
 
 
@@ -1205,3 +1205,34 @@ class IngredientCategoryAdmin(admin.ModelAdmin):
             )
         return format_html('<span style="color: gray;">사용 안됨</span>')
     get_usage_count.short_description = '사용 횟수'
+
+
+@admin.register(RecommendationSettings)
+class RecommendationSettingsAdmin(admin.ModelAdmin):
+    """RecommendationSettings Admin - 레시피 추천 설정 관리"""
+
+    list_display = ('min_match_rate', 'default_algorithm', 'default_limit', 'exclude_seasonings_default', 'updated_at')
+    readonly_fields = ('updated_at',)
+
+    fieldsets = (
+        ('추천 알고리즘 설정', {
+            'fields': ('default_algorithm', 'min_match_rate'),
+            'description': '레시피 추천 API의 기본 알고리즘 및 최소 매칭률 설정'
+        }),
+        ('기본 옵션', {
+            'fields': ('default_limit', 'exclude_seasonings_default'),
+            'description': '추천 레시피 기본 개수 및 조미료 제외 여부'
+        }),
+        ('시스템 정보', {
+            'fields': ('updated_at',),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def has_add_permission(self, request):
+        """추가 불가 (Singleton)"""
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        """삭제 불가 (Singleton)"""
+        return False

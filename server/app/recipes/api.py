@@ -7,7 +7,7 @@ from typing import List, Optional
 from django.db.models import Q, Count
 from django.http import JsonResponse
 from django.contrib.auth import get_user_model
-from .models import Recipe, Ingredient, NormalizedIngredient, Fridge, FridgeIngredient, IngredientCategory
+from .models import Recipe, Ingredient, NormalizedIngredient, Fridge, FridgeIngredient, IngredientCategory, RecommendationSettings
 from .schemas import (
     RecipeSearchResponseSchema,
     RecipeRecommendRequestSchema,
@@ -224,20 +224,20 @@ def recommend_recipes(request, data: RecipeRecommendRequestSchema):
 def get_recipe_recommendations(
     request,
     ingredients: str,
-    limit: int = 20,
-    algorithm: str = "jaccard",
-    exclude_seasonings: bool = True,
-    min_match_rate: float = 0.3
+    limit: Optional[int] = None,
+    algorithm: Optional[str] = None,
+    exclude_seasonings: Optional[bool] = None,
+    min_match_rate: Optional[float] = None
 ):
     """
     레시피 추천 (GET 방식, 유사도 알고리즘 선택 가능)
 
     Args:
         ingredients: 쉼표로 구분된 정규화 재료명 (예: "돼지고기,배추,두부")
-        limit: 추천 레시피 최대 개수 (기본: 20, 범위: 1-100)
-        algorithm: 유사도 알고리즘 ("jaccard", "cosine")
-        exclude_seasonings: 범용 조미료 제외 여부 (기본: True)
-        min_match_rate: 최소 매칭률 (기본: 0.3, 범위: 0.0-1.0)
+        limit: 추천 레시피 최대 개수 (미지정 시 관리자 설정값 사용, 범위: 1-100)
+        algorithm: 유사도 알고리즘 (미지정 시 관리자 설정값 사용, "jaccard" or "cosine")
+        exclude_seasonings: 범용 조미료 제외 여부 (미지정 시 관리자 설정값 사용)
+        min_match_rate: 최소 매칭률 (미지정 시 관리자 설정값 사용, 범위: 0.0-1.0)
 
     Returns:
         RecipeRecommendationsResponseSchema: {
@@ -248,6 +248,15 @@ def get_recipe_recommendations(
         }
     """
     from django.db.models import Prefetch
+
+    # 관리자 설정 조회
+    settings = RecommendationSettings.get_settings()
+
+    # 파라미터 우선순위: API 파라미터 > 관리자 설정 > 하드코딩 기본값
+    limit = limit if limit is not None else settings.default_limit
+    algorithm = algorithm if algorithm else settings.default_algorithm
+    exclude_seasonings = exclude_seasonings if exclude_seasonings is not None else settings.exclude_seasonings_default
+    min_match_rate = min_match_rate if min_match_rate is not None else settings.min_match_rate
 
     # 파라미터 검증
     limit = max(1, min(limit, 100))
