@@ -225,6 +225,12 @@ class ApiClient {
       // 요청 로깅
       if (kDebugMode && AppConfig.enableNetworkLogging) {
         debugPrint('🌐 $method $uri');
+        // 🔍 DEBUG: 요청 헤더의 세션 ID
+        if (sessionId != null) {
+          debugPrint('🔍 [DEBUG] Request Header X-Session-ID: ${sessionId.substring(0, 8)}...');
+        } else {
+          debugPrint('🔍 [DEBUG] Request Header X-Session-ID: null (서버가 생성 예정)');
+        }
         if (body != null) {
           debugPrint('📤 Request Body: ${jsonEncode(body)}');
         }
@@ -268,11 +274,17 @@ class ApiClient {
 
       // X-Session-ID 헤더가 있으면 저장 (서버가 새로 생성한 세션)
       final responseSessionId = response.headers['x-session-id'];
+      if (kDebugMode && AppConfig.enableNetworkLogging) {
+        if (responseSessionId != null && responseSessionId.isNotEmpty) {
+          debugPrint('🔍 [DEBUG] Response Header X-Session-ID: ${responseSessionId.substring(0, 8)}...');
+          debugPrint('🔐 New session ID received from server, saving to SharedPreferences');
+        } else {
+          debugPrint('🔍 [DEBUG] Response Header X-Session-ID: null (기존 세션 유지)');
+        }
+      }
+
       if (responseSessionId != null && responseSessionId.isNotEmpty) {
         await SessionService.instance.saveSessionId(responseSessionId);
-        if (kDebugMode && AppConfig.enableNetworkLogging) {
-          debugPrint('🔐 New session ID received from server: ${responseSessionId.substring(0, 8)}...');
-        }
       }
 
       // UTF-8 인코딩 확인 및 수정

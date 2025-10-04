@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/api/api_fridge.dart';
 import '../services/api/fridge_api_service.dart';
+import '../services/session_service.dart';
 
 /// 냉장고 상태 관리 Provider
 class FridgeNotifier extends StateNotifier<AsyncValue<ApiFridge>> {
@@ -12,9 +13,27 @@ class FridgeNotifier extends StateNotifier<AsyncValue<ApiFridge>> {
 
   /// 냉장고 조회
   Future<void> loadFridge() async {
+    if (kDebugMode) {
+      // 🔍 DEBUG: 냉장고 조회 전 세션 ID
+      final sessionBefore = await SessionService.instance.getSessionId();
+      debugPrint('🔍 [DEBUG] Session BEFORE getFridge: ${sessionBefore ?? "null"}');
+    }
+
     state = const AsyncValue.loading();
 
     final response = await FridgeApiService.getFridge();
+
+    if (kDebugMode) {
+      // 🔍 DEBUG: 냉장고 조회 후 세션 ID
+      final sessionAfter = await SessionService.instance.getSessionId();
+      debugPrint('🔍 [DEBUG] Session AFTER getFridge: ${sessionAfter ?? "null"}');
+
+      if (response.success && response.data != null) {
+        debugPrint('🔍 [DEBUG] Fridge ID from GET: ${response.data!.id}');
+        debugPrint('🔍 [DEBUG] Ingredients from GET: ${response.data!.ingredients.map((e) => e.name).join(", ")}');
+        debugPrint('🔍 [DEBUG] Total ingredients: ${response.data!.ingredients.length}');
+      }
+    }
 
     if (response.success && response.data != null) {
       state = AsyncValue.data(response.data!);
@@ -30,14 +49,23 @@ class FridgeNotifier extends StateNotifier<AsyncValue<ApiFridge>> {
   Future<bool> addIngredient(String ingredientName) async {
     if (kDebugMode) {
       debugPrint('🥬 [FridgeProvider] Adding ingredient: $ingredientName');
+      // 🔍 DEBUG: 재료 추가 전 세션 ID
+      final sessionBefore = await SessionService.instance.getSessionId();
+      debugPrint('🔍 [DEBUG] Session BEFORE add: ${sessionBefore ?? "null"}');
     }
 
     final response = await FridgeApiService.addIngredient(ingredientName);
 
     if (kDebugMode) {
+      // 🔍 DEBUG: 재료 추가 후 세션 ID
+      final sessionAfter = await SessionService.instance.getSessionId();
+      debugPrint('🔍 [DEBUG] Session AFTER add: ${sessionAfter ?? "null"}');
+
       debugPrint('🥬 [FridgeProvider] Response: success=${response.success}, hasData=${response.data != null}');
       if (response.data != null) {
         debugPrint('🥬 [FridgeProvider] Fridge after add: ${response.data!.ingredients.length} ingredients');
+        debugPrint('🔍 [DEBUG] Fridge ID in response: ${response.data!.id}');
+        debugPrint('🔍 [DEBUG] Ingredients in response: ${response.data!.ingredients.map((e) => e.name).join(", ")}');
       }
     }
 
