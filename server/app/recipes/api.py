@@ -27,9 +27,11 @@ from .schemas import (
     NormalizedIngredientSchema,
     IngredientCategorySchema,
     CategoryListResponseSchema,
+    RecommendedRecipeSchema,
+    RecipeRecommendationsResponseSchema,
 )
 from users.auth import OptionalJWTAuth, decode_access_token
-from math import ceil
+from math import ceil, sqrt
 
 User = get_user_model()
 router = Router()
@@ -215,6 +217,166 @@ def recommend_recipes(request, data: RecipeRecommendRequestSchema):
     return {
         'recipes': recommended_recipes,
         'match_rate': match_rate_text
+    }
+
+
+@router.get("/recommendations", response=RecipeRecommendationsResponseSchema)
+def get_recipe_recommendations(
+    request,
+    ingredients: str,
+    limit: int = 20,
+    algorithm: str = "jaccard",
+    exclude_seasonings: bool = True,
+    min_match_rate: float = 0.3
+):
+    """
+    레시피 추천 (GET 방식, 유사도 알고리즘 선택 가능)
+
+    Args:
+        ingredients: 쉼표로 구분된 정규화 재료명 (예: "돼지고기,배추,두부")
+        limit: 추천 레시피 최대 개수 (기본: 20, 범위: 1-100)
+        algorithm: 유사도 알고리즘 ("jaccard", "cosine")
+        exclude_seasonings: 범용 조미료 제외 여부 (기본: True)
+        min_match_rate: 최소 매칭률 (기본: 0.3, 범위: 0.0-1.0)
+
+    Returns:
+        RecipeRecommendationsResponseSchema: {
+            recipes: 추천 레시피 목록,
+            total: 전체 추천 개수,
+            algorithm: 사용된 알고리즘,
+            summary: 매칭률 요약
+        }
+    """
+    from django.db.models import Prefetch
+
+    # 파라미터 검증
+    limit = max(1, min(limit, 100))
+    min_match_rate = max(0.0, min(min_match_rate, 1.0))
+
+    if algorithm not in ['jaccard', 'cosine']:
+        return JsonResponse(
+            {'error': 'InvalidAlgorithm', 'message': 'algorithm must be "jaccard" or "cosine"'},
+            status=400
+        )
+
+    # 재료명 파싱
+    ingredient_names = [name.strip() for name in ingredients.split(',') if name.strip()]
+
+    if not ingredient_names:
+        return {
+            'recipes': [],
+            'total': 0,
+            'algorithm': algorithm,
+            'summary': '재료 없음'
+        }
+
+    # 사용자가 가진 정규화 재료 찾기
+    user_normalized_ingredients = NormalizedIngredient.objects.filter(
+        name__in=ingredient_names
+    )
+    user_normalized_ids = set(user_normalized_ingredients.values_list('id', flat=True))
+
+    if not user_normalized_ids:
+        return {
+            'recipes': [],
+            'total': 0,
+            'algorithm': algorithm,
+            'summary': '재료 없음'
+        }
+
+    # Ingredient queryset 생성 (조미료 제외 옵션 적용)
+    ingredient_qs = Ingredient.objects.select_related(
+        'normalized_ingredient',
+        'normalized_ingredient__category'
+    )
+
+    if exclude_seasonings:
+        ingredient_qs = ingredient_qs.exclude(
+            normalized_ingredient__is_common_seasoning=True
+        )
+
+    # 모든 레시피 조회
+    recipes = Recipe.objects.prefetch_related(
+        Prefetch('ingredients', queryset=ingredient_qs)
+    ).all()
+
+    recipe_matches = []
+
+    for recipe in recipes:
+        # prefetch된 재료들
+        essential_ingredients = recipe.ingredients.all()
+
+        # 정규화 재료 ID 추출
+        recipe_ingredient_ids = set()
+        for ing in essential_ingredients:
+            if ing.normalized_ingredient_id:
+                recipe_ingredient_ids.add(ing.normalized_ingredient_id)
+
+        if not recipe_ingredient_ids:
+            continue
+
+        # 매칭된 재료 ID
+        matched_ids = user_normalized_ids & recipe_ingredient_ids
+        matched_count = len(matched_ids)
+        total_count = len(recipe_ingredient_ids)
+
+        # 유사도 계산
+        if algorithm == 'jaccard':
+            # Jaccard Similarity: |A ∩ B| / |A ∪ B|
+            union_count = len(user_normalized_ids | recipe_ingredient_ids)
+            match_score = matched_count / union_count if union_count > 0 else 0
+        else:  # cosine
+            # Cosine Similarity: (A · B) / (||A|| × ||B||)
+            # 이진 벡터이므로 내적 = matched_count
+            dot_product = matched_count
+            norm_a = sqrt(len(user_normalized_ids))
+            norm_b = sqrt(total_count)
+            match_score = dot_product / (norm_a * norm_b) if (norm_a * norm_b) > 0 else 0
+
+        # 최소 매칭률 필터링
+        if match_score >= min_match_rate:
+            recipe_matches.append({
+                'recipe': recipe,
+                'match_score': match_score,
+                'matched_count': matched_count,
+                'total_count': total_count
+            })
+
+    # 유사도 점수 내림차순 정렬
+    recipe_matches.sort(key=lambda x: x['match_score'], reverse=True)
+
+    # limit 적용
+    limited_matches = recipe_matches[:limit]
+
+    # 응답 생성
+    recommended_recipes = []
+    for match in limited_matches:
+        recipe_data = RecipeSchema.from_orm(match['recipe']).dict()
+        recipe_data.update({
+            'match_score': round(match['match_score'], 3),
+            'matched_count': match['matched_count'],
+            'total_count': match['total_count'],
+            'algorithm': algorithm
+        })
+        recommended_recipes.append(RecommendedRecipeSchema(**recipe_data))
+
+    # 매칭률 요약
+    if recommended_recipes:
+        top_score = recommended_recipes[0].match_score
+        if top_score >= 0.8:
+            summary = "80% 이상 매칭"
+        elif top_score >= 0.5:
+            summary = "50% 이상 매칭"
+        else:
+            summary = "30% 이상 매칭"
+    else:
+        summary = "매칭 불가"
+
+    return {
+        'recipes': recommended_recipes,
+        'total': len(recipe_matches),
+        'algorithm': algorithm,
+        'summary': summary
     }
 
 

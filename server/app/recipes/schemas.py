@@ -45,6 +45,22 @@ class RecipeRecommendResponseSchema(Schema):
     match_rate: str  # 예: "80% 이상 매칭"
 
 
+class RecommendedRecipeSchema(RecipeSchema):
+    """추천 레시피 스키마 (GET /recommendations용)"""
+    match_score: float  # 유사도 점수 (0.0 ~ 1.0)
+    matched_count: int  # 매칭된 재료 수
+    total_count: int  # 레시피 전체 재료 수
+    algorithm: str  # 사용된 알고리즘
+
+
+class RecipeRecommendationsResponseSchema(Schema):
+    """레시피 추천 응답 스키마 (GET /recommendations용)"""
+    recipes: List[RecommendedRecipeSchema]
+    total: int
+    algorithm: str
+    summary: str  # 예: "85% 이상 매칭"
+
+
 class IngredientCategorySchema(Schema):
     """재료 카테고리 스키마"""
     id: int
