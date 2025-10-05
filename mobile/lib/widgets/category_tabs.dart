@@ -25,7 +25,7 @@ class CategoryTabs extends StatelessWidget {
       child: ListView.builder(
         controller: scrollController,
         scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.symmetric(horizontal: AppTheme.spacingM),
+        padding: EdgeInsets.symmetric(horizontal: 16.w), // 고정값으로 변경 (AppTheme.spacingM=64.0으로 인한 과도한 패딩 문제 해결)
         itemCount: categories.length,
         itemBuilder: (context, index) {
           final isSelected = index == selectedIndex;
