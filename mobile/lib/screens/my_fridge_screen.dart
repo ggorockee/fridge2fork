@@ -227,12 +227,21 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
 
   /// 빈 냉장고 상태 위젯
   Widget _buildEmptyState() {
+    // 태블릿 여부에 따른 반응형 값 설정
+    final isTablet = ResponsiveUtils.isTablet(context);
+    final topPadding = isTablet ? 80.h : 0.0;
+    final titleFontSize = isTablet ? 28.sp : 20.sp;
+    final subtitleFontSize = isTablet ? 18.sp : 14.sp;
+    final buttonHeight = isTablet ? 64.0 : 56.0;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppTheme.spacingXL),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // 태블릿에서 상단 여백 추가
+            SizedBox(height: topPadding),
             Container(
               width: 120.w,
               height: 120.h,
@@ -254,7 +263,7 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
             Text(
               '냉장고가 비어있어요',
               style: TextStyle(
-                fontSize: 20.sp,
+                fontSize: titleFontSize,
                 fontWeight: FontWeight.w600,
                 color: AppTheme.textPrimary,
               ),
@@ -265,7 +274,7 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
             Text(
               '식재료를 추가해서 냉장고를 채워보세요!',
               style: TextStyle(
-                fontSize: 14.sp,
+                fontSize: subtitleFontSize,
                 color: AppTheme.textPrimary,
               ),
               textAlign: TextAlign.center,
@@ -279,7 +288,7 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
                 text: '식재료 추가하기',
                 onPressed: _onAddButtonPressed,
                 type: ButtonType.primary,
-                height: 56,
+                height: buttonHeight,
                 icon: Icons.add,
               ),
             ),

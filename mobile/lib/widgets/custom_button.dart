@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../theme/app_theme.dart';
+import '../utils/responsive_utils.dart';
 
 /// 커스텀 버튼 위젯
 /// Figma 디자인의 "Let's Continue", "Start Ordering", "Add to basket" 등의 버튼 스타일 구현
@@ -26,6 +27,11 @@ class CustomButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 태블릿 여부에 따른 폰트 크기 조정
+    final isTablet = ResponsiveUtils.isTablet(context);
+    final buttonFontSize = isTablet ? 20.sp : 16.sp;
+    final iconSize = isTablet ? 24.sp : 20.sp;
+
     return ConstrainedBox(
       constraints: BoxConstraints(
         minWidth: width?.w ?? 0,
@@ -35,7 +41,7 @@ class CustomButton extends StatelessWidget {
         width: width?.w,
         child: ElevatedButton(
           onPressed: isLoading ? null : onPressed,
-          style: _getButtonStyle(),
+          style: _getButtonStyle(context, buttonFontSize),
           child: isLoading
               ? SizedBox(
                   width: 20.w,
@@ -50,7 +56,7 @@ class CustomButton extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     if (icon != null) ...[
-                      Icon(icon, size: 20.sp),
+                      Icon(icon, size: iconSize),
                       SizedBox(width: AppTheme.spacingS),
                     ],
                     Flexible(
@@ -68,12 +74,23 @@ class CustomButton extends StatelessWidget {
     );
   }
 
-  ButtonStyle _getButtonStyle() {
+  ButtonStyle _getButtonStyle(BuildContext context, double fontSize) {
+    final textStyle = TextStyle(
+      fontFamily: 'Brandon Grotesque',
+      fontSize: fontSize,
+      fontWeight: FontWeight.w500,
+      letterSpacing: -0.16,
+    );
+
     switch (type) {
       case ButtonType.primary:
-        return AppTheme.primaryButtonStyle;
+        return AppTheme.primaryButtonStyle.copyWith(
+          textStyle: WidgetStateProperty.all(textStyle),
+        );
       case ButtonType.secondary:
-        return AppTheme.secondaryButtonStyle;
+        return AppTheme.secondaryButtonStyle.copyWith(
+          textStyle: WidgetStateProperty.all(textStyle),
+        );
       case ButtonType.ghost:
         return ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
@@ -87,6 +104,7 @@ class CustomButton extends StatelessWidget {
             horizontal: AppTheme.spacingL,
             vertical: AppTheme.spacingM,
           ),
+          textStyle: textStyle,
         );
       case ButtonType.text:
         return TextButton.styleFrom(
@@ -95,12 +113,7 @@ class CustomButton extends StatelessWidget {
             horizontal: AppTheme.spacingL,
             vertical: AppTheme.spacingM,
           ),
-          textStyle: TextStyle(
-            fontFamily: 'Brandon Grotesque',
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w500,
-            letterSpacing: -0.16,
-          ),
+          textStyle: textStyle,
         );
     }
   }
