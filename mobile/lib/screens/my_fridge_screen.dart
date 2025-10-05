@@ -323,7 +323,7 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
                   child: Icon(
                     Icons.search,
                     color: const Color(0xFF5D577E),
-                    size: 20.sp,
+                    size: 22.sp,
                   ),
                 ),
                 Expanded(
@@ -334,7 +334,7 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
                       });
                     },
                     style: TextStyle(
-                      fontSize: 14.sp,
+                      fontSize: 16.sp,
                       color: const Color(0xFF27214D),
                     ),
                     decoration: const InputDecoration(
@@ -348,7 +348,7 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
                       contentPadding: EdgeInsets.zero,
                       isDense: true,
                       hintStyle: TextStyle(
-                        fontSize: 14,
+                        fontSize: 16,
                         color: Color(0xFFC2BDBD),
                       ),
                     ),
