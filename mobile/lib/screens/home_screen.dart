@@ -418,23 +418,26 @@ class _RecipeRecommendationSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Container(
-      padding: const EdgeInsets.only(left: AppTheme.spacingM, top: AppTheme.spacingM),
+    return Padding(
+      padding: EdgeInsets.only(top: 16.h),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // 섹션 제목
           Padding(
-            padding: const EdgeInsets.only(bottom: AppTheme.spacingM),
-            child: Text(
-              '추천 레시피',
-              style: TextStyle(
-                fontSize: 18.sp,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary,
+            padding: EdgeInsets.only(left: 16.w, bottom: 16.h),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                '추천 레시피',
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textPrimary,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
             ),
           ),
 
@@ -450,7 +453,7 @@ class _RecipeRecommendationSection extends ConsumerWidget {
                     size: 48.sp,
                     color: AppTheme.primaryOrange.withValues(alpha: 0.5),
                   ),
-                  const SizedBox(height: AppTheme.spacingS),
+                  SizedBox(height: 8.h),
                   Text(
                     '냉장고에 재료를 추가하면\n맛있는 레시피를 추천해드려요!',
                     style: TextStyle(
