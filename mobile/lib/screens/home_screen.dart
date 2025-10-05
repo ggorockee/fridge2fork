@@ -488,7 +488,7 @@ class _SelectedIngredientsSection extends ConsumerWidget {
         children: [
           // "냉장고 현황" 텍스트만 중앙 정렬, (+) 버튼은 오른쪽에
           SizedBox(
-            height: 28.h, // 버튼 높이와 동일
+            height: 24.h, // 버튼 높이 감소
             child: Stack(
               children: [
                 // "냉장고 현황" 텍스트를 정확히 중앙에
@@ -515,8 +515,8 @@ class _SelectedIngredientsSection extends ConsumerWidget {
                       onTargetClick: onAddPressed,
                       disposeOnTap: true,
                       child: SizedBox(
-                        width: 28.w,
-                        height: 28.h,
+                        width: 24.w,
+                        height: 24.h,
                         child: Material(
                           color: Colors.white,
                           shape: CircleBorder(
@@ -531,7 +531,7 @@ class _SelectedIngredientsSection extends ConsumerWidget {
                             child: Icon(
                               Icons.add,
                               color: AppTheme.primaryOrange,
-                              size: 18.sp,
+                              size: 20.sp,
                             ),
                           ),
                         ),
