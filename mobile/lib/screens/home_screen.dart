@@ -776,7 +776,7 @@ class _RecipeRecommendationsSectionState extends ConsumerState<_RecipeRecommenda
                 itemCount: response.recipes.take(10).length,
                 separatorBuilder: (context, index) => Container(
                   width: 1.w,
-                  margin: EdgeInsets.symmetric(horizontal: 8.w, vertical: 20.h),
+                  margin: EdgeInsets.symmetric(horizontal: 8.w, vertical: 10.h),
                   color: const Color(0xFF999999), // 진한 회색
                 ),
                 itemBuilder: (context, index) {
