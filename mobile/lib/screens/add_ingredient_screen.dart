@@ -5,6 +5,7 @@ import '../widgets/widgets.dart';
 import '../providers/ingredients_provider.dart';
 import '../providers/api/ingredient_api_provider.dart';
 import '../providers/api_ingredients_provider.dart';
+import '../utils/responsive_utils.dart';
 
 /// 식재료 추가 화면 (Modal Bottom Sheet)
 /// 사용자가 냉장고에 추가할 식재료를 선택할 수 있는 화면
@@ -91,8 +92,12 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
         final selectedIngredients = ref.watch(tempSelectedIngredientsProvider);
         
         return GridView.builder(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: ResponsiveUtils.getGridColumns(
+              context,
+              mobileColumns: 3,
+              tabletColumns: 5,
+            ),
             childAspectRatio: 3.0, // 고정 높이 38px에 맞춘 비율 조정
             crossAxisSpacing: AppTheme.spacingS,
             mainAxisSpacing: AppTheme.spacingS,
@@ -169,8 +174,12 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
                 GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: ResponsiveUtils.getGridColumns(
+                      context,
+                      mobileColumns: 3,
+                      tabletColumns: 5,
+                    ),
                     childAspectRatio: 3.0, // 고정 높이 38px에 맞춘 비율 조정
                     crossAxisSpacing: AppTheme.spacingS,
                     mainAxisSpacing: AppTheme.spacingS,

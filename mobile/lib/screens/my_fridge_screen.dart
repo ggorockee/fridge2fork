@@ -6,6 +6,7 @@ import '../providers/fridge_provider.dart';
 import '../models/api/api_fridge.dart';
 import 'add_ingredient_screen.dart';
 import '../services/analytics_service.dart';
+import '../utils/responsive_utils.dart';
 
 /// 나의냉장고 화면 (API 기반)
 class MyFridgeScreen extends ConsumerStatefulWidget {
@@ -595,8 +596,12 @@ class _CategorySection extends StatelessWidget {
             child: GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: ResponsiveUtils.getGridColumns(
+                  context,
+                  mobileColumns: 3,
+                  tabletColumns: 5,
+                ),
                 childAspectRatio: 2.5,
                 crossAxisSpacing: AppTheme.spacingS,
                 mainAxisSpacing: AppTheme.spacingS,
