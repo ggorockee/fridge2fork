@@ -288,7 +288,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               right: 0,
               bottom: 0.h, // 바텀 네비게이션 바와 16px 간격
               child: Container(
-                height: 300.h, // 레시피 영역 높이 약간 증가
+                height: 250.h, // 레시피 영역 높이 (더보기 버튼 공간 확보)
                 color: AppTheme.backgroundWhite,
                 child: selectedIngredients.isEmpty
                     ? const _RecipeRecommendationSection()
@@ -619,7 +619,7 @@ class _SelectedIngredientsSection extends ConsumerWidget {
           ],
 
           // 레시피 추천 섹션을 위한 여백
-          SizedBox(height: 300.h),
+          SizedBox(height: 250.h),
         ],
       ),
     );
