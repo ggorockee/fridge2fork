@@ -290,7 +290,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Positioned(
               left: 0,
               right: 0,
-              bottom: 16.h, // 바텀 네비게이션 바와 16px 간격
+              bottom: 0.h, // 바텀 네비게이션 바와 16px 간격
               child: Container(
                 height: 300.h, // 레시피 영역 높이 약간 증가
                 color: AppTheme.backgroundWhite,
