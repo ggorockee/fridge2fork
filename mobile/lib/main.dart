@@ -7,7 +7,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'config/app_config.dart';
 import 'providers/app_state_provider.dart';
 import 'providers/api/api_connection_provider.dart';
-import 'screens/splash_screen.dart';
+import 'screens/main_screen.dart';
 import 'screens/recipe_detail_screen.dart';
 import 'models/recipe.dart';
 import 'theme/app_theme.dart';
@@ -137,7 +137,7 @@ class MyApp extends ConsumerWidget {
           theme: AppTheme.lightTheme,
           home: const AsyncPerformanceOverlay(
             showMonitor: kDebugMode,
-            child: SplashScreen(),
+            child: MainScreen(),
           ),
           onGenerateRoute: (settings) {
             switch (settings.name) {
