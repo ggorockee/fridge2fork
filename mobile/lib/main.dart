@@ -16,7 +16,6 @@ import 'services/interstitial_ad_manager.dart';
 import 'services/cache_service.dart';
 import 'services/offline_service.dart';
 import 'services/session_service.dart';
-import 'widgets/async_performance_monitor.dart';
 
 void main() async {
   // Flutter 엔진과 위젯 바인딩 초기화
@@ -135,10 +134,7 @@ class MyApp extends ConsumerWidget {
           title: AppConfig.appName,
           debugShowCheckedModeBanner: false,
           theme: AppTheme.lightTheme,
-          home: const AsyncPerformanceOverlay(
-            showMonitor: kDebugMode,
-            child: MainScreen(),
-          ),
+          home: const MainScreen(),
           onGenerateRoute: (settings) {
             switch (settings.name) {
               case '/recipe-detail':
