@@ -285,11 +285,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               right: 0,
               bottom: 0.h, // 바텀 네비게이션 바와 16px 간격
               child: Container(
-                height: 250.h, // 레시피 영역 높이 (더보기 버튼 공간 확보)
+                constraints: BoxConstraints(
+                  minHeight: 250.h, // 최소 높이 250.h, 폰트 크기에 따라 자동 확장
+                  maxHeight: 350.h, // 최대 높이 제한 (너무 커지지 않도록)
+                ),
                 color: AppTheme.backgroundWhite,
-                child: selectedIngredients.isEmpty
-                    ? const _RecipeRecommendationSection()
-                    : _RecipeRecommendationsSection(ingredients: selectedIngredients),
+                child: SingleChildScrollView(
+                  child: selectedIngredients.isEmpty
+                      ? const _RecipeRecommendationSection()
+                      : _RecipeRecommendationsSection(ingredients: selectedIngredients),
+                ),
               ),
             ),
           ],
