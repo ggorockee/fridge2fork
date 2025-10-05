@@ -109,7 +109,7 @@ flutter_launcher_icons:
 # Flutter Native Splash 설정
 flutter_native_splash:
   color: "#FF8C00"  # 주황색 배경
-  image: assets/logos/app_logo.png
+  image: assets/logos/app_logo_trans.png
   android: true
   ios: true
   web: true
