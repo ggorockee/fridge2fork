@@ -885,6 +885,19 @@ class _RecommendedRecipeCard extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 4.h),
+              // 제목 (텍스트 영역)
+              Text(
+                recipe.title,
+                style: TextStyle(
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.w600,
+                  height: 1.2,
+                  color: AppTheme.textPrimary,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              SizedBox(height: 4.h),
               // 매칭 퍼센트 배지 (우측 정렬)
               if (recipe.matchPercentage != null && recipe.matchPercentage! > 0)
                 Align(
@@ -905,20 +918,6 @@ class _RecommendedRecipeCard extends StatelessWidget {
                     ),
                   ),
                 ),
-              if (recipe.matchPercentage != null && recipe.matchPercentage! > 0)
-                SizedBox(height: 4.h),
-              // 제목 (텍스트 영역)
-              Text(
-                recipe.title,
-                style: TextStyle(
-                  fontSize: 11.sp,
-                  fontWeight: FontWeight.w600,
-                  height: 1.2,
-                  color: AppTheme.textPrimary,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
             ],
           ),
         ),
