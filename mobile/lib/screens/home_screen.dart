@@ -780,37 +780,26 @@ class _RecipeRecommendationsSectionState extends ConsumerState<_RecipeRecommenda
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            // 레시피 그리드 (3열)
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                childAspectRatio: 0.85,
-                crossAxisSpacing: 0,
-                mainAxisSpacing: 0,
+            // 레시피 가로 스크롤 리스트
+            SizedBox(
+              height: 200.h,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: EdgeInsets.only(left: 16.w, right: 16.w),
+                itemCount: response.recipes.take(10).length,
+                separatorBuilder: (context, index) => Container(
+                  width: 1.w,
+                  margin: EdgeInsets.symmetric(horizontal: 8.w, vertical: 20.h),
+                  color: const Color(0xFF999999), // 진한 회색
+                ),
+                itemBuilder: (context, index) {
+                  final recipe = response.recipes[index];
+                  return SizedBox(
+                    width: 140.w,
+                    child: _RecommendedRecipeCard(recipe: recipe),
+                  );
+                },
               ),
-              itemCount: response.recipes.take(12).length,
-              itemBuilder: (context, index) {
-                final recipe = response.recipes[index];
-                final isTopRow = index < 3;
-                final isBottomRow = index >= response.recipes.take(12).length - 3;
-
-                return Column(
-                  children: [
-                    // 상단 구분선 (첫 행은 제외)
-                    if (!isTopRow)
-                      Container(
-                        height: 1.h,
-                        color: AppTheme.borderGray,
-                      ),
-                    // 레시피 카드
-                    Expanded(
-                      child: _RecommendedRecipeCard(recipe: recipe),
-                    ),
-                  ],
-                );
-              },
             ),
           ],
         );
