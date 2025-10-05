@@ -560,65 +560,65 @@ class _SelectedIngredientsSection extends ConsumerWidget {
 
           SizedBox(height: 12.h),
 
-          // 재료 칩들 (중앙 정렬) - 3줄만 표시
+          // 재료 칩들 + 더보기 버튼 (12개 슬롯, 중앙 정렬)
           Wrap(
             alignment: WrapAlignment.center,
             spacing: AppTheme.spacingS,
             runSpacing: AppTheme.spacingS,
-            children: displayIngredients.map((ingredient) => _IngredientChip(
-              ingredient: ingredient.name,
-              onRemove: () => onRemove(ingredient.id),
-            )).toList(),
-          ),
+            children: [
+              // 재료 칩들 (11개 또는 전체)
+              ...displayIngredients.map((ingredient) => _IngredientChip(
+                ingredient: ingredient.name,
+                onRemove: () => onRemove(ingredient.id),
+              )),
 
-          // 3번째 줄: 더보기 버튼 (중앙 정렬)
-          if (hasMore) ...[
-            SizedBox(height: 8.h),
-            Center(
-              child: GestureDetector(
-                onTap: () {
-                  // "나의 냉장고" 탭으로 이동 (탭 인덱스 1)
-                  ref.read(selectedTabIndexProvider.notifier).state = 1;
-                },
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 12.w,
-                    vertical: AppTheme.spacingS,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppTheme.lightOrange,
-                    borderRadius: BorderRadius.circular(50.r),
-                    border: Border.all(
-                      color: AppTheme.primaryOrange,
-                      width: 1.w,
+              // 12번째 슬롯: 더보기 버튼 (12개 초과 시에만 표시)
+              if (hasMore)
+                GestureDetector(
+                  onTap: () {
+                    // "나의 냉장고" 탭으로 이동 (탭 인덱스 1)
+                    ref.read(selectedTabIndexProvider.notifier).state = 1;
+                  },
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 12.w,
+                      vertical: AppTheme.spacingS,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.lightOrange,
+                      borderRadius: BorderRadius.circular(50.r),
+                      border: Border.all(
+                        color: AppTheme.primaryOrange,
+                        width: 1.w,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '더보기 +${ingredients.length - 11}',
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            color: AppTheme.primaryOrange,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        SizedBox(width: 4.w),
+                        Icon(
+                          Icons.arrow_forward_ios,
+                          size: 14.sp,
+                          color: AppTheme.primaryOrange,
+                        ),
+                      ],
                     ),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '더보기 +${ingredients.length - 11}',
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          color: AppTheme.primaryOrange,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      SizedBox(width: 4.w),
-                      Icon(
-                        Icons.arrow_forward_ios,
-                        size: 14.sp,
-                        color: AppTheme.primaryOrange,
-                      ),
-                    ],
-                  ),
                 ),
-              ),
-            ),
-            SizedBox(height: 24.h), // 레시피 추천 섹션과의 간격 확보
-          ],
+            ],
+          ),
+
+          SizedBox(height: 24.h), // 레시피 추천 섹션과의 간격 확보
 
           // 레시피 추천 섹션을 위한 여백
           SizedBox(height: 250.h),
