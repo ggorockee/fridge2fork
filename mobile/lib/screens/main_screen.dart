@@ -22,7 +22,6 @@ class MainScreen extends ConsumerStatefulWidget {
 }
 
 class _MainScreenState extends ConsumerState<MainScreen> {
-  int _selectedIndex = 0;
   late PageController _pageController;
 
   // Showcase를 위한 GlobalKey 선언
@@ -41,7 +40,8 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     super.initState();
     _pageController = PageController();
     // 첫 화면 진입 기록
-    AnalyticsService().logScreenView(_screenNames[_selectedIndex]);
+    final selectedIndex = ref.read(selectedTabIndexProvider);
+    AnalyticsService().logScreenView(_screenNames[selectedIndex]);
   }
 
   @override
@@ -51,31 +51,42 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   }
 
   void _onBottomNavTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    ref.read(selectedTabIndexProvider.notifier).state = index;
     _pageController.animateToPage(
       index,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
     // 화면 전환 시 애널리틱스 이벤트 기록
-    AnalyticsService().logScreenView(_screenNames[_selectedIndex]);
+    AnalyticsService().logScreenView(_screenNames[index]);
   }
 
   void _onPageChanged(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    ref.read(selectedTabIndexProvider.notifier).state = index;
   }
 
   @override
   Widget build(BuildContext context) {
+    final selectedIndex = ref.watch(selectedTabIndexProvider);
+
+    // Provider 변경 시 PageController도 업데이트
+    ref.listen(selectedTabIndexProvider, (previous, next) {
+      if (previous != next && _pageController.hasClients) {
+        _pageController.animateToPage(
+          next,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+        // 화면 전환 시 애널리틱스 이벤트 기록
+        AnalyticsService().logScreenView(_screenNames[next]);
+      }
+    });
+
     return ShowCaseWidget(
       onFinish: () async {
         // 온보딩 완료 후 isFirstLaunch 상태를 false로 변경
         ref.read(isFirstLaunchProvider.notifier).state = false;
-        
+
         // SharedPreferences에 온보딩 완료 상태 저장
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('isFirstLaunch', false);
@@ -100,18 +111,18 @@ class _MainScreenState extends ConsumerState<MainScreen> {
             children: [
               // 홈 화면
               const HomeScreen(),
-              
+
               // 나의냉장고 화면
               const MyFridgeScreen(),
-              
+
               // 요리하기 화면
               const RecipeScreen(),
-              
+
               // 의견보내기 화면
               const FeedbackScreen(),
             ],
           ),
-          
+
           // 하단 네비게이션 바 (항상 표시)
           bottomNavigationBar: Container(
             height: 80.h,
@@ -130,7 +141,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                 _buildBottomNavItem(
                   icon: Icons.home,
                   label: '홈',
-                  isSelected: _selectedIndex == 0,
+                  isSelected: selectedIndex == 0,
                   onTap: () => _onBottomNavTapped(0),
                 ),
                 _buildBottomNavItem(
@@ -138,19 +149,19 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                   icon: Icons.kitchen,
                   label: '나의냉장고',
                   description: '추가한 식재료들을 이곳에서 확인하고 관리할 수 있어요.',
-                  isSelected: _selectedIndex == 1,
+                  isSelected: selectedIndex == 1,
                   onTap: () => _onBottomNavTapped(1),
                 ),
                 _buildBottomNavItem(
                   icon: Icons.restaurant_menu,
                   label: '요리하기',
-                  isSelected: _selectedIndex == 2,
+                  isSelected: selectedIndex == 2,
                   onTap: () => _onBottomNavTapped(2),
                 ),
                 _buildBottomNavItem(
                   icon: Icons.feedback,
                   label: '의견보내기',
-                  isSelected: _selectedIndex == 3,
+                  isSelected: selectedIndex == 3,
                   onTap: () => _onBottomNavTapped(3),
                 ),
               ],
