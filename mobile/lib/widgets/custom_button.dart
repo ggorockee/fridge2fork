@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../theme/app_theme.dart';
 
 /// 커스텀 버튼 위젯
@@ -26,17 +27,17 @@ class CustomButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: width,
-      height: height ?? 56, // Figma 디자인의 기본 버튼 높이
+      width: width?.w,
+      height: height?.h ?? 56.h, // Figma 디자인의 기본 버튼 높이
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: _getButtonStyle(),
         child: isLoading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
+            ? SizedBox(
+                width: 20.w,
+                height: 20.h,
                 child: CircularProgressIndicator(
-                  strokeWidth: 2,
+                  strokeWidth: 2.w,
                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
               )
@@ -45,8 +46,8 @@ class CustomButton extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   if (icon != null) ...[
-                    Icon(icon, size: 20),
-                    const SizedBox(width: AppTheme.spacingS),
+                    Icon(icon, size: 20.sp),
+                    SizedBox(width: AppTheme.spacingS),
                   ],
                   Text(text),
                 ],
@@ -66,11 +67,11 @@ class CustomButton extends StatelessWidget {
           backgroundColor: Colors.transparent,
           foregroundColor: AppTheme.primaryOrange,
           elevation: 0,
-          side: const BorderSide(color: AppTheme.primaryOrange),
+          side: BorderSide(color: AppTheme.primaryOrange, width: 1.w),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppTheme.radiusButton),
           ),
-          padding: const EdgeInsets.symmetric(
+          padding: EdgeInsets.symmetric(
             horizontal: AppTheme.spacingL,
             vertical: AppTheme.spacingM,
           ),
@@ -78,13 +79,13 @@ class CustomButton extends StatelessWidget {
       case ButtonType.text:
         return TextButton.styleFrom(
           foregroundColor: AppTheme.primaryOrange,
-          padding: const EdgeInsets.symmetric(
+          padding: EdgeInsets.symmetric(
             horizontal: AppTheme.spacingL,
             vertical: AppTheme.spacingM,
           ),
-          textStyle: const TextStyle(
+          textStyle: TextStyle(
             fontFamily: 'Brandon Grotesque',
-            fontSize: 16,
+            fontSize: 16.sp,
             fontWeight: FontWeight.w500,
             letterSpacing: -0.16,
           ),

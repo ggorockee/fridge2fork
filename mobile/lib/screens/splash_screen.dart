@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../utils/app_assets.dart';
 import '../theme/app_theme.dart';
@@ -37,41 +38,41 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
             // 앱 로고
             Image.asset(
               AppAssets.appLogo,
-              width: 120,
-              height: 120,
+              width: 120.w,
+              height: 120.h,
               errorBuilder: (context, error, stackTrace) {
                 // 로고 파일이 없을 경우 기본 아이콘 표시
                 return Container(
-                  width: 120,
-                  height: 120,
+                  width: 120.w,
+                  height: 120.h,
                   decoration: const BoxDecoration(
                     color: AppTheme.primaryOrange,
                     borderRadius: BorderRadius.all(Radius.circular(AppTheme.radiusMedium)),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.kitchen,
-                    size: 60,
+                    size: 60.sp,
                     color: Colors.white,
                   ),
                 );
               },
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24.h),
             // 앱 이름
-            const Text(
+            Text(
               '냉털레시피',
               style: TextStyle(
-                fontSize: 28,
+                fontSize: 28.sp,
                 fontWeight: FontWeight.bold,
                 color: AppTheme.textPrimary,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8.h),
             // 앱 설명
-            const Text(
+            Text(
               '냉장고 털어서 만드는 레시피',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 16.sp,
                 color: AppTheme.textSecondary,
               ),
             ),

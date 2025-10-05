@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import '../services/ad_service.dart';
 import '../theme/app_theme.dart';
@@ -81,7 +82,7 @@ class _AdBannerWidgetState extends State<AdBannerWidget> {
         color: AppTheme.backgroundGray,
         border: Border.all(
           color: AppTheme.textPlaceholder.withOpacity(0.3),
-          width: 0.5,
+          width: 0.5.w,
         ),
       ),
       child: Column(
@@ -90,12 +91,12 @@ class _AdBannerWidgetState extends State<AdBannerWidget> {
           // 광고 표시 라벨 (정책 준수)
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
             color: AppTheme.textPlaceholder.withOpacity(0.1),
             child: Text(
               '광고',
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 10.sp,
                 color: AppTheme.textPlaceholder,
                 fontWeight: FontWeight.w400,
               ),
@@ -170,13 +171,13 @@ class _AdNativeWidgetState extends State<AdNativeWidget> {
         borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
         border: Border.all(
           color: AppTheme.textPlaceholder.withOpacity(0.3),
-          width: 0.5,
+          width: 0.5.w,
         ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            blurRadius: 4.r,
+            offset: Offset(0, 2.h),
           ),
         ],
       ),
@@ -198,14 +199,14 @@ class _AdNativeWidgetState extends State<AdNativeWidget> {
               children: [
                 Icon(
                   Icons.info_outline,
-                  size: 12,
+                  size: 12.sp,
                   color: AppTheme.textPlaceholder,
                 ),
-                const SizedBox(width: 4),
+                SizedBox(width: 4.w),
                 Text(
                   '스폰서 콘텐츠',
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 10.sp,
                     color: AppTheme.textPlaceholder,
                     fontWeight: FontWeight.w400,
                   ),
@@ -214,7 +215,7 @@ class _AdNativeWidgetState extends State<AdNativeWidget> {
                 Text(
                   '광고',
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 10.sp,
                     color: AppTheme.textPlaceholder,
                     fontWeight: FontWeight.w500,
                   ),
@@ -224,7 +225,7 @@ class _AdNativeWidgetState extends State<AdNativeWidget> {
           ),
           // 네이티브 광고 콘텐츠
           SizedBox(
-            height: 120, // 네이티브 광고 높이
+            height: 120.h, // 네이티브 광고 높이
             child: AdWidget(ad: _nativeAd!),
           ),
         ],
@@ -251,7 +252,7 @@ class AdLoadingPlaceholder extends StatelessWidget {
         color: AppTheme.backgroundGray,
         border: Border.all(
           color: AppTheme.textPlaceholder.withOpacity(0.3),
-          width: 0.5,
+          width: 0.5.w,
         ),
       ),
       child: Center(
@@ -259,20 +260,20 @@ class AdLoadingPlaceholder extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             SizedBox(
-              width: 12,
-              height: 12,
+              width: 12.w,
+              height: 12.h,
               child: CircularProgressIndicator(
-                strokeWidth: 2,
+                strokeWidth: 2.w,
                 valueColor: AlwaysStoppedAnimation<Color>(
                   AppTheme.textPlaceholder,
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8.w),
             Text(
               '광고 로딩 중...',
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 12.sp,
                 color: AppTheme.textPlaceholder,
               ),
             ),

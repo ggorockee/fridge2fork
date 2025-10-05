@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../widgets/widgets.dart';
 import '../providers/fridge_provider.dart';
 import '../models/api/api_fridge.dart';
@@ -121,11 +122,11 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
         backgroundColor: AppTheme.backgroundWhite,
         elevation: 0,
         automaticallyImplyLeading: false,
-        title: const Text(
+        title: Text(
           '나의 냉장고',
           style: TextStyle(
             color: AppTheme.textPrimary,
-            fontSize: 20,
+            fontSize: 20.sp,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -157,24 +158,24 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
         data: (fridge) => fridge.ingredients.isEmpty
             ? null
             : SizedBox(
-                width: 45,
-                height: 45,
+                width: 45.w,
+                height: 45.h,
                 child: FloatingActionButton(
                   onPressed: _onAddButtonPressed,
                   backgroundColor: Colors.white,
                   elevation: 0,
                   heroTag: "fridge_fab",
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(13),
-                    side: const BorderSide(
+                    borderRadius: BorderRadius.circular(13.r),
+                    side: BorderSide(
                       color: AppTheme.primaryOrange,
-                      width: 2,
+                      width: 2.w,
                     ),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.add,
                     color: AppTheme.primaryOrange,
-                    size: 26,
+                    size: 26.sp,
                   ),
                 ),
               ),
@@ -192,28 +193,32 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            Icon(
               Icons.error_outline,
-              size: 64,
+              size: 64.sp,
               color: Colors.red,
             ),
             const SizedBox(height: AppTheme.spacingM),
-            const Text(
+            Text(
               '냉장고를 불러올 수 없습니다',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 18.sp,
                 fontWeight: FontWeight.w600,
                 color: AppTheme.textPrimary,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: AppTheme.spacingS),
             Text(
               error,
-              style: const TextStyle(
-                fontSize: 14,
+              style: TextStyle(
+                fontSize: 14.sp,
                 color: AppTheme.textSecondary,
               ),
               textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: AppTheme.spacingL),
             CustomButton(
@@ -236,8 +241,8 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 120,
-              height: 120,
+              width: 120.w,
+              height: 120.h,
               decoration: const BoxDecoration(
                 color: AppTheme.backgroundWhite,
                 borderRadius: BorderRadius.all(Radius.circular(AppTheme.radiusMedium)),
@@ -246,29 +251,33 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
                 borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                 child: Image.asset(
                   'assets/logos/app_logo.png',
-                  width: 120,
-                  height: 120,
+                  width: 120.w,
+                  height: 120.h,
                   fit: BoxFit.contain,
                 ),
               ),
             ),
             const SizedBox(height: AppTheme.spacingL),
-            const Text(
+            Text(
               '냉장고가 비어있어요',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 20.sp,
                 fontWeight: FontWeight.w600,
                 color: AppTheme.textPrimary,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: AppTheme.spacingS),
-            const Text(
+            Text(
               '식재료를 추가해서 냉장고를 채워보세요!',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 14.sp,
                 color: AppTheme.textPrimary,
               ),
               textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: AppTheme.spacingXL),
             SizedBox(
@@ -348,16 +357,16 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
             child: Row(
               children: [
                 Container(
-                  width: 48,
-                  height: 48,
+                  width: 48.w,
+                  height: 48.h,
                   decoration: BoxDecoration(
                     color: AppTheme.primaryOrange,
                     borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.inventory_2,
                     color: Colors.white,
-                    size: 24,
+                    size: 24.sp,
                   ),
                 ),
                 const SizedBox(width: AppTheme.spacingM),
@@ -367,19 +376,23 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
                     children: [
                       Text(
                         '총 ${fridge.ingredients.length}개의 식재료',
-                        style: const TextStyle(
-                          fontSize: 18,
+                        style: TextStyle(
+                          fontSize: 18.sp,
                           fontWeight: FontWeight.w600,
                           color: AppTheme.textPrimary,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4.h),
                       Text(
                         '${categorizedIngredients.length}개 카테고리',
-                        style: const TextStyle(
-                          fontSize: 14,
+                        style: TextStyle(
+                          fontSize: 14.sp,
                           color: AppTheme.textSecondary,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
@@ -400,33 +413,37 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
 
   /// 검색 결과 없음 상태
   Widget _buildNoResultsState() {
-    return const Center(
+    return Center(
       child: Padding(
-        padding: EdgeInsets.all(AppTheme.spacingXL),
+        padding: const EdgeInsets.all(AppTheme.spacingXL),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.search_off,
-              size: 64,
+              size: 64.sp,
               color: AppTheme.textSecondary,
             ),
-            SizedBox(height: AppTheme.spacingM),
+            const SizedBox(height: AppTheme.spacingM),
             Text(
               '검색 결과가 없습니다',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 16.sp,
                 fontWeight: FontWeight.w600,
                 color: AppTheme.textPrimary,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            SizedBox(height: AppTheme.spacingS),
+            const SizedBox(height: AppTheme.spacingS),
             Text(
               '다른 검색어로 시도해보세요',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 14.sp,
                 color: AppTheme.textPrimary,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -489,8 +506,8 @@ class _CategorySection extends StatelessWidget {
             child: Row(
               children: [
                 Container(
-                  width: 32,
-                  height: 32,
+                  width: 32.w,
+                  height: 32.h,
                   decoration: BoxDecoration(
                     color: _getCategoryColor(category),
                     borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
@@ -498,23 +515,25 @@ class _CategorySection extends StatelessWidget {
                   child: Icon(
                     _getCategoryIcon(category),
                     color: Colors.white,
-                    size: 18,
+                    size: 18.sp,
                   ),
                 ),
                 const SizedBox(width: AppTheme.spacingS),
                 Text(
                   category,
-                  style: const TextStyle(
-                    fontSize: 16,
+                  style: TextStyle(
+                    fontSize: 16.sp,
                     fontWeight: FontWeight.w600,
                     color: AppTheme.textPrimary,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(width: AppTheme.spacingS),
                 Container(
-                  padding: const EdgeInsets.symmetric(
+                  padding: EdgeInsets.symmetric(
                     horizontal: AppTheme.spacingS,
-                    vertical: 2,
+                    vertical: 2.h,
                   ),
                   decoration: BoxDecoration(
                     color: AppTheme.backgroundGray,
@@ -522,11 +541,13 @@ class _CategorySection extends StatelessWidget {
                   ),
                   child: Text(
                     '${ingredients.length}개',
-                    style: const TextStyle(
-                      fontSize: 12,
+                    style: TextStyle(
+                      fontSize: 12.sp,
                       fontWeight: FontWeight.w600,
                       color: AppTheme.textSecondary,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -607,8 +628,8 @@ class _IngredientChip extends StatelessWidget {
     return Tooltip(
       message: ingredient.name,
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 12,
+        padding: EdgeInsets.symmetric(
+          horizontal: 12.w,
           vertical: AppTheme.spacingS,
         ),
         decoration: BoxDecoration(
@@ -616,7 +637,7 @@ class _IngredientChip extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppTheme.radiusButton),
           border: Border.all(
             color: AppTheme.borderGray,
-            width: 1,
+            width: 1.w,
           ),
         ),
         child: Row(
@@ -625,8 +646,8 @@ class _IngredientChip extends StatelessWidget {
             Expanded(
               child: Text(
                 ingredient.name,
-                style: const TextStyle(
-                  fontSize: 14,
+                style: TextStyle(
+                  fontSize: 14.sp,
                   color: AppTheme.textPrimary,
                   fontWeight: FontWeight.w500,
                 ),
@@ -634,12 +655,12 @@ class _IngredientChip extends StatelessWidget {
                 maxLines: 1,
               ),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8.w),
             GestureDetector(
               onTap: onRemove,
-              child: const Icon(
+              child: Icon(
                 Icons.close,
-                size: 14,
+                size: 14.sp,
                 color: AppTheme.textSecondary,
               ),
             ),

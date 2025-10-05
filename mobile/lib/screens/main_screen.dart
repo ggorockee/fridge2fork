@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:showcaseview/showcaseview.dart';
 import '../providers/app_state_provider.dart';
@@ -113,12 +114,12 @@ class _MainScreenState extends ConsumerState<MainScreen> {
           
           // 하단 네비게이션 바 (항상 표시)
           bottomNavigationBar: Container(
-            height: 80,
+            height: 80.h,
             decoration: const BoxDecoration(
               color: Colors.white,
               border: Border(
                 top: BorderSide(
-                  color: Color(0xFFF0F0F0),
+                  color: const Color(0xFFF0F0F0),
                   width: 1,
                 ),
               ),
@@ -172,20 +173,20 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     Widget content = GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: EdgeInsets.symmetric(vertical: 8),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               icon,
-              size: 24,
+              size: 24.sp,
               color: isSelected ? AppTheme.primaryOrange : AppTheme.iconPrimary,
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: 4.h),
             Text(
               label,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 12.sp,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                 color: isSelected ? AppTheme.primaryOrange : AppTheme.textSecondary,
               ),

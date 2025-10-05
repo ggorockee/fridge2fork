@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../theme/app_theme.dart';
 
 /// 카테고리 탭 위젯
@@ -19,12 +20,12 @@ class CategoryTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 34,
+    return SizedBox(
+      height: 34.h,
       child: ListView.builder(
         controller: scrollController,
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingM),
+        padding: EdgeInsets.symmetric(horizontal: AppTheme.spacingM),
         itemCount: categories.length,
         itemBuilder: (context, index) {
           final isSelected = index == selectedIndex;
@@ -42,19 +43,19 @@ class CategoryTabs extends StatelessWidget {
                       categories[index],
                       style: TextStyle(
                         fontFamily: 'Brandon Grotesque',
-                        fontSize: 16, // 모든 탭 동일한 크기
+                        fontSize: 16.sp, // 모든 탭 동일한 크기
                         fontWeight: FontWeight.w500,
                         letterSpacing: -0.16,
-                      color: isSelected 
+                      color: isSelected
                           ? AppTheme.primaryOrange // 선택된 항목은 오렌지 색상
                           : AppTheme.textPrimary, // 비선택 항목은 진한 색상으로 시인성 향상
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4.h),
                     if (isSelected)
                       Container(
                         width: double.infinity, // 텍스트 전체 너비에 맞춤
-                        height: 2,
+                        height: 2.h,
                         color: AppTheme.primaryOrange,
                       ),
                   ],
@@ -91,21 +92,21 @@ class CustomFilterChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 38, // 고정 높이 38px로 수정
-        padding: const EdgeInsets.symmetric(
+        height: 38.h, // 고정 높이 38px로 수정
+        padding: EdgeInsets.symmetric(
           horizontal: AppTheme.spacingM,
           // vertical 패딩 제거
         ),
         decoration: BoxDecoration(
-          color: isSelected 
+          color: isSelected
               ? AppTheme.primaryOrange // 선택된 항목 primaryOrange 색상 사용
               : AppTheme.backgroundGray, // 모든 비선택 항목 통일된 회색 배경
           borderRadius: BorderRadius.circular(AppTheme.radiusButton),
-          border: isSelected 
-              ? null 
+          border: isSelected
+              ? null
               : Border.all(
                   color: AppTheme.borderGray,
-                  width: 1,
+                  width: 1.w,
                 ),
         ),
         child: Center( // 고정 높이 내에서 텍스트 세로 중앙정렬
@@ -113,10 +114,10 @@ class CustomFilterChip extends StatelessWidget {
             label,
             style: TextStyle(
               fontFamily: 'Brandon Grotesque',
-              fontSize: 16, // 텍스트 크기 증가 (14 → 16)
+              fontSize: 16.sp, // 텍스트 크기 증가 (14 → 16)
               fontWeight: FontWeight.w600, // 폰트 굵기 증가
               letterSpacing: -0.16,
-              color: isSelected 
+              color: isSelected
                   ? Colors.white // 선택된 텍스트 색상 #fff
                   : AppTheme.textPrimary, // 비선택 항목 시인성 향상
             ),

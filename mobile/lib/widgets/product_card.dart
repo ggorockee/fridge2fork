@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../theme/app_theme.dart';
 
 /// 상품 카드 위젯
@@ -32,8 +33,8 @@ class ProductCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: width ?? 152,
-        height: height ?? 183,
+        width: width?.w ?? 152.w,
+        height: height?.h ?? 183.h,
         decoration: AppTheme.cardDecoration(
           backgroundColor: backgroundColor,
           radius: AppTheme.radiusCard,
@@ -47,8 +48,8 @@ class ProductCard extends StatelessWidget {
               Expanded(
                 child: Center(
                   child: Container(
-                    width: 80,
-                    height: 80,
+                    width: 80.w,
+                    height: 80.h,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                       color: AppTheme.backgroundGray,
@@ -97,12 +98,12 @@ class ProductCard extends StatelessWidget {
                   // 가격
                   Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.currency_exchange,
-                        size: 16,
+                        size: 16.sp,
                         color: AppTheme.darkOrange,
                       ),
-                      const SizedBox(width: 4),
+                      SizedBox(width: 4.w),
                       Text(
                         price,
                         style: AppTheme.bodySmall.copyWith(
@@ -116,15 +117,15 @@ class ProductCard extends StatelessWidget {
                   GestureDetector(
                     onTap: onAddToCart,
                     child: Container(
-                      width: 24,
-                      height: 24,
+                      width: 24.w,
+                      height: 24.h,
                       decoration: const BoxDecoration(
                         color: AppTheme.lightOrange,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.add,
-                        size: 16,
+                        size: 16.sp,
                         color: AppTheme.primaryOrange,
                       ),
                     ),
@@ -170,7 +171,7 @@ class HorizontalProductCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 80,
+        height: 80.h,
         decoration: AppTheme.cardDecoration(
           backgroundColor: backgroundColor,
           radius: AppTheme.radiusSmall,
@@ -181,8 +182,8 @@ class HorizontalProductCard extends StatelessWidget {
             children: [
               // 상품 이미지
               Container(
-                width: 64,
-                height: 64,
+                width: 64.w,
+                height: 64.h,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                   color: AppTheme.backgroundGray,
@@ -201,10 +202,10 @@ class HorizontalProductCard extends StatelessWidget {
                           },
                         ),
                       )
-                    : const Icon(
+                    : Icon(
                         Icons.fastfood,
                         color: AppTheme.textGray,
-                        size: 24,
+                        size: 24.sp,
                       ),
               ),
               
@@ -223,7 +224,7 @@ class HorizontalProductCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     if (subtitle != null) ...[
-                      const SizedBox(height: 2),
+                      SizedBox(height: 2.h),
                       Text(
                         subtitle!,
                         style: AppTheme.bodySmall,
@@ -245,12 +246,12 @@ class HorizontalProductCard extends StatelessWidget {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.currency_exchange,
-                        size: 16,
+                        size: 16.sp,
                         color: AppTheme.iconPrimary,
                       ),
-                      const SizedBox(width: 4),
+                      SizedBox(width: 4.w),
                       Text(
                         price,
                         style: AppTheme.bodyMedium,
@@ -258,7 +259,7 @@ class HorizontalProductCard extends StatelessWidget {
                     ],
                   ),
                   if (quantity > 1) ...[
-                    const SizedBox(height: 2),
+                    SizedBox(height: 2.h),
                     Text(
                       '수량: $quantity',
                       style: AppTheme.bodySmall.copyWith(
@@ -303,8 +304,8 @@ class LargeProductCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: width ?? 140,
-        height: height ?? 150,
+        width: width?.w ?? 140.w,
+        height: height?.h ?? 150.h,
         decoration: AppTheme.cardDecoration(
           backgroundColor: backgroundColor,
           radius: AppTheme.radiusSmall,
@@ -318,8 +319,8 @@ class LargeProductCard extends StatelessWidget {
               Expanded(
                 child: Center(
                   child: Container(
-                    width: 64,
-                    height: 64,
+                    width: 64.w,
+                    height: 64.h,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                       color: AppTheme.backgroundGray,
@@ -338,10 +339,10 @@ class LargeProductCard extends StatelessWidget {
                               },
                             ),
                           )
-                        : const Icon(
+                        : Icon(
                             Icons.fastfood,
                             color: AppTheme.textGray,
-                            size: 32,
+                            size: 32.sp,
                           ),
                   ),
                 ),
@@ -362,12 +363,12 @@ class LargeProductCard extends StatelessWidget {
               // 가격
               Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.currency_exchange,
-                    size: 16,
+                    size: 16.sp,
                     color: AppTheme.darkOrange,
                   ),
-                  const SizedBox(width: 4),
+                  SizedBox(width: 4.w),
                   Text(
                     price,
                     style: AppTheme.bodyMedium.copyWith(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../theme/app_theme.dart';
 import '../providers/ingredients_provider.dart';
 import 'package:another_flushbar/flushbar.dart';
@@ -74,29 +75,29 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
                   GestureDetector(
                     onTap: widget.onBackPressed,
                     child: Container(
-                      width: 40,
-                      height: 40,
+                      width: 40.w,
+                      height: 40.h,
                       decoration: BoxDecoration(
                         color: AppTheme.backgroundGray,
                         borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.arrow_back,
                         color: AppTheme.iconPrimary,
-                        size: 20,
+                        size: 20.sp,
                       ),
                     ),
                   ),
-                  const SizedBox(width: AppTheme.spacingM),
+                  SizedBox(width: AppTheme.spacingM),
                 ],
-                
+
                 // 제목
                 Expanded(
                   child: Text(
                     widget.title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppTheme.textPrimary,
-                      fontSize: 20,
+                      fontSize: 20.sp,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -138,15 +139,15 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar> {
     return TextField(
       controller: _searchController,
       autofocus: true,
-      style: const TextStyle(
+      style: TextStyle(
         color: AppTheme.textPrimary,
-        fontSize: 16,
+        fontSize: 16.sp,
       ),
       decoration: InputDecoration(
         hintText: widget.searchHint,
-        hintStyle: const TextStyle(
+        hintStyle: TextStyle(
           color: AppTheme.textPlaceholder,
-          fontSize: 16,
+          fontSize: 16.sp,
         ),
         border: InputBorder.none,
         contentPadding: EdgeInsets.zero,
@@ -170,23 +171,23 @@ class SnackBarHelper {
       messageText: Text(
         message,
         textAlign: TextAlign.center,
-        style: const TextStyle(
+        style: TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.w600,
-          fontSize: 15,
+          fontSize: 15.sp,
         ),
       ),
       backgroundColor: backgroundColor,
       duration: duration,
       flushbarPosition: FlushbarPosition.TOP, // 상단에 표시
-      margin: const EdgeInsets.all(12),
+      margin: EdgeInsets.all(12.w),
       borderRadius: BorderRadius.circular(AppTheme.radiusButton),
       animationDuration: const Duration(milliseconds: 400),
       boxShadows: [
         BoxShadow(
           color: Colors.black.withOpacity(0.1),
-          offset: const Offset(0, 2),
-          blurRadius: 5,
+          offset: Offset(0, 2.h),
+          blurRadius: 5.r,
         ),
       ],
     ).show(context);
