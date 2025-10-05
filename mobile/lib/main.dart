@@ -33,27 +33,35 @@ void main() async {
     debugPrint('ℹ️ Using default configuration');
   }
 
-  // 🔥 Firebase 초기화 (네이티브 설정 파일 사용: GoogleService-Info.plist, google-services.json)
-  try {
-    await Firebase.initializeApp();
-    debugPrint('✅ Firebase initialized successfully');
-  } catch (e) {
-    debugPrint('⚠️ Firebase initialization failed: $e');
-    debugPrint('ℹ️ App will run without Firebase features');
+  // 🔥 Firebase 초기화 (운영 환경에서만)
+  if (AppConfig.isProduction) {
+    try {
+      await Firebase.initializeApp();
+      debugPrint('✅ Firebase initialized successfully (Production)');
+    } catch (e) {
+      debugPrint('⚠️ Firebase initialization failed: $e');
+      debugPrint('ℹ️ App will run without Firebase features');
+    }
+  } else {
+    debugPrint('ℹ️ Firebase disabled in development mode');
   }
 
-  // 📱 AdMob 초기화 및 전면 광고 프리로드 (수익성 극대화)
-  try {
-    final adService = AdService();
-    await adService.initialize();
-    await adService.preloadInterstitialAd();
-    debugPrint('✅ AdMob initialized successfully');
+  // 📱 AdMob 초기화 및 전면 광고 프리로드 (운영 환경에서만)
+  if (AppConfig.isProduction) {
+    try {
+      final adService = AdService();
+      await adService.initialize();
+      await adService.preloadInterstitialAd();
+      debugPrint('✅ AdMob initialized successfully (Production)');
 
-    // 전면 광고 관리자 초기화 (앱 시작 후 광고 기회 제공)
-    InterstitialAdManager().onAppLaunched();
-  } catch (e) {
-    debugPrint('⚠️ AdMob initialization failed: $e');
-    debugPrint('ℹ️ App will run without ads');
+      // 전면 광고 관리자 초기화 (앱 시작 후 광고 기회 제공)
+      InterstitialAdManager().onAppLaunched();
+    } catch (e) {
+      debugPrint('⚠️ AdMob initialization failed: $e');
+      debugPrint('ℹ️ App will run without ads');
+    }
+  } else {
+    debugPrint('ℹ️ AdMob disabled in development mode');
   }
 
   // 🗄️ 캐시 서비스 초기화
