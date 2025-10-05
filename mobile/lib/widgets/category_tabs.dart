@@ -93,7 +93,7 @@ class CustomFilterChip extends StatelessWidget {
       child: Container(
         height: 38, // 고정 높이 38px로 수정
         padding: const EdgeInsets.symmetric(
-          horizontal: 16, // 고정값 (AppTheme.spacingM=64.0 문제 해결)
+          horizontal: AppTheme.spacingM,
           // vertical 패딩 제거
         ),
         decoration: BoxDecoration(
