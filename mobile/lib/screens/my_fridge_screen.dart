@@ -157,26 +157,21 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
       floatingActionButton: fridgeState.when(
         data: (fridge) => fridge.ingredients.isEmpty
             ? null
-            : SizedBox(
-                width: 45.w,
-                height: 45.h,
-                child: FloatingActionButton(
-                  onPressed: _onAddButtonPressed,
-                  backgroundColor: Colors.white,
-                  elevation: 0,
-                  heroTag: "fridge_fab",
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(13.r),
-                    side: BorderSide(
-                      color: AppTheme.primaryOrange,
-                      width: 2.w,
-                    ),
-                  ),
-                  child: Icon(
-                    Icons.add,
+            : FloatingActionButton(
+                onPressed: _onAddButtonPressed,
+                backgroundColor: Colors.white,
+                elevation: 2,
+                heroTag: "fridge_fab",
+                shape: CircleBorder(
+                  side: BorderSide(
                     color: AppTheme.primaryOrange,
-                    size: 26.sp,
+                    width: 2.w,
                   ),
+                ),
+                child: Icon(
+                  Icons.add,
+                  color: AppTheme.primaryOrange,
+                  size: 26.sp,
                 ),
               ),
         loading: () => null,
@@ -312,20 +307,55 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
 
     return Column(
       children: [
-        // 검색바
-        Container(
-          padding: const EdgeInsets.all(AppTheme.spacingM),
-          child: SearchTextField(
-            hintText: '식재료 검색...',
-            onChanged: (value) {
-              setState(() {
-                _searchText = value;
-              });
-            },
+        // 검색바 (요리하기 화면과 동일한 디자인)
+        Padding(
+          padding: EdgeInsets.all(16.w),
+          child: Container(
+            height: 56.h,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF3F4F9),
+              borderRadius: BorderRadius.circular(16.r),
+            ),
+            child: Row(
+              children: [
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.w),
+                  child: Icon(
+                    Icons.search,
+                    color: const Color(0xFF5D577E),
+                    size: 20.sp,
+                  ),
+                ),
+                Expanded(
+                  child: TextFormField(
+                    onChanged: (value) {
+                      setState(() {
+                        _searchText = value;
+                      });
+                    },
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: const Color(0xFF27214D),
+                    ),
+                    decoration: InputDecoration(
+                      hintText: '식재료 검색...',
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(vertical: 16.h),
+                      hintStyle: TextStyle(
+                        fontSize: 14.sp,
+                        color: const Color(0xFFC2BDBD),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         Container(
-          height: 1,
+          height: 1.h,
           color: AppTheme.borderGray,
         ),
         // 냉장고 콘텐츠
