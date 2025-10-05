@@ -743,7 +743,7 @@ class _RecipeRecommendationsSectionState extends ConsumerState<_RecipeRecommenda
           children: [
             // 추천 제목 (왼쪽 패딩만)
             Padding(
-              padding: EdgeInsets.only(left: 16.w, top: 48.h, bottom: 8.h), // 상단 여백 증가 (AppTheme.spacingM → 48.h)
+              padding: EdgeInsets.only(left: 16.w, top: 64.h, bottom: 8.h), // 상단 여백 증가 (AppTheme.spacingM → 48.h)
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
