@@ -885,7 +885,7 @@ class _RecommendedRecipeCard extends StatelessWidget {
                               ),
                       ),
                     ),
-                    // 매칭 퍼센트 배지
+                    // 매칭 퍼센트 배지 (우하단)
                     if (recipe.matchPercentage != null && recipe.matchPercentage! > 0)
                       Positioned(
                         bottom: 6.h,
@@ -909,7 +909,7 @@ class _RecommendedRecipeCard extends StatelessWidget {
                   ],
                 ),
               ),
-              SizedBox(height: 8.h),
+              SizedBox(height: 4.h),
               // 제목 (텍스트 영역)
               Text(
                 recipe.title,
