@@ -909,37 +909,18 @@ class _RecommendedRecipeCard extends StatelessWidget {
                   ],
                 ),
               ),
-              SizedBox(height: 6.h),
-              // 텍스트 영역
-              Expanded(
-                flex: 2,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 제목
-                    Text(
-                      recipe.title,
-                      style: TextStyle(
-                        fontSize: 11.sp,
-                        fontWeight: FontWeight.w600,
-                        height: 1.2,
-                        color: AppTheme.textPrimary,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: 2.h),
-                    // 재료 정보
-                    if (recipe.matchedCount > 0 && recipe.totalCount > 0)
-                      Text(
-                        '${recipe.matchedCount}/${recipe.totalCount}개',
-                        style: TextStyle(
-                          fontSize: 10.sp,
-                          color: AppTheme.textSecondary,
-                        ),
-                      ),
-                  ],
+              SizedBox(height: 8.h),
+              // 제목 (텍스트 영역)
+              Text(
+                recipe.title,
+                style: TextStyle(
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.w600,
+                  height: 1.2,
+                  color: AppTheme.textPrimary,
                 ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
