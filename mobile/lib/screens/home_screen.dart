@@ -257,94 +257,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       constraints: BoxConstraints(
                         minHeight: MediaQuery.of(context).size.height - 320.h,
                       ),
-                      child: Stack(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          // 중앙 정렬된 콘텐츠
-                          Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              SizedBox(height: 40.h), // 상단 여백
+                          SizedBox(height: 40.h), // 상단 여백
 
-                              // 냉장고 이미지 + 냉장고 현황 텍스트 (중앙 정렬)
-                              Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const _FridgeIcon(),
-                                  SizedBox(height: 16.h),
+                          // 냉장고 이미지 (중앙 정렬)
+                          const _FridgeIcon(),
 
-                                  fridgeState.when(
-                                    data: (fridge) => fridge.ingredients.isEmpty
-                                        ? const SizedBox.shrink() // 빈 상태에서는 "냉장고 현황" 표시 안 함
-                                        : Text(
-                                            '냉장고 현황',
-                                            style: TextStyle(
-                                              fontSize: 18.sp,
-                                              fontWeight: FontWeight.w600,
-                                              color: AppTheme.textPrimary,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                    loading: () => const SizedBox.shrink(),
-                                    error: (_, __) => const SizedBox.shrink(),
-                                  ),
-                                ],
-                              ),
+                          SizedBox(height: 16.h),
 
-                              SizedBox(height: 16.h),
-
-                              // 냉장고 상태 내용
-                              fridgeState.when(
-                                data: (fridge) => fridge.ingredients.isEmpty
-                                    ? _EmptyStateMessage(onAddPressed: _onAddButtonPressed)
-                                    : _SelectedIngredientsContent(
-                                        ingredients: fridge.ingredients,
-                                        showAll: _showAllIngredients,
-                                        onRemove: _removeIngredient,
-                                        onToggleShowAll: _toggleShowAllIngredients,
-                                      ),
-                                loading: () => const CircularProgressIndicator(
-                                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryOrange),
-                                ),
-                                error: (_, __) => _EmptyStateMessage(onAddPressed: _onAddButtonPressed),
-                              ),
-                            ],
-                          ),
-
-                          // Floating (+) 버튼 - "냉장고 현황" 오른쪽에 배치
+                          // 냉장고 상태 내용
                           fridgeState.when(
                             data: (fridge) => fridge.ingredients.isEmpty
-                                ? const SizedBox.shrink() // 빈 상태에서는 floating 버튼 숨김
-                                : Positioned(
-                                    right: 16.w,
-                                    top: 40.h + 120.h + 16.h + 18.sp / 2 - 16.h, // 냉장고 아이콘 + 여백 + 텍스트 중간
-                                    child: Showcase(
-                                      key: homeScreenAddButtonKey,
-                                      description: '냉장고에 식재료를 추가하려면 이 버튼을 누르세요!',
-                                      onTargetClick: _onAddButtonPressed,
-                                      disposeOnTap: true,
-                                      child: SizedBox(
-                                        width: 40.w,
-                                        height: 40.h,
-                                        child: Material(
-                                          color: AppTheme.primaryOrange,
-                                          shape: const CircleBorder(),
-                                          elevation: 4,
-                                          child: InkWell(
-                                            onTap: _onAddButtonPressed,
-                                            customBorder: const CircleBorder(),
-                                            child: Icon(
-                                              Icons.add,
-                                              color: Colors.white,
-                                              size: 24.sp,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
+                                ? _EmptyStateMessage(onAddPressed: _onAddButtonPressed)
+                                : _SelectedIngredientsSection(
+                                    ingredients: fridge.ingredients,
+                                    showAll: _showAllIngredients,
+                                    onRemove: _removeIngredient,
+                                    onToggleShowAll: _toggleShowAllIngredients,
+                                    onAddPressed: _onAddButtonPressed,
                                   ),
-                            loading: () => const SizedBox.shrink(),
-                            error: (_, __) => const SizedBox.shrink(),
+                            loading: () => const CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryOrange),
+                            ),
+                            error: (_, __) => _EmptyStateMessage(onAddPressed: _onAddButtonPressed),
                           ),
                         ],
                       ),
@@ -533,18 +470,20 @@ class _RecipeRecommendationSection extends ConsumerWidget {
   }
 }
 
-/// 선택된 식재료 표시 콘텐츠 (제목 제외)
-class _SelectedIngredientsContent extends StatelessWidget {
+/// 선택된 식재료 표시 섹션
+class _SelectedIngredientsSection extends StatelessWidget {
   final List<ApiFridgeIngredient> ingredients;
   final bool showAll;
   final Function(int) onRemove;
   final VoidCallback onToggleShowAll;
+  final VoidCallback onAddPressed;
 
-  const _SelectedIngredientsContent({
+  const _SelectedIngredientsSection({
     required this.ingredients,
     required this.showAll,
     required this.onRemove,
     required this.onToggleShowAll,
+    required this.onAddPressed,
   });
 
   @override
@@ -557,6 +496,54 @@ class _SelectedIngredientsContent extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingM),
       child: Column(
         children: [
+          // "냉장고 현황" + (+) 버튼
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '냉장고 현황',
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textPrimary,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              SizedBox(width: 8.w),
+              Showcase(
+                key: homeScreenAddButtonKey,
+                description: '냉장고에 식재료를 추가하려면 이 버튼을 누르세요!',
+                onTargetClick: onAddPressed,
+                disposeOnTap: true,
+                child: SizedBox(
+                  width: 28.w,
+                  height: 28.h,
+                  child: Material(
+                    color: Colors.white,
+                    shape: CircleBorder(
+                      side: BorderSide(
+                        color: AppTheme.primaryOrange,
+                        width: 2.w,
+                      ),
+                    ),
+                    child: InkWell(
+                      onTap: onAddPressed,
+                      customBorder: const CircleBorder(),
+                      child: Icon(
+                        Icons.add,
+                        color: AppTheme.primaryOrange,
+                        size: 18.sp,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          SizedBox(height: 12.h),
+
           // 선택된 재료 개수
           Text(
             '총 ${ingredients.length}개의 식재료',
@@ -564,14 +551,15 @@ class _SelectedIngredientsContent extends StatelessWidget {
               fontSize: 14.sp,
               color: AppTheme.textSecondary,
             ),
-            maxLines: 2,
+            maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
 
-          const SizedBox(height: AppTheme.spacingM),
+          SizedBox(height: 12.h),
 
-          // 재료 칩들
+          // 재료 칩들 (중앙 정렬)
           Wrap(
+            alignment: WrapAlignment.center,
             spacing: AppTheme.spacingS,
             runSpacing: AppTheme.spacingS,
             children: [
