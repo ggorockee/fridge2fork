@@ -7,6 +7,7 @@ import '../providers/recipe_provider.dart';
 import '../providers/ingredients_provider.dart';
 import '../providers/fridge_provider.dart';
 import '../providers/api/recipe_recommendation_provider.dart';
+import '../providers/app_state_provider.dart';
 import '../models/recipe.dart';
 import '../models/api/api_recipe.dart';
 import '../theme/app_theme.dart';
@@ -267,8 +268,8 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
             CustomButton(
               text: '냉장고에 재료 추가하기',
               onPressed: () {
-                // 냉장고 탭으로 이동
-                DefaultTabController.of(context).animateTo(1);
+                // 냉장고 탭으로 이동 (탭 인덱스 1)
+                ref.read(selectedTabIndexProvider.notifier).state = 1;
               },
               type: ButtonType.primary,
               height: 48.h,
@@ -313,7 +314,8 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
             CustomButton(
               text: '냉장고에 재료 추가하기',
               onPressed: () {
-                DefaultTabController.of(context).animateTo(1);
+                // 냉장고 탭으로 이동 (탭 인덱스 1)
+                ref.read(selectedTabIndexProvider.notifier).state = 1;
               },
               type: ButtonType.secondary,
               height: 48.h,
