@@ -19,13 +19,16 @@ class CategoryTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 34,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(
+        minHeight: 34, // 최소 높이 34px, 폰트 크기에 따라 자동으로 늘어남
+      ),
       child: ListView.builder(
         controller: scrollController,
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingM),
         itemCount: categories.length,
+        shrinkWrap: true, // 내용물 크기에 맞춤
         itemBuilder: (context, index) {
           final isSelected = index == selectedIndex;
           return Padding(
@@ -36,6 +39,7 @@ class CategoryTabs extends StatelessWidget {
               onTap: () => onTap(index),
               child: IntrinsicWidth(
                 child: Column(
+                  mainAxisSize: MainAxisSize.min, // Column 크기를 자식에 맞춤
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
@@ -45,7 +49,7 @@ class CategoryTabs extends StatelessWidget {
                         fontSize: 16, // 모든 탭 동일한 크기
                         fontWeight: FontWeight.w500,
                         letterSpacing: -0.16,
-                      color: isSelected 
+                      color: isSelected
                           ? AppTheme.primaryOrange // 선택된 항목은 오렌지 색상
                           : AppTheme.textPrimary, // 비선택 항목은 진한 색상으로 시인성 향상
                       ),
@@ -90,39 +94,43 @@ class CustomFilterChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        height: 38, // 고정 높이 38px로 수정
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppTheme.spacingM,
-          // vertical 패딩 제거
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          minHeight: 38, // 최소 높이 38px, 폰트 크기에 따라 자동으로 늘어남
         ),
-        decoration: BoxDecoration(
-          color: isSelected 
-              ? AppTheme.primaryOrange // 선택된 항목 primaryOrange 색상 사용
-              : AppTheme.backgroundGray, // 모든 비선택 항목 통일된 회색 배경
-          borderRadius: BorderRadius.circular(AppTheme.radiusButton),
-          border: isSelected 
-              ? null 
-              : Border.all(
-                  color: AppTheme.borderGray,
-                  width: 1,
-                ),
-        ),
-        child: Center( // 고정 높이 내에서 텍스트 세로 중앙정렬
-          child: Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'Brandon Grotesque',
-              fontSize: 16, // 텍스트 크기 증가 (14 → 16)
-              fontWeight: FontWeight.w600, // 폰트 굵기 증가
-              letterSpacing: -0.16,
-              color: isSelected 
-                  ? Colors.white // 선택된 텍스트 색상 #fff
-                  : AppTheme.textPrimary, // 비선택 항목 시인성 향상
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTheme.spacingM,
+            vertical: 8, // 상하 여유 공간 확보
+          ),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? AppTheme.primaryOrange // 선택된 항목 primaryOrange 색상 사용
+                : AppTheme.backgroundGray, // 모든 비선택 항목 통일된 회색 배경
+            borderRadius: BorderRadius.circular(AppTheme.radiusButton),
+            border: isSelected
+                ? null
+                : Border.all(
+                    color: AppTheme.borderGray,
+                    width: 1,
+                  ),
+          ),
+          child: Center( // 텍스트 세로 중앙정렬
+            child: Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Brandon Grotesque',
+                fontSize: 16, // 텍스트 크기 증가 (14 → 16)
+                fontWeight: FontWeight.w600, // 폰트 굵기 증가
+                letterSpacing: -0.16,
+                color: isSelected
+                    ? Colors.white // 선택된 텍스트 색상 #fff
+                    : AppTheme.textPrimary, // 비선택 항목 시인성 향상
+              ),
+              textAlign: TextAlign.center, // 텍스트 가운데 정렬
+              overflow: TextOverflow.ellipsis, // 텍스트 잘림 방지
+              maxLines: 1, // 한 줄로 제한
             ),
-            textAlign: TextAlign.center, // 텍스트 가운데 정렬
-            overflow: TextOverflow.ellipsis, // 텍스트 잘림 방지
-            maxLines: 1, // 한 줄로 제한
           ),
         ),
       ),

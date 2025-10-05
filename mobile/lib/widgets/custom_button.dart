@@ -26,32 +26,44 @@ class CustomButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: width?.w,
-      height: height?.h ?? 56.h, // Figma 디자인의 기본 버튼 높이
-      child: ElevatedButton(
-        onPressed: isLoading ? null : onPressed,
-        style: _getButtonStyle(),
-        child: isLoading
-            ? SizedBox(
-                width: 20.w,
-                height: 20.h,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.w,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              )
-            : Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (icon != null) ...[
-                    Icon(icon, size: 20.sp),
-                    SizedBox(width: AppTheme.spacingS),
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        minWidth: width?.w ?? 0,
+        minHeight: height?.h ?? 56.h, // 최소 높이, 폰트 크기에 따라 자동으로 늘어남
+      ),
+      child: SizedBox(
+        width: width?.w,
+        child: ElevatedButton(
+          onPressed: isLoading ? null : onPressed,
+          style: _getButtonStyle(),
+          child: isLoading
+              ? SizedBox(
+                  width: 20.w,
+                  height: 20.h,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.w,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (icon != null) ...[
+                      Icon(icon, size: 20.sp),
+                      SizedBox(width: AppTheme.spacingS),
+                    ],
+                    Flexible(
+                      child: Text(
+                        text,
+                        textAlign: TextAlign.center,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 2, // 최대 2줄까지 허용
+                      ),
+                    ),
                   ],
-                  Text(text),
-                ],
-              ),
+                ),
+        ),
       ),
     );
   }
