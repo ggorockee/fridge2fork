@@ -277,7 +277,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ],
                       ),
                     ),
-                    SizedBox(height: 320.h), // 레시피 영역 차지할 공간 확보 (여백 증가)
+                    SizedBox(height: 380.h), // 레시피 영역 차지할 공간 확보 (겹침 방지)
                   ],
                 ),
               ),
