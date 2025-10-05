@@ -888,7 +888,7 @@ class _RecommendedRecipeCard extends StatelessWidget {
                     // 매칭 퍼센트 배지
                     if (recipe.matchPercentage != null && recipe.matchPercentage! > 0)
                       Positioned(
-                        top: 6.h,
+                        bottom: 6.h,
                         right: 6.w,
                         child: Container(
                           padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
@@ -897,7 +897,7 @@ class _RecommendedRecipeCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(12.r),
                           ),
                           child: Text(
-                            '${recipe.matchPercentage}%',
+                            '${recipe.matchPercentage}% 일치',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 9.sp,
