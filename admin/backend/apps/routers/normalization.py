@@ -91,10 +91,10 @@ async def get_pending_normalization(
     # 정규화가 필요한 식재료들 (수량이나 색상 정보가 포함된 것들)
     query = db.query(
         Ingredient,
-        func.count(RecipeIngredient.recipe_id).label('recipe_count')
+        func.count(RecipeIngredient.rcp_sno).label('recipe_count')
     ).outerjoin(
-        RecipeIngredient, Ingredient.ingredient_id == RecipeIngredient.ingredient_id
-    ).group_by(Ingredient.ingredient_id)
+        RecipeIngredient, Ingredient.id == RecipeIngredient.ingredient_id
+    ).group_by(Ingredient.id)
     
     # 검색 조건
     if search:
@@ -129,14 +129,19 @@ async def get_pending_normalization(
     for ingredient, recipe_count in pending_ingredients:
         suggestion = suggest_normalization(ingredient.name)
         ingredients.append(IngredientWithRecipeCount(
-            ingredient_id=ingredient.ingredient_id,
+            id=ingredient.id,
             name=ingredient.name,
-            is_vague=ingredient.is_vague,
-            vague_description=ingredient.vague_description,
+            original_name=getattr(ingredient, 'original_name', None),
+            category=getattr(ingredient, 'category', None),
+            is_common=getattr(ingredient, 'is_common', False),
+            created_at=getattr(ingredient, 'created_at', None),
             recipe_count=recipe_count,
             normalization_status="pending",
             suggested_normalized_name=suggestion["suggested_name"],
-            confidence_score=suggestion["confidence_score"]
+            confidence_score=suggestion["confidence_score"],
+            # 호환성 필드들
+            is_vague=False,
+            vague_description=None
         ))
     
     logger.info(f"✅ {len(ingredients)}개의 정규화 대기 식재료 조회 완료 (총 {total}개)")
@@ -160,7 +165,7 @@ async def get_normalization_suggestions(
     
     if ingredient_id:
         # 특정 식재료의 제안
-        ingredient = db.query(Ingredient).filter(Ingredient.ingredient_id == ingredient_id).first()
+        ingredient = db.query(Ingredient).filter(Ingredient.id == ingredient_id).first()
         if not ingredient:
             raise HTTPException(status_code=404, detail="식재료를 찾을 수 없습니다")
         
@@ -169,22 +174,22 @@ async def get_normalization_suggestions(
             # 유사한 식재료 찾기
             similar_ingredients = db.query(Ingredient).filter(
                 Ingredient.name.ilike(f"%{suggestion['suggested_name']}%"),
-                Ingredient.ingredient_id != ingredient_id
+                Ingredient.id != ingredient_id
             ).limit(5).all()
             
             similar_list = [
                 {
-                    "ingredient_id": sim.ingredient_id,
+                    "ingredient_id": sim.id,
                     "name": sim.name,
                     "recipe_count": db.query(RecipeIngredient).filter(
-                        RecipeIngredient.ingredient_id == sim.ingredient_id
+                        RecipeIngredient.ingredient_id == sim.id
                     ).count()
                 }
                 for sim in similar_ingredients
             ]
             
             suggestions = [NormalizationSuggestion(
-                ingredient_id=ingredient.ingredient_id,
+                ingredient_id=ingredient.id,
                 original_name=ingredient.name,
                 suggested_name=suggestion["suggested_name"],
                 confidence_score=suggestion["confidence_score"],
@@ -203,7 +208,7 @@ async def get_normalization_suggestions(
             suggestion = suggest_normalization(ingredient.name)
             if suggestion["confidence_score"] >= confidence_threshold:
                 suggestions.append(NormalizationSuggestion(
-                    ingredient_id=ingredient.ingredient_id,
+                    ingredient_id=ingredient.id,
                     original_name=ingredient.name,
                     suggested_name=suggestion["suggested_name"],
                     confidence_score=suggestion["confidence_score"],
@@ -230,7 +235,7 @@ async def apply_normalization(
     
     # 식재료 조회
     ingredient = db.query(Ingredient).filter(
-        Ingredient.ingredient_id == request.ingredient_id
+        Ingredient.id == request.ingredient_id
     ).first()
     
     if not ingredient:
@@ -241,7 +246,7 @@ async def apply_normalization(
     # 병합할 식재료가 있는 경우
     if request.merge_with_ingredient_id:
         merge_ingredient = db.query(Ingredient).filter(
-            Ingredient.ingredient_id == request.merge_with_ingredient_id
+            Ingredient.id == request.merge_with_ingredient_id
         ).first()
         
         if not merge_ingredient:
@@ -251,7 +256,7 @@ async def apply_normalization(
         affected_recipes = db.query(RecipeIngredient).filter(
             RecipeIngredient.ingredient_id == request.ingredient_id
         ).count()
-        
+
         db.query(RecipeIngredient).filter(
             RecipeIngredient.ingredient_id == request.ingredient_id
         ).update({"ingredient_id": request.merge_with_ingredient_id})
@@ -278,7 +283,7 @@ async def apply_normalization(
         # 중복 이름 확인
         existing = db.query(Ingredient).filter(
             Ingredient.name == request.normalized_name,
-            Ingredient.ingredient_id != request.ingredient_id
+            Ingredient.id != request.ingredient_id
         ).first()
         
         if existing:
@@ -286,8 +291,10 @@ async def apply_normalization(
         
         # 이름 업데이트
         ingredient.name = request.normalized_name
-        ingredient.is_vague = request.is_vague
-        ingredient.vague_description = request.vague_description
+        if hasattr(ingredient, 'is_vague'):
+            ingredient.is_vague = getattr(request, 'is_vague', False)
+        if hasattr(ingredient, 'vague_description'):
+            ingredient.vague_description = getattr(request, 'vague_description', None)
         
         affected_recipes = db.query(RecipeIngredient).filter(
             RecipeIngredient.ingredient_id == request.ingredient_id

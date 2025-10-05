@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../widgets/widgets.dart';
 import '../providers/ingredients_provider.dart';
+import '../providers/api/ingredient_api_provider.dart';
+import '../providers/api_ingredients_provider.dart';
 
 /// 식재료 추가 화면 (Modal Bottom Sheet)
 /// 사용자가 냉장고에 추가할 식재료를 선택할 수 있는 화면
@@ -25,6 +27,19 @@ class AddIngredientScreen extends ConsumerStatefulWidget {
 class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  
+  @override
+  void initState() {
+    super.initState();
+    // API에서 식재료 목록 로드 (새 API 사용, 캐시 무시하고 항상 최신 데이터 가져오기)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(ingredientApiProvider.notifier).loadRecipeIngredients(
+        excludeSeasonings: false,
+        limit: 100,
+        forceRefresh: true,
+      );
+    });
+  }
 
 
 
@@ -181,11 +196,12 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final categories = ref.watch(categoriesProvider);
+    final categoriesAsync = ref.watch(apiCategoriesProvider);
     final selectedCategory = ref.watch(selectedCategoryProvider);
-    final filteredIngredients = ref.watch(filteredIngredientsProvider);
-    final categorizedIngredients = ref.watch(categorizedIngredientsProvider);
+    final filteredIngredients = ref.watch(apiIngredientNamesProvider);
+    final categorizedIngredients = ref.watch(apiCategorizedIngredientNamesProvider);
     final selectedIngredients = ref.watch(tempSelectedIngredientsProvider);
+    final ingredientsState = ref.watch(ingredientApiProvider);
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.9, // 화면의 90% 높이 사용
@@ -196,15 +212,41 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
           topRight: Radius.circular(AppTheme.radiusLarge),
         ),
       ),
-      child: Column(
-        children: [
+      child: categoriesAsync.when(
+        data: (categories) => ingredientsState.when(
+          data: (ingredients) => _buildContent(
+            categories: categories,
+            selectedCategory: selectedCategory,
+            filteredIngredients: filteredIngredients,
+            categorizedIngredients: categorizedIngredients,
+            selectedIngredients: selectedIngredients,
+          ),
+          loading: () => _buildLoadingState(),
+          error: (error, stack) => _buildErrorState(error.toString()),
+        ),
+        loading: () => _buildLoadingState(),
+        error: (error, stack) => _buildErrorState('카테고리를 불러올 수 없습니다.'),
+      ),
+    );
+  }
+
+  /// 메인 콘텐츠 빌드
+  Widget _buildContent({
+    required List<String> categories,
+    required String selectedCategory,
+    required List<String> filteredIngredients,
+    required Map<String, List<String>> categorizedIngredients,
+    required List<String> selectedIngredients,
+  }) {
+    return Column(
+      children: [
           // Modal 상단 핸들 바
           Container(
             width: 40,
             height: 4,
             margin: const EdgeInsets.symmetric(vertical: AppTheme.spacingM),
             decoration: BoxDecoration(
-              color: AppTheme.textSecondary.withOpacity(0.3),
+              color: AppTheme.textSecondary.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -270,6 +312,7 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
                     child: TextFormField(
                       controller: _searchController,
                       onChanged: (value) {
+                        // 검색어 업데이트 (클라이언트 필터링)
                         ref.read(searchTextProvider.notifier).state = value;
                       },
                       style: const TextStyle(
@@ -491,7 +534,254 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
             SizedBox(height: MediaQuery.of(context).padding.bottom + AppTheme.spacingM),
           ],
         ],
-      ),
+      );
+  }
+
+  /// 로딩 상태 UI
+  Widget _buildLoadingState() {
+    return Column(
+      children: [
+        // Modal 상단 핸들 바
+        Container(
+          width: 40,
+          height: 4,
+          margin: const EdgeInsets.symmetric(vertical: AppTheme.spacingM),
+          decoration: BoxDecoration(
+            color: AppTheme.textSecondary.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        
+        // 헤더 영역
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingM),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '식재료를 검색해보세요',
+                  style: AppTheme.headingMedium.copyWith(
+                    color: AppTheme.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(
+                  Icons.close,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+        
+        // 로딩 인디케이터
+        Expanded(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const CircularProgressIndicator(
+                  color: AppTheme.primaryOrange,
+                ),
+                const SizedBox(height: AppTheme.spacingM),
+                Text(
+                  '식재료 목록을 불러오는 중...',
+                  style: AppTheme.bodyMedium.copyWith(
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
+  }
+
+  /// 에러 상태 UI (개선된 버전)
+  Widget _buildErrorState(String error) {
+    return Column(
+      children: [
+        // Modal 상단 핸들 바
+        Container(
+          width: 40,
+          height: 4,
+          margin: const EdgeInsets.symmetric(vertical: AppTheme.spacingM),
+          decoration: BoxDecoration(
+            color: AppTheme.textSecondary.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+
+        // 헤더 영역
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingM),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '식재료를 검색해보세요',
+                  style: AppTheme.headingMedium.copyWith(
+                    color: AppTheme.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(
+                  Icons.close,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // 에러 메시지와 재시도 버튼
+        Expanded(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(AppTheme.spacingL),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    _getErrorIcon(error),
+                    size: 64,
+                    color: AppTheme.textSecondary,
+                  ),
+                  const SizedBox(height: AppTheme.spacingM),
+                  Text(
+                    _getErrorTitle(error),
+                    style: AppTheme.headingSmall.copyWith(
+                      color: AppTheme.textPrimary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: AppTheme.spacingS),
+                  Text(
+                    _getErrorDescription(error),
+                    style: AppTheme.bodySmall.copyWith(
+                      color: AppTheme.textSecondary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: AppTheme.spacingL),
+
+                  // 재시도 버튼
+                  CustomButton(
+                    text: '다시 시도',
+                    onPressed: () async {
+                      await ref.read(ingredientApiProvider.notifier).refresh();
+                    },
+                    type: ButtonType.primary,
+                    height: 48,
+                    icon: Icons.refresh,
+                  ),
+
+                  const SizedBox(height: AppTheme.spacingM),
+
+                  // 오프라인 모드 안내
+                  Container(
+                    padding: const EdgeInsets.all(AppTheme.spacingM),
+                    decoration: BoxDecoration(
+                      color: AppTheme.lightOrange.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                      border: Border.all(
+                        color: AppTheme.lightOrange,
+                        width: 1,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.info_outline,
+                              size: 16,
+                              color: AppTheme.primaryOrange,
+                            ),
+                            const SizedBox(width: AppTheme.spacingS),
+                            Expanded(
+                              child: Text(
+                                '오프라인 상태일 수 있습니다',
+                                style: AppTheme.bodySmall.copyWith(
+                                  color: AppTheme.primaryOrange,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: AppTheme.spacingS),
+                        Text(
+                          '네트워크 연결을 확인하고 다시 시도해주세요.\n연결이 복구되면 자동으로 식재료 목록이 로드됩니다.',
+                          style: AppTheme.bodySmall.copyWith(
+                            color: AppTheme.textSecondary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 에러 타입별 아이콘 반환
+  IconData _getErrorIcon(String error) {
+    if (error.toLowerCase().contains('network') ||
+        error.toLowerCase().contains('connection') ||
+        error.toLowerCase().contains('연결')) {
+      return Icons.wifi_off;
+    } else if (error.toLowerCase().contains('timeout') ||
+               error.toLowerCase().contains('시간')) {
+      return Icons.schedule;
+    } else if (error.toLowerCase().contains('server') ||
+               error.toLowerCase().contains('서버')) {
+      return Icons.dns;
+    }
+    return Icons.error_outline;
+  }
+
+  /// 에러 타입별 제목 반환
+  String _getErrorTitle(String error) {
+    if (error.toLowerCase().contains('network') ||
+        error.toLowerCase().contains('connection') ||
+        error.toLowerCase().contains('연결')) {
+      return '네트워크 연결 오류';
+    } else if (error.toLowerCase().contains('timeout') ||
+               error.toLowerCase().contains('시간')) {
+      return '응답 시간 초과';
+    } else if (error.toLowerCase().contains('server') ||
+               error.toLowerCase().contains('서버')) {
+      return '서버 연결 오류';
+    }
+    return '식재료 목록을 불러올 수 없습니다';
+  }
+
+  /// 에러 타입별 설명 반환
+  String _getErrorDescription(String error) {
+    if (error.toLowerCase().contains('network') ||
+        error.toLowerCase().contains('connection') ||
+        error.toLowerCase().contains('연결')) {
+      return '네트워크 연결 상태를 확인하고\n다시 시도해주세요.';
+    } else if (error.toLowerCase().contains('timeout') ||
+               error.toLowerCase().contains('시간')) {
+      return '서버 응답이 지연되고 있습니다.\n잠시 후 다시 시도해주세요.';
+    } else if (error.toLowerCase().contains('server') ||
+               error.toLowerCase().contains('서버')) {
+      return '서버에 일시적인 문제가 발생했습니다.\n잠시 후 다시 시도해주세요.';
+    }
+    return '오류가 발생했습니다.\n잠시 후 다시 시도해주세요.';
   }
 }

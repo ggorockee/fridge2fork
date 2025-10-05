@@ -42,10 +42,10 @@ async def get_ingredients(
     # 레시피 개수와 함께 조회
     query = db.query(
         Ingredient,
-        func.count(RecipeIngredient.recipe_id).label('recipe_count')
+        func.count(RecipeIngredient.rcp_sno).label('recipe_count')
     ).outerjoin(
-        RecipeIngredient, Ingredient.ingredient_id == RecipeIngredient.ingredient_id
-    ).group_by(Ingredient.ingredient_id)
+        RecipeIngredient, Ingredient.id == RecipeIngredient.ingredient_id
+    ).group_by(Ingredient.id)
     
     # 검색 조건 적용
     if search:
@@ -111,7 +111,7 @@ async def get_ingredient(
     """🥕 특정 식재료의 상세 정보를 조회합니다."""
     logger.info(f"🔍 식재료 상세 조회 - ID: {ingredient_id}")
     
-    ingredient = db.query(Ingredient).filter(Ingredient.ingredient_id == ingredient_id).first()
+    ingredient = db.query(Ingredient).filter(Ingredient.id == ingredient_id).first()
     
     if not ingredient:
         logger.warning(f"❌ 식재료를 찾을 수 없음 - ID: {ingredient_id}")
@@ -119,15 +119,15 @@ async def get_ingredient(
     
     # 사용된 레시피 목록 조회
     recipes_query = db.query(Recipe, RecipeIngredient).join(
-        RecipeIngredient, Recipe.recipe_id == RecipeIngredient.recipe_id
-    ).filter(RecipeIngredient.ingredient_id == ingredient_id)
+        RecipeIngredient, Recipe.rcp_sno == RecipeIngredient.rcp_sno
+    ).filter(RecipeIngredient.id == ingredient_id)
     
     recipes = []
     for recipe, _ in recipes_query.all():
         recipes.append(RecipeInfo(
-            recipe_id=recipe.recipe_id,
-            title=recipe.title,
-            url=recipe.url
+            recipe_id=recipe.rcp_sno,
+            title=recipe.rcp_ttl,
+            url=f"#recipe-{recipe.rcp_sno}"  # 임시 URL
         ))
     
     logger.info(f"✅ 식재료 조회 완료 - {ingredient.name}")
@@ -185,7 +185,7 @@ async def update_ingredient(
     logger.info(f"✏️ 식재료 수정 시작 - ID: {ingredient_id}")
     
     # 식재료 조회
-    db_ingredient = db.query(Ingredient).filter(Ingredient.ingredient_id == ingredient_id).first()
+    db_ingredient = db.query(Ingredient).filter(Ingredient.id == ingredient_id).first()
     if not db_ingredient:
         logger.warning(f"❌ 수정할 식재료를 찾을 수 없음 - ID: {ingredient_id}")
         raise HTTPException(status_code=404, detail="식재료를 찾을 수 없습니다")
@@ -220,7 +220,7 @@ async def delete_ingredient(ingredient_id: int, db: Session = Depends(get_db)):
     logger.info(f"🗑️ 식재료 삭제 시작 - ID: {ingredient_id}")
     
     # 식재료 조회
-    db_ingredient = db.query(Ingredient).filter(Ingredient.ingredient_id == ingredient_id).first()
+    db_ingredient = db.query(Ingredient).filter(Ingredient.id == ingredient_id).first()
     if not db_ingredient:
         logger.warning(f"❌ 삭제할 식재료를 찾을 수 없음 - ID: {ingredient_id}")
         raise HTTPException(status_code=404, detail="식재료를 찾을 수 없습니다")

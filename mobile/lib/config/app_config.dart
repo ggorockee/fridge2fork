@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// 앱 환경 타입
@@ -44,17 +45,28 @@ class AppConfig {
     _currentEnvironment = environment;
 
     try {
-      // 공통 설정 로드
-      await dotenv.load(fileName: '.env.common');
+      // 공통 설정 로드 (파일이 없어도 계속 진행)
+      try {
+        await dotenv.load(fileName: '.env.common');
+        debugPrint('✅ Loaded .env.common');
+      } catch (e) {
+        debugPrint('ℹ️ .env.common not found, using defaults: $e');
+      }
 
-      // 환경별 설정 로드 및 병합
+      // 환경별 설정 로드 및 병합 (파일이 없어도 계속 진행)
       final envFile = environment == AppEnvironment.development ? '.env.dev' : '.env.prod';
-      await dotenv.load(fileName: envFile, mergeWith: dotenv.env);
+      try {
+        await dotenv.load(fileName: envFile, mergeWith: dotenv.env);
+        debugPrint('✅ Loaded $envFile');
+      } catch (e) {
+        debugPrint('ℹ️ $envFile not found, using defaults: $e');
+      }
 
       _isInitialized = true;
-      print('✅ AppConfig initialized for ${environment.value} environment');
+      debugPrint('✅ AppConfig initialized for ${environment.value} environment');
+      debugPrint('🔧 API Base URL: $apiBaseUrl');
     } catch (e) {
-      print('❌ Failed to initialize AppConfig: $e');
+      debugPrint('❌ Failed to initialize AppConfig: $e');
       _isInitialized = false;
       rethrow;
     }
@@ -82,7 +94,7 @@ class AppConfig {
   // API 설정
   // ===========================================
 
-  static String get apiBaseUrl => dotenv.env['API_BASE_URL'] ?? 'https://api.example.com';
+  static String get apiBaseUrl => dotenv.env['API_BASE_URL'] ?? 'https://api-dev.woohalabs.com';
   static String get apiKey => dotenv.env['API_KEY'] ?? '';
   static int get apiTimeoutMs => _getInt('API_TIMEOUT_MS', defaultValue: 30000);
 
@@ -162,28 +174,22 @@ class AppConfig {
     return int.tryParse(value) ?? defaultValue;
   }
 
-  /// 환경 변수를 double로 변환
-  static double _getDouble(String key, {double defaultValue = 0.0}) {
-    final value = dotenv.env[key];
-    if (value == null) return defaultValue;
-    return double.tryParse(value) ?? defaultValue;
-  }
 
   /// 현재 설정을 디버그용으로 출력
   static void printConfig() {
     if (!_isInitialized) {
-      print('❌ AppConfig not initialized');
+      debugPrint('❌ AppConfig not initialized');
       return;
     }
 
-    print('=== AppConfig Debug Info ===');
-    print('Environment: ${_currentEnvironment.value}');
-    print('App Name: $appName');
-    print('App Version: $appVersion');
-    print('Debug Mode: $debugMode');
-    print('API Base URL: $apiBaseUrl');
-    print('Log Level: $logLevel');
-    print('==========================');
+    debugPrint('=== AppConfig Debug Info ===');
+    debugPrint('Environment: ${_currentEnvironment.value}');
+    debugPrint('App Name: $appName');
+    debugPrint('App Version: $appVersion');
+    debugPrint('Debug Mode: $debugMode');
+    debugPrint('API Base URL: $apiBaseUrl');
+    debugPrint('Log Level: $logLevel');
+    debugPrint('==========================');
   }
 
   /// 특정 환경 변수 값 가져오기

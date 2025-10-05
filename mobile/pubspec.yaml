@@ -47,6 +47,9 @@ dependencies:
   # 이미지 캐싱
   cached_network_image: ^3.3.0
   
+  # 네트워크 연결 상태 확인
+  connectivity_plus: ^6.0.5
+  
   # 국제화
   intl: ^0.19.0
   showcaseview: ^4.0.1
@@ -54,6 +57,12 @@ dependencies:
   
   # 환경 변수 관리
   flutter_dotenv: ^5.1.0
+
+  # UUID 생성
+  uuid: ^4.5.1
+
+  # URL 실행
+  url_launcher: ^6.2.2
   
   # Firebase 및 AdMob
   firebase_core: ^3.8.0
