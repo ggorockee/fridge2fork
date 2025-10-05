@@ -22,38 +22,68 @@ void main() async {
   // Flutter 엔진과 위젯 바인딩 초기화
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Firebase 초기화 (네이티브 설정 파일 사용)
-  await Firebase.initializeApp();
-  debugPrint('🔥 Firebase Initialized successfully!');
-  
-  // 환경 설정 초기화 (.env 파일의 ENVIRONMENT 값에 따라 자동 결정)
-  await AppConfig.initialize();
-  
-  // 디버그 모드에서 설정 정보 출력
-  if (AppConfig.debugMode) {
-    AppConfig.printConfig();
+  // 🔧 환경 설정 초기화 (.env 파일의 ENVIRONMENT 값에 따라 자동 결정)
+  try {
+    await AppConfig.initialize();
+    debugPrint('✅ AppConfig initialized successfully');
+    if (AppConfig.debugMode) {
+      AppConfig.printConfig();
+    }
+  } catch (e) {
+    debugPrint('⚠️ AppConfig initialization failed: $e');
+    debugPrint('ℹ️ Using default configuration');
   }
-  
-  // AdMob 초기화 및 전면 광고 프리로드 (수익성 극대화)
-  final adService = AdService();
-  await adService.initialize();
-  await adService.preloadInterstitialAd();
-  
-  // 전면 광고 관리자 초기화 (앱 시작 후 광고 기회 제공)
-  InterstitialAdManager().onAppLaunched();
-  
-  // 캐시 서비스 초기화
-  await CacheService.initialize();
-  
-  // 오프라인 서비스 초기화
-  await OfflineService.initialize();
 
-  // 세션 서비스 초기화 (API 호출을 위한 세션 관리)
-  await SessionService.initialize();
+  // 🔥 Firebase 초기화 (네이티브 설정 파일 사용: GoogleService-Info.plist, google-services.json)
+  try {
+    await Firebase.initializeApp();
+    debugPrint('✅ Firebase initialized successfully');
+  } catch (e) {
+    debugPrint('⚠️ Firebase initialization failed: $e');
+    debugPrint('ℹ️ App will run without Firebase features');
+  }
 
-  // SharedPreferences 인스턴스 로드
+  // 📱 AdMob 초기화 및 전면 광고 프리로드 (수익성 극대화)
+  try {
+    final adService = AdService();
+    await adService.initialize();
+    await adService.preloadInterstitialAd();
+    debugPrint('✅ AdMob initialized successfully');
+
+    // 전면 광고 관리자 초기화 (앱 시작 후 광고 기회 제공)
+    InterstitialAdManager().onAppLaunched();
+  } catch (e) {
+    debugPrint('⚠️ AdMob initialization failed: $e');
+    debugPrint('ℹ️ App will run without ads');
+  }
+
+  // 🗄️ 캐시 서비스 초기화
+  try {
+    await CacheService.initialize();
+    debugPrint('✅ CacheService initialized successfully');
+  } catch (e) {
+    debugPrint('⚠️ CacheService initialization failed: $e');
+  }
+
+  // 📴 오프라인 서비스 초기화
+  try {
+    await OfflineService.initialize();
+    debugPrint('✅ OfflineService initialized successfully');
+  } catch (e) {
+    debugPrint('⚠️ OfflineService initialization failed: $e');
+  }
+
+  // 🔐 세션 서비스 초기화 (API 호출을 위한 세션 관리)
+  try {
+    await SessionService.initialize();
+    debugPrint('✅ SessionService initialized successfully');
+  } catch (e) {
+    debugPrint('⚠️ SessionService initialization failed: $e');
+  }
+
+  // 💾 SharedPreferences 인스턴스 로드
   final prefs = await SharedPreferences.getInstance();
-  
+
   bool isFirstLaunch;
 
   if (AppConfig.isProduction) {
@@ -63,6 +93,8 @@ void main() async {
     // 개발 모드: 테스트를 위해 앱을 재시작할 때마다 온보딩 표시
     isFirstLaunch = false; // 온보딩 비활성화
   }
+
+  debugPrint('🚀 App initialization completed');
 
   runApp(
     ProviderScope(
