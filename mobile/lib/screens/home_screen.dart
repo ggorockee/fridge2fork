@@ -497,28 +497,29 @@ class _SelectedIngredientsSection extends StatelessWidget {
       child: Column(
         children: [
           // "냉장고 현황" 텍스트만 중앙 정렬, (+) 버튼은 오른쪽에
-          Row(
-            children: [
-              // 왼쪽 공간 (버튼 크기 + 간격만큼)
-              SizedBox(width: 34.w), // 28.w (버튼) + 6.w (간격)
-
-              // 중앙 영역 - "냉장고 현황" + (+) 버튼
-              Expanded(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      '냉장고 현황',
-                      style: TextStyle(
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.textPrimary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+          SizedBox(
+            height: 28.h, // 버튼 높이와 동일
+            child: Stack(
+              children: [
+                // "냉장고 현황" 텍스트를 정확히 중앙에
+                Center(
+                  child: Text(
+                    '냉장고 현황',
+                    style: TextStyle(
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textPrimary,
                     ),
-                    SizedBox(width: 6.w),
-                    Showcase(
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+
+                // (+) 버튼을 텍스트 오른쪽에 배치
+                Center(
+                  child: Transform.translate(
+                    offset: Offset(70.w, 0), // 텍스트 너비의 절반 + 간격 + 버튼 중심
+                    child: Showcase(
                       key: homeScreenAddButtonKey,
                       description: '냉장고에 식재료를 추가하려면 이 버튼을 누르세요!',
                       onTargetClick: onAddPressed,
@@ -546,13 +547,10 @@ class _SelectedIngredientsSection extends StatelessWidget {
                         ),
                       ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
-
-              // 오른쪽 공간 (균형 유지)
-              SizedBox(width: 34.w), // 28.w (버튼) + 6.w (간격)
-            ],
+              ],
+            ),
           ),
 
           SizedBox(height: 12.h),
