@@ -104,6 +104,12 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         });
 
         return Scaffold(
+          appBar: AppBar(
+            toolbarHeight: 0, // AppBar 높이를 0으로 설정 (시각적으로 보이지 않음)
+            elevation: 0, // 그림자 제거
+            backgroundColor: AppTheme.backgroundWhite,
+            // systemOverlayStyle는 유지하여 상태 표시줄 색상 제어
+          ),
           backgroundColor: AppTheme.backgroundWhite,
           body: PageView(
             controller: _pageController,
