@@ -3,6 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// 앱 환경 타입
 enum AppEnvironment {
+  local('local'),
   development('dev'),
   production('prod');
 
@@ -10,7 +11,9 @@ enum AppEnvironment {
   final String value;
 
   static AppEnvironment fromString(String value) {
-    switch (value) {
+    switch (value.toLowerCase()) {
+      case 'local':
+        return AppEnvironment.local;
       case 'development':
       case 'dev':
         return AppEnvironment.development;
@@ -18,7 +21,7 @@ enum AppEnvironment {
       case 'prod':
         return AppEnvironment.production;
       default:
-        return AppEnvironment.development;
+        return AppEnvironment.local; // 기본값을 local로 변경
     }
   }
 }
@@ -34,27 +37,41 @@ class AppConfig {
   /// 초기화 여부 확인
   static bool get isInitialized => _isInitialized;
 
+  /// 로컬 환경 여부
+  static bool get isLocal => _currentEnvironment == AppEnvironment.local;
+
   /// 개발 환경 여부
   static bool get isDevelopment => _currentEnvironment == AppEnvironment.development;
 
   /// 운영 환경 여부
   static bool get isProduction => _currentEnvironment == AppEnvironment.production;
 
-  /// 환경 설정 초기화
-  static Future<void> initialize(AppEnvironment environment) async {
-    _currentEnvironment = environment;
-
+  /// 환경 설정 초기화 (.env 파일의 ENVIRONMENT 값에 따라 자동 결정)
+  static Future<void> initialize() async {
     try {
-      // 공통 설정 로드 (파일이 없어도 계속 진행)
+      // 1단계: .env 파일을 먼저 로드하여 ENVIRONMENT 값 확인
       try {
-        await dotenv.load(fileName: '.env.common');
+        await dotenv.load(fileName: '.env');
+        debugPrint('✅ Loaded .env');
+      } catch (e) {
+        debugPrint('ℹ️ .env not found, will use .env.local as default: $e');
+      }
+
+      // 2단계: ENVIRONMENT 값으로 환경 결정
+      final envValue = dotenv.env['ENVIRONMENT'] ?? 'local';
+      _currentEnvironment = AppEnvironment.fromString(envValue);
+      debugPrint('🌍 Environment: ${_currentEnvironment.value} (from ENVIRONMENT=$envValue)');
+
+      // 3단계: .env.common 로드 (공통 설정)
+      try {
+        await dotenv.load(fileName: '.env.common', mergeWith: dotenv.env);
         debugPrint('✅ Loaded .env.common');
       } catch (e) {
         debugPrint('ℹ️ .env.common not found, using defaults: $e');
       }
 
-      // 환경별 설정 로드 및 병합 (파일이 없어도 계속 진행)
-      final envFile = environment == AppEnvironment.development ? '.env.dev' : '.env.prod';
+      // 4단계: 환경별 설정 파일 로드 및 병합
+      final envFile = _getEnvFileName(_currentEnvironment);
       try {
         await dotenv.load(fileName: envFile, mergeWith: dotenv.env);
         debugPrint('✅ Loaded $envFile');
@@ -63,12 +80,25 @@ class AppConfig {
       }
 
       _isInitialized = true;
-      debugPrint('✅ AppConfig initialized for ${environment.value} environment');
+      debugPrint('✅ AppConfig initialized for ${_currentEnvironment.value} environment');
       debugPrint('🔧 API Base URL: $apiBaseUrl');
+      debugPrint('🔧 Environment from .env: $environment');
     } catch (e) {
       debugPrint('❌ Failed to initialize AppConfig: $e');
       _isInitialized = false;
       rethrow;
+    }
+  }
+
+  /// 환경에 따른 .env 파일명 반환
+  static String _getEnvFileName(AppEnvironment env) {
+    switch (env) {
+      case AppEnvironment.local:
+        return '.env.local';
+      case AppEnvironment.development:
+        return '.env.dev';
+      case AppEnvironment.production:
+        return '.env.prod';
     }
   }
 

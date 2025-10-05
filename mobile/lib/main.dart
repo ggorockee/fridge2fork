@@ -25,9 +25,8 @@ void main() async {
   await Firebase.initializeApp();
   debugPrint('🔥 Firebase Initialized successfully!');
   
-  // 환경 설정 초기화
-  final environment = kReleaseMode ? AppEnvironment.production : AppEnvironment.development;
-  await AppConfig.initialize(environment);
+  // 환경 설정 초기화 (.env 파일의 ENVIRONMENT 값에 따라 자동 결정)
+  await AppConfig.initialize();
   
   // 디버그 모드에서 설정 정보 출력
   if (AppConfig.debugMode) {
