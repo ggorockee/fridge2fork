@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../widgets/widgets.dart';
 import '../providers/ingredients_provider.dart';
 import '../providers/api/ingredient_api_provider.dart';
@@ -142,14 +141,12 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
                           color: AppTheme.textPrimary,
                           fontWeight: FontWeight.w600,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(width: AppTheme.spacingS),
                       Container(
-                        padding: EdgeInsets.symmetric(
+                        padding: const EdgeInsets.symmetric(
                           horizontal: AppTheme.spacingS,
-                          vertical: 2.h,
+                          vertical: 2,
                         ),
                         decoration: BoxDecoration(
                           color: AppTheme.lightOrange,
@@ -161,8 +158,6 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
                             color: AppTheme.primaryOrange,
                             fontWeight: FontWeight.w600,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
@@ -247,12 +242,12 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
       children: [
           // Modal 상단 핸들 바
           Container(
-            width: 40.w,
-            height: 4.h,
+            width: 40,
+            height: 4,
             margin: const EdgeInsets.symmetric(vertical: AppTheme.spacingM),
             decoration: BoxDecoration(
               color: AppTheme.textSecondary.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(2.r),
+              borderRadius: BorderRadius.circular(2),
             ),
           ),
           
@@ -268,8 +263,6 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
                       color: AppTheme.textPrimary,
                       fontWeight: FontWeight.w600,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 IconButton(
@@ -278,10 +271,9 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
                     ref.read(searchTextProvider.notifier).state = '';
                     Navigator.of(context).pop();
                   },
-                  icon: Icon(
+                  icon: const Icon(
                     Icons.close,
                     color: AppTheme.textSecondary,
-                    size: 20.sp,
                   ),
                 ),
               ],
@@ -299,21 +291,21 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
 
           // 검색바
           Padding(
-            padding: EdgeInsets.all(16.0.w),
+            padding: const EdgeInsets.all(16.0),
             child: Container(
-              height: 56.h,
+              height: 56,
               decoration: BoxDecoration(
                 color: const Color(0xFFF3F4F9),
-                borderRadius: BorderRadius.circular(16.r),
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Row(
                 children: [
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16.w),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16),
                     child: Icon(
                       Icons.search,
-                      color: const Color(0xFF5D577E),
-                      size: 20.sp,
+                      color: Color(0xFF5D577E),
+                      size: 20,
                     ),
                   ),
                   Expanded(
@@ -323,19 +315,19 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
                         // 검색어 업데이트 (클라이언트 필터링)
                         ref.read(searchTextProvider.notifier).state = value;
                       },
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        color: const Color(0xFF27214D),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF27214D),
                       ),
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         hintText: '식재료 검색',
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
                         focusedBorder: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(vertical: 16.h),
+                        contentPadding: EdgeInsets.symmetric(vertical: 16),
                         hintStyle: TextStyle(
-                          fontSize: 14.sp,
-                          color: const Color(0xFFC2BDBD),
+                          fontSize: 14,
+                          color: Color(0xFFC2BDBD),
                         ),
                       ),
                     ),
@@ -361,8 +353,6 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
                           color: AppTheme.textPrimary,
                           fontWeight: FontWeight.w600,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(width: AppTheme.spacingS),
                       Container(
@@ -380,8 +370,6 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
                             color: AppTheme.primaryOrange,
                             fontWeight: FontWeight.w700, // 더 굵은 폰트
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
@@ -409,12 +397,12 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10.r,
-                    offset: Offset(0, -2.h),
+                    blurRadius: 10,
+                    offset: const Offset(0, -2),
                   ),
                 ],
-                border: Border(
-                  top: BorderSide(color: AppTheme.dividerGray, width: 1.w),
+                border: const Border(
+                  top: BorderSide(color: AppTheme.dividerGray, width: 1),
                 ),
               ),
               child: Column(
@@ -427,8 +415,8 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
                       Row(
                         children: [
                           Container(
-                            width: 6.w,
-                            height: 6.h,
+                            width: 6,
+                            height: 6,
                             decoration: const BoxDecoration(
                               color: AppTheme.primaryOrange,
                               shape: BoxShape.circle,
@@ -441,8 +429,6 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
                               color: AppTheme.textPrimary,
                               fontWeight: FontWeight.w500,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
@@ -452,9 +438,9 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
                         },
                         child: Row(
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.refresh,
-                              size: 16.sp,
+                              size: 16,
                               color: AppTheme.textSecondary,
                             ),
                             const SizedBox(width: AppTheme.spacingS / 2),
@@ -464,8 +450,6 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
                                 color: AppTheme.textPrimary,
                                 fontWeight: FontWeight.w500,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
@@ -477,8 +461,8 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
                   
                   // 선택된 식재료 태그들 (3줄 초과 시 스크롤)
                   ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxHeight: 120.h, // 약 3줄 높이 (38px * 3 + 간격)
+                    constraints: const BoxConstraints(
+                      maxHeight: 120, // 약 3줄 높이 (38px * 3 + 간격)
                     ),
                     child: SingleChildScrollView(
                       controller: _scrollController,
@@ -487,16 +471,16 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
                         runSpacing: AppTheme.spacingS,
                         children: selectedIngredients.map((ingredient) {
                           return Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 12.w, // 가로 패딩 12px로 축소
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12, // 가로 패딩 12px로 축소
                               vertical: AppTheme.spacingS,
                             ),
                             decoration: BoxDecoration(
                               color: Colors.white, // 백그라운드 색: #fff
-                              borderRadius: BorderRadius.circular(50.r), // 50% 보더 레디어스 (완전한 둥근 모양)
+                              borderRadius: BorderRadius.circular(50), // 50% 보더 레디어스 (완전한 둥근 모양)
                               border: Border.all(
                                 color: const Color(0xFFD7D7D7), // 보더 #d7d7d7
-                                width: 1.w,
+                                width: 1,
                               ),
                             ),
                             child: Row(
@@ -508,16 +492,14 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
                                     color: const Color(0xFF333333), // 텍스트: #333
                                     fontWeight: FontWeight.w600,
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                SizedBox(width: 12.w), // 삭제 버튼과의 간격 12px
+                                const SizedBox(width: 12), // 삭제 버튼과의 간격 12px
                                 GestureDetector(
                                   onTap: () => _toggleIngredient(ingredient),
-                                  child: Icon(
+                                  child: const Icon(
                                     Icons.close, // 원 모양 없이 x버튼만
-                                    size: 14.sp,
-                                    color: const Color(0xFF999999), // 삭제 버튼 색상
+                                    size: 14,
+                                    color: Color(0xFF999999), // 삭제 버튼 색상
                                   ),
                                 ),
                               ],
@@ -537,7 +519,7 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
                       text: '냉장고에 추가하기 (${selectedIngredients.length})',
                       onPressed: _addIngredientsToFridge,
                       type: ButtonType.primary,
-                      height: 56.h,
+                      height: 56,
                       icon: Icons.add,
                     ),
                   ),
@@ -561,12 +543,12 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
       children: [
         // Modal 상단 핸들 바
         Container(
-          width: 40.w,
-          height: 4.h,
+          width: 40,
+          height: 4,
           margin: const EdgeInsets.symmetric(vertical: AppTheme.spacingM),
           decoration: BoxDecoration(
             color: AppTheme.textSecondary.withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(2.r),
+            borderRadius: BorderRadius.circular(2),
           ),
         ),
         
@@ -582,22 +564,19 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
                     color: AppTheme.textPrimary,
                     fontWeight: FontWeight.w600,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               IconButton(
                 onPressed: () => Navigator.of(context).pop(),
-                icon: Icon(
+                icon: const Icon(
                   Icons.close,
                   color: AppTheme.textSecondary,
-                  size: 20.sp,
                 ),
               ),
             ],
           ),
         ),
-
+        
         // 로딩 인디케이터
         Expanded(
           child: Center(
@@ -613,8 +592,6 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
                   style: AppTheme.bodyMedium.copyWith(
                     color: AppTheme.textSecondary,
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -630,12 +607,12 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
       children: [
         // Modal 상단 핸들 바
         Container(
-          width: 40.w,
-          height: 4.h,
+          width: 40,
+          height: 4,
           margin: const EdgeInsets.symmetric(vertical: AppTheme.spacingM),
           decoration: BoxDecoration(
             color: AppTheme.textSecondary.withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(2.r),
+            borderRadius: BorderRadius.circular(2),
           ),
         ),
 
@@ -651,16 +628,13 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
                     color: AppTheme.textPrimary,
                     fontWeight: FontWeight.w600,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               IconButton(
                 onPressed: () => Navigator.of(context).pop(),
-                icon: Icon(
+                icon: const Icon(
                   Icons.close,
                   color: AppTheme.textSecondary,
-                  size: 20.sp,
                 ),
               ),
             ],
@@ -677,7 +651,7 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
                 children: [
                   Icon(
                     _getErrorIcon(error),
-                    size: 64.sp,
+                    size: 64,
                     color: AppTheme.textSecondary,
                   ),
                   const SizedBox(height: AppTheme.spacingM),
@@ -687,8 +661,6 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
                       color: AppTheme.textPrimary,
                     ),
                     textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: AppTheme.spacingS),
                   Text(
@@ -697,8 +669,6 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
                       color: AppTheme.textSecondary,
                     ),
                     textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: AppTheme.spacingL),
 
@@ -709,7 +679,7 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
                       await ref.read(ingredientApiProvider.notifier).refresh();
                     },
                     type: ButtonType.primary,
-                    height: 48.h,
+                    height: 48,
                     icon: Icons.refresh,
                   ),
 
@@ -723,16 +693,16 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
                       borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                       border: Border.all(
                         color: AppTheme.lightOrange,
-                        width: 1.w,
+                        width: 1,
                       ),
                     ),
                     child: Column(
                       children: [
                         Row(
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.info_outline,
-                              size: 16.sp,
+                              size: 16,
                               color: AppTheme.primaryOrange,
                             ),
                             const SizedBox(width: AppTheme.spacingS),
@@ -743,8 +713,6 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
                                   color: AppTheme.primaryOrange,
                                   fontWeight: FontWeight.w600,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -756,8 +724,6 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
                             color: AppTheme.textSecondary,
                           ),
                           textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
