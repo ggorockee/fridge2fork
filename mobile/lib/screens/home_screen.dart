@@ -32,8 +32,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  bool _showAllIngredients = false;
-
   @override
   void initState() {
     super.initState();
@@ -206,12 +204,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  void _toggleShowAllIngredients() {
-    setState(() {
-      _showAllIngredients = !_showAllIngredients;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final fridgeState = ref.watch(fridgeProvider);
@@ -274,9 +266,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 ? _EmptyStateMessage(onAddPressed: _onAddButtonPressed)
                                 : _SelectedIngredientsSection(
                                     ingredients: fridge.ingredients,
-                                    showAll: _showAllIngredients,
                                     onRemove: _removeIngredient,
-                                    onToggleShowAll: _toggleShowAllIngredients,
                                     onAddPressed: _onAddButtonPressed,
                                   ),
                             loading: () => const CircularProgressIndicator(
@@ -476,26 +466,22 @@ class _RecipeRecommendationSection extends ConsumerWidget {
 }
 
 /// 선택된 식재료 표시 섹션
-class _SelectedIngredientsSection extends StatelessWidget {
+class _SelectedIngredientsSection extends ConsumerWidget {
   final List<ApiFridgeIngredient> ingredients;
-  final bool showAll;
   final Function(int) onRemove;
-  final VoidCallback onToggleShowAll;
   final VoidCallback onAddPressed;
 
   const _SelectedIngredientsSection({
     required this.ingredients,
-    required this.showAll,
     required this.onRemove,
-    required this.onToggleShowAll,
     required this.onAddPressed,
   });
 
   @override
-  Widget build(BuildContext context) {
-    // 4줄까지만 표시 (3개씩 4줄 = 12개)
-    final displayIngredients = showAll ? ingredients : ingredients.take(12).toList();
-    final hasMore = ingredients.length > 12;
+  Widget build(BuildContext context, WidgetRef ref) {
+    // 3줄까지만 표시 (3개씩 3줄 = 9개)
+    final displayIngredients = ingredients.take(9).toList();
+    final hasMore = ingredients.length > 9;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingM),
@@ -573,59 +559,64 @@ class _SelectedIngredientsSection extends StatelessWidget {
 
           SizedBox(height: 12.h),
 
-          // 재료 칩들 (중앙 정렬)
+          // 재료 칩들 (중앙 정렬) - 3줄만 표시
           Wrap(
             alignment: WrapAlignment.center,
             spacing: AppTheme.spacingS,
             runSpacing: AppTheme.spacingS,
-            children: [
-              ...displayIngredients.map((ingredient) => _IngredientChip(
-                ingredient: ingredient.name,
-                onRemove: () => onRemove(ingredient.id),
-              )),
+            children: displayIngredients.map((ingredient) => _IngredientChip(
+              ingredient: ingredient.name,
+              onRemove: () => onRemove(ingredient.id),
+            )).toList(),
+          ),
 
-              // 더보기/접기 버튼
-              if (hasMore)
-                GestureDetector(
-                  onTap: onToggleShowAll,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 12.w,
-                      vertical: AppTheme.spacingS,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppTheme.lightOrange,
-                      borderRadius: BorderRadius.circular(50.r),
-                      border: Border.all(
-                        color: AppTheme.primaryOrange,
-                        width: 1.w,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          showAll ? '접기' : '더보기 +${ingredients.length - 12}',
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            color: AppTheme.primaryOrange,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        SizedBox(width: 4.w),
-                        Icon(
-                          showAll ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                          size: 16.sp,
-                          color: AppTheme.primaryOrange,
-                        ),
-                      ],
+          // 4번째 줄: 더보기 버튼 (중앙 정렬)
+          if (hasMore) ...[
+            SizedBox(height: 8.h),
+            Center(
+              child: GestureDetector(
+                onTap: () {
+                  // "나의 냉장고" 탭으로 이동 (탭 인덱스 1)
+                  ref.read(selectedTabIndexProvider.notifier).state = 1;
+                },
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 12.w,
+                    vertical: AppTheme.spacingS,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.lightOrange,
+                    borderRadius: BorderRadius.circular(50.r),
+                    border: Border.all(
+                      color: AppTheme.primaryOrange,
+                      width: 1.w,
                     ),
                   ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '더보기 +${ingredients.length - 9}',
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          color: AppTheme.primaryOrange,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(width: 4.w),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        size: 14.sp,
+                        color: AppTheme.primaryOrange,
+                      ),
+                    ],
+                  ),
                 ),
-            ],
-          ),
+              ),
+            ),
+          ],
         ],
       ),
     );
