@@ -618,11 +618,8 @@ class _SelectedIngredientsSection extends ConsumerWidget {
             SizedBox(height: 24.h), // 레시피 추천 섹션과의 간격 확보
           ],
 
-          // 레시피 추천 섹션 영역 보호 (투명 padding 가림)
-          Container(
-            height: 380.h,
-            color: AppTheme.backgroundWhite,
-          ),
+          // 레시피 추천 섹션을 위한 여백
+          SizedBox(height: 300.h),
         ],
       ),
     );
@@ -740,7 +737,7 @@ class _RecipeRecommendationsSectionState extends ConsumerState<_RecipeRecommenda
           children: [
             // 추천 제목 (왼쪽 패딩만)
             Padding(
-              padding: EdgeInsets.only(left: 16.w, top: 64.h, bottom: 8.h), // 상단 여백 증가 (AppTheme.spacingM → 48.h)
+              padding: EdgeInsets.only(left: 16.w, top: 16.h, bottom: 8.h), // 상단 여백 최소화
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
