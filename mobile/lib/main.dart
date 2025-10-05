@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart'; // Firebase Core 패키지 임포트
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'config/app_config.dart';
 import 'providers/app_state_provider.dart';
 import 'providers/api/api_connection_provider.dart';
@@ -89,24 +90,35 @@ class MyApp extends ConsumerWidget {
       }
     });
 
-    return MaterialApp(
-      title: AppConfig.appName,
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      home: const AsyncPerformanceOverlay(
-        showMonitor: kDebugMode,
-        child: SplashScreen(),
-      ),
-      onGenerateRoute: (settings) {
-        switch (settings.name) {
-          case '/recipe-detail':
-            final recipe = settings.arguments as Recipe;
-            return MaterialPageRoute(
-              builder: (context) => RecipeDetailScreen(recipe: recipe),
-            );
-          default:
-            return null;
-        }
+    // ScreenUtil을 사용하여 반응형 디자인 구현
+    return ScreenUtilInit(
+      // 디자인 기준 사이즈 (일반적인 모바일 디자인 기준)
+      designSize: const Size(375, 812),
+      // 최소 텍스트 크기 배율 (접근성 고려)
+      minTextAdapt: true,
+      // 분할 화면 모드 지원
+      splitScreenMode: true,
+      builder: (context, child) {
+        return MaterialApp(
+          title: AppConfig.appName,
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          home: const AsyncPerformanceOverlay(
+            showMonitor: kDebugMode,
+            child: SplashScreen(),
+          ),
+          onGenerateRoute: (settings) {
+            switch (settings.name) {
+              case '/recipe-detail':
+                final recipe = settings.arguments as Recipe;
+                return MaterialPageRoute(
+                  builder: (context) => RecipeDetailScreen(recipe: recipe),
+                );
+              default:
+                return null;
+            }
+          },
+        );
       },
     );
   }

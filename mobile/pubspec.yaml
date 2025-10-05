@@ -63,7 +63,10 @@ dependencies:
 
   # URL 실행
   url_launcher: ^6.2.2
-  
+
+  # 반응형 디자인
+  flutter_screenutil: ^5.9.3
+
   # Firebase 및 AdMob
   firebase_core: ^3.8.0
   firebase_analytics: ^11.3.4
