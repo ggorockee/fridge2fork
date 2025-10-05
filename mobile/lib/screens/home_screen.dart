@@ -347,6 +347,7 @@ class _EmptyStateMessage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         // 메인 메시지
         Text(
@@ -361,7 +362,7 @@ class _EmptyStateMessage extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
 
-        const SizedBox(height: AppTheme.spacingM),
+        SizedBox(height: 8.h),
 
         // 서브 메시지
         Text(
