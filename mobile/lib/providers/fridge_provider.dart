@@ -80,6 +80,47 @@ class FridgeNotifier extends StateNotifier<AsyncValue<ApiFridge>> {
     return true; // 즉시 반환 (UI 블로킹 없음)
   }
 
+  /// 여러 재료를 한번에 추가 (병렬 처리 + Loading State)
+  Future<int> addIngredients(List<String> ingredientNames) async {
+    if (ingredientNames.isEmpty) return 0;
+
+    if (kDebugMode) {
+      debugPrint('🥬 [FridgeProvider] Adding ${ingredientNames.length} ingredients in batch');
+    }
+
+    // Loading 상태로 전환 (사용자에게 처리 중임을 표시)
+    state = const AsyncValue.loading();
+
+    try {
+      // 병렬로 모든 재료 추가 API 호출
+      final futures = ingredientNames.map((name) =>
+        FridgeApiService.addIngredient(name)
+      ).toList();
+
+      final responses = await Future.wait(futures);
+
+      // 성공한 재료 개수 계산
+      final successCount = responses.where((r) => r.success).length;
+
+      if (kDebugMode) {
+        debugPrint('✅ [FridgeProvider] Batch add completed: $successCount/${ingredientNames.length} succeeded');
+      }
+
+      // 냉장고 재조회로 최종 상태 갱신 (한번만 re-render)
+      await loadFridge();
+
+      return successCount;
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ [FridgeProvider] Batch add error: $e');
+      }
+
+      // 에러 발생 시에도 냉장고 재조회
+      await loadFridge();
+      return 0;
+    }
+  }
+
   /// 재료 제거 (Optimistic UI)
   Future<bool> removeIngredient(int ingredientId) async {
     // 1. 현재 상태 백업 (롤백용)

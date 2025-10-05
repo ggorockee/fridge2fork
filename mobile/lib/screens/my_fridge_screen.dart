@@ -28,15 +28,12 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
     // 식재료 추가 Modal Bottom Sheet 표시
     final result = await AddIngredientScreen.showModal(context);
 
-    // 선택된 식재료가 있으면 API로 추가
+    // 선택된 식재료가 있으면 API로 추가 (병렬 처리 + Loading State)
     if (result != null && result.isNotEmpty) {
-      int successCount = 0;
-      for (final ingredient in result) {
-        final success = await ref.read(fridgeProvider.notifier).addIngredient(ingredient);
-        if (success) successCount++;
-      }
+      // 여러 재료를 한번에 추가 (병렬 처리로 성능 개선)
+      final successCount = await ref.read(fridgeProvider.notifier).addIngredients(result);
 
-      if (mounted) {
+      if (mounted && successCount > 0) {
         SnackBarHelper.showSnackBar(
           context,
           '$successCount개의 식재료가 추가되었습니다!',
