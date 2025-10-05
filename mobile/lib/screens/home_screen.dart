@@ -570,7 +570,7 @@ class _SelectedIngredientsSection extends ConsumerWidget {
             )).toList(),
           ),
 
-          // 4번째 줄: 더보기 버튼 (중앙 정렬)
+          // 3번째 줄: 더보기 버튼 (중앙 정렬)
           if (hasMore) ...[
             SizedBox(height: 8.h),
             Center(
@@ -616,6 +616,7 @@ class _SelectedIngredientsSection extends ConsumerWidget {
                 ),
               ),
             ),
+            SizedBox(height: 24.h), // 레시피 추천 섹션과의 간격 확보
           ],
         ],
       ),
