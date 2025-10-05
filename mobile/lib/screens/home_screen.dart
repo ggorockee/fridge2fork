@@ -247,31 +247,50 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       constraints: BoxConstraints(
                         minHeight: MediaQuery.of(context).size.height - 320.h,
                       ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SizedBox(height: 40.h), // 상단 여백
+                      child: fridgeState.when(
+                        data: (fridge) {
+                          final hasItems = fridge.ingredients.isNotEmpty;
+                          return Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(height: hasItems ? 16.h : 40.h), // 아이템 있으면 여백 축소
 
-                          // 냉장고 이미지 (중앙 정렬)
-                          const _FridgeIcon(),
+                              // 냉장고 이미지 (중앙 정렬)
+                              const _FridgeIcon(),
 
-                          SizedBox(height: 16.h),
+                              SizedBox(height: hasItems ? 8.h : 16.h), // 아이템 있으면 여백 축소
 
-                          // 냉장고 상태 내용
-                          fridgeState.when(
-                            data: (fridge) => fridge.ingredients.isEmpty
-                                ? _EmptyStateMessage(onAddPressed: _onAddButtonPressed)
-                                : _SelectedIngredientsSection(
-                                    ingredients: fridge.ingredients,
-                                    onRemove: _removeIngredient,
-                                    onAddPressed: _onAddButtonPressed,
-                                  ),
-                            loading: () => const CircularProgressIndicator(
+                              // 냉장고 상태 내용
+                              hasItems
+                                  ? _SelectedIngredientsSection(
+                                      ingredients: fridge.ingredients,
+                                      onRemove: _removeIngredient,
+                                      onAddPressed: _onAddButtonPressed,
+                                    )
+                                  : _EmptyStateMessage(onAddPressed: _onAddButtonPressed),
+                            ],
+                          );
+                        },
+                        loading: () => Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(height: 40.h),
+                            const _FridgeIcon(),
+                            SizedBox(height: 16.h),
+                            const CircularProgressIndicator(
                               valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryOrange),
                             ),
-                            error: (_, __) => _EmptyStateMessage(onAddPressed: _onAddButtonPressed),
-                          ),
-                        ],
+                          ],
+                        ),
+                        error: (_, __) => Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(height: 40.h),
+                            const _FridgeIcon(),
+                            SizedBox(height: 16.h),
+                            _EmptyStateMessage(onAddPressed: _onAddButtonPressed),
+                          ],
+                        ),
                       ),
                     ),
                   ],
