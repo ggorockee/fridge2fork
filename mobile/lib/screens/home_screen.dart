@@ -885,28 +885,12 @@ class _RecommendedRecipeCard extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 4.h),
-              // 제목 (고정 높이)
-              SizedBox(
-                height: 32.h,
-                child: Text(
-                  recipe.title,
-                  style: TextStyle(
-                    fontSize: 11.sp,
-                    fontWeight: FontWeight.w600,
-                    height: 1.2,
-                    color: AppTheme.textPrimary,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              SizedBox(height: 4.h),
-              // 매칭 퍼센트 배지 (우측 정렬, 고정 높이)
+              // 매칭 퍼센트 배지 (왼쪽 정렬, 고정 높이)
               SizedBox(
                 height: 20.h,
                 child: recipe.matchPercentage != null && recipe.matchPercentage! > 0
                     ? Align(
-                        alignment: Alignment.centerRight,
+                        alignment: Alignment.centerLeft,
                         child: Container(
                           padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
                           decoration: BoxDecoration(
@@ -924,6 +908,22 @@ class _RecommendedRecipeCard extends StatelessWidget {
                         ),
                       )
                     : const SizedBox.shrink(),
+              ),
+              SizedBox(height: 4.h),
+              // 제목 (고정 높이)
+              SizedBox(
+                height: 32.h,
+                child: Text(
+                  recipe.title,
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w600,
+                    height: 1.2,
+                    color: AppTheme.textPrimary,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
