@@ -520,7 +520,7 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
                       text: '냉장고에 추가하기 (${selectedIngredients.length})',
                       onPressed: _addIngredientsToFridge,
                       type: ButtonType.primary,
-                      height: 56,
+                      height: 36.h,
                       icon: Icons.add,
                     ),
                   ),
