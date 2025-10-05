@@ -865,51 +865,48 @@ class _RecommendedRecipeCard extends StatelessWidget {
               // 이미지 영역
               Expanded(
                 flex: 3,
-                child: Stack(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8.r),
-                      child: Container(
-                        width: double.infinity,
-                        color: Colors.grey[200],
-                        child: recipe.imageUrl != null && recipe.imageUrl!.isNotEmpty
-                            ? Image.network(
-                                recipe.imageUrl!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Center(
-                                  child: Icon(Icons.restaurant, size: 32.sp, color: Colors.grey),
-                                ),
-                              )
-                            : Center(
-                                child: Icon(Icons.restaurant, size: 32.sp, color: Colors.grey),
-                              ),
-                      ),
-                    ),
-                    // 매칭 퍼센트 배지 (우하단)
-                    if (recipe.matchPercentage != null && recipe.matchPercentage! > 0)
-                      Positioned(
-                        bottom: 6.h,
-                        right: 6.w,
-                        child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryOrange,
-                            borderRadius: BorderRadius.circular(12.r),
-                          ),
-                          child: Text(
-                            '${recipe.matchPercentage}% 일치',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 9.sp,
-                              fontWeight: FontWeight.w600,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8.r),
+                  child: Container(
+                    width: double.infinity,
+                    color: Colors.grey[200],
+                    child: recipe.imageUrl != null && recipe.imageUrl!.isNotEmpty
+                        ? Image.network(
+                            recipe.imageUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Center(
+                              child: Icon(Icons.restaurant, size: 32.sp, color: Colors.grey),
                             ),
+                          )
+                        : Center(
+                            child: Icon(Icons.restaurant, size: 32.sp, color: Colors.grey),
                           ),
-                        ),
-                      ),
-                  ],
+                  ),
                 ),
               ),
               SizedBox(height: 4.h),
+              // 매칭 퍼센트 배지 (우측 정렬)
+              if (recipe.matchPercentage != null && recipe.matchPercentage! > 0)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryOrange,
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                    child: Text(
+                      '${recipe.matchPercentage}% 일치',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 9.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              if (recipe.matchPercentage != null && recipe.matchPercentage! > 0)
+                SizedBox(height: 4.h),
               // 제목 (텍스트 영역)
               Text(
                 recipe.title,
