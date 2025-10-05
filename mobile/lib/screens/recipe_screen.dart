@@ -94,6 +94,14 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
             fontWeight: FontWeight.w600,
           ),
         ),
+        // AppBar 하단에 구분선 추가
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(1.h),
+          child: Container(
+            height: 1.h,
+            color: const Color(0xFFE0E0E0),
+          ),
+        ),
       ),
       body: _buildBody(recommendationState, fridgeIngredientCount),
     );
@@ -152,12 +160,6 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
               ],
             ),
           ),
-        ),
-
-        // 구분선
-        Container(
-          height: 1.h,
-          color: AppTheme.borderGray,
         ),
 
         // 콘텐츠

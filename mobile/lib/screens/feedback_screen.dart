@@ -30,6 +30,14 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
             fontWeight: FontWeight.w600,
           ),
         ),
+        // AppBar 하단에 구분선 추가
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(1.h),
+          child: Container(
+            height: 1.h,
+            color: const Color(0xFFE0E0E0),
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(AppTheme.spacingM),
