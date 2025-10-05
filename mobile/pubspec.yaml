@@ -133,6 +133,8 @@ flutter:
   assets:
     - assets/data/
     - assets/logos/
+    - .env
+    - .env.local
     - .env.common
     - .env.dev
     - .env.prod
