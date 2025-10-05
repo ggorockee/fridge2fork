@@ -496,50 +496,55 @@ class _SelectedIngredientsSection extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingM),
       child: Column(
         children: [
-          // "냉장고 현황" + (+) 버튼
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                '냉장고 현황',
-                style: TextStyle(
-                  fontSize: 18.sp,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.textPrimary,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              SizedBox(width: 8.w),
-              Showcase(
-                key: homeScreenAddButtonKey,
-                description: '냉장고에 식재료를 추가하려면 이 버튼을 누르세요!',
-                onTargetClick: onAddPressed,
-                disposeOnTap: true,
-                child: SizedBox(
-                  width: 28.w,
-                  height: 28.h,
-                  child: Material(
-                    color: Colors.white,
-                    shape: CircleBorder(
-                      side: BorderSide(
-                        color: AppTheme.primaryOrange,
-                        width: 2.w,
-                      ),
+          // "냉장고 현황" 텍스트만 중앙 정렬, (+) 버튼은 오른쪽에
+          Center(
+            child: Transform.translate(
+              offset: Offset(-(28.w + 6.w) / 2, 0), // 버튼 크기 + 간격의 절반만큼 왼쪽으로
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '냉장고 현황',
+                    style: TextStyle(
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textPrimary,
                     ),
-                    child: InkWell(
-                      onTap: onAddPressed,
-                      customBorder: const CircleBorder(),
-                      child: Icon(
-                        Icons.add,
-                        color: AppTheme.primaryOrange,
-                        size: 18.sp,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(width: 6.w),
+                  Showcase(
+                    key: homeScreenAddButtonKey,
+                    description: '냉장고에 식재료를 추가하려면 이 버튼을 누르세요!',
+                    onTargetClick: onAddPressed,
+                    disposeOnTap: true,
+                    child: SizedBox(
+                      width: 28.w,
+                      height: 28.h,
+                      child: Material(
+                        color: Colors.white,
+                        shape: CircleBorder(
+                          side: BorderSide(
+                            color: AppTheme.primaryOrange,
+                            width: 2.w,
+                          ),
+                        ),
+                        child: InkWell(
+                          onTap: onAddPressed,
+                          customBorder: const CircleBorder(),
+                          child: Icon(
+                            Icons.add,
+                            color: AppTheme.primaryOrange,
+                            size: 18.sp,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
 
           SizedBox(height: 12.h),
