@@ -337,7 +337,7 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
                       fontSize: 16.sp,
                       color: const Color(0xFF27214D),
                     ),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: '식재료 검색...',
                       border: InputBorder.none,
                       enabledBorder: InputBorder.none,
@@ -348,7 +348,7 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
                       contentPadding: EdgeInsets.zero,
                       isDense: true,
                       hintStyle: TextStyle(
-                        fontSize: 16,
+                        fontSize: 16.sp,
                         color: Color(0xFFC2BDBD),
                       ),
                     ),

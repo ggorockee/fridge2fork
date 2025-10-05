@@ -780,19 +780,36 @@ class _RecipeRecommendationsSectionState extends ConsumerState<_RecipeRecommenda
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            // 레시피 리스트 (세로 스크롤, 그리드 형식)
-            ListView.separated(
+            // 레시피 그리드 (3열)
+            GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: response.recipes.take(10).length,
-              separatorBuilder: (context, index) => Divider(
-                height: 1.h,
-                thickness: 1.h,
-                color: AppTheme.borderGray,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                childAspectRatio: 0.85,
+                crossAxisSpacing: 0,
+                mainAxisSpacing: 0,
               ),
+              itemCount: response.recipes.take(12).length,
               itemBuilder: (context, index) {
                 final recipe = response.recipes[index];
-                return _RecommendedRecipeCard(recipe: recipe);
+                final isTopRow = index < 3;
+                final isBottomRow = index >= response.recipes.take(12).length - 3;
+
+                return Column(
+                  children: [
+                    // 상단 구분선 (첫 행은 제외)
+                    if (!isTopRow)
+                      Container(
+                        height: 1.h,
+                        color: AppTheme.borderGray,
+                      ),
+                    // 레시피 카드
+                    Expanded(
+                      child: _RecommendedRecipeCard(recipe: recipe),
+                    ),
+                  ],
+                );
               },
             ),
           ],
@@ -865,40 +882,36 @@ class _RecommendedRecipeCard extends StatelessWidget {
         minScaleFactor: 1.0,
         maxScaleFactor: 1.0, // 시스템 폰트 크기 변경 무시
         child: Padding(
-          padding: EdgeInsets.only(left: 16.w, top: 12.h, bottom: 12.h),
-          child: Row(
+          padding: EdgeInsets.all(8.w),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 이미지 영역
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8.r),
-                child: SizedBox(
-                  width: 80.w,
-                  height: 80.h,
-                  child: recipe.imageUrl != null && recipe.imageUrl!.isNotEmpty
-                      ? Image.network(
-                          recipe.imageUrl!,
-                          width: 80.w,
-                          height: 80.h,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Container(
-                            width: 80.w,
-                            height: 80.h,
-                            color: Colors.grey[200],
+              Expanded(
+                flex: 3,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8.r),
+                  child: Container(
+                    width: double.infinity,
+                    color: Colors.grey[200],
+                    child: recipe.imageUrl != null && recipe.imageUrl!.isNotEmpty
+                        ? Image.network(
+                            recipe.imageUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Center(
+                              child: Icon(Icons.restaurant, size: 32.sp, color: Colors.grey),
+                            ),
+                          )
+                        : Center(
                             child: Icon(Icons.restaurant, size: 32.sp, color: Colors.grey),
                           ),
-                        )
-                      : Container(
-                          width: 80.w,
-                          height: 80.h,
-                          color: Colors.grey[200],
-                          child: Icon(Icons.restaurant, size: 32.sp, color: Colors.grey),
-                        ),
+                  ),
                 ),
               ),
-              SizedBox(width: 12.w),
-              // 텍스트 영역 (오른쪽 패딩 없음)
+              SizedBox(height: 6.h),
+              // 텍스트 영역
               Expanded(
+                flex: 2,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -906,21 +919,21 @@ class _RecommendedRecipeCard extends StatelessWidget {
                     Text(
                       recipe.title,
                       style: TextStyle(
-                        fontSize: 14.sp,
+                        fontSize: 11.sp,
                         fontWeight: FontWeight.w600,
-                        height: 1.3,
+                        height: 1.2,
                         color: AppTheme.textPrimary,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    SizedBox(height: 4.h),
+                    SizedBox(height: 2.h),
                     // 재료 정보
                     if (recipe.matchedCount > 0 && recipe.totalCount > 0)
                       Text(
-                        '보유 재료 ${recipe.matchedCount}개 / 총 ${recipe.totalCount}개',
+                        '${recipe.matchedCount}/${recipe.totalCount}개',
                         style: TextStyle(
-                          fontSize: 12.sp,
+                          fontSize: 10.sp,
                           color: AppTheme.textSecondary,
                         ),
                       ),
