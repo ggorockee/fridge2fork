@@ -255,14 +255,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     // 냉장고 + 상태
                     ConstrainedBox(
                       constraints: BoxConstraints(
-                        minHeight: MediaQuery.of(context).size.height - 350.h,
+                        minHeight: MediaQuery.of(context).size.height - 320.h,
                       ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          SizedBox(height: 80.h), // 더 아래로 내리기
+                          SizedBox(height: 40.h), // 상단 여백
                           const _FridgeIcon(),
-                          const SizedBox(height: AppTheme.spacingM),
+                          SizedBox(height: 24.h), // 냉장고 아이콘 아래 여백 증가
                           fridgeState.when(
                             data: (fridge) => fridge.ingredients.isEmpty
                                 ? _EmptyStateMessage(onAddPressed: _onAddButtonPressed)
@@ -280,19 +280,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ],
                       ),
                     ),
-                    SizedBox(height: 295.h), // 레시피 영역 차지할 공간 확보
+                    SizedBox(height: 320.h), // 레시피 영역 차지할 공간 확보 (여백 증가)
                   ],
                 ),
               ),
             ),
 
-            // 하단 레시피 영역 고정 (바텀 네비게이션 바 위로 16px)
+            // 하단 레시피 영역 고정 (바텀 네비게이션 바 위로)
             Positioned(
               left: 0,
               right: 0,
               bottom: 16.h, // 바텀 네비게이션 바와 16px 간격
               child: Container(
-                height: 295.h,
+                height: 300.h, // 레시피 영역 높이 약간 증가
                 color: AppTheme.backgroundWhite,
                 child: selectedIngredients.isEmpty
                     ? const _RecipeRecommendationSection()
@@ -489,57 +489,53 @@ class _SelectedIngredientsSection extends StatelessWidget {
       child: Column(
         children: [
           // 냉장고 상태 제목 + [+] 버튼
-          Stack(
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // 중앙 정렬된 제목
-              Center(
-                child: Text(
-                  '냉장고 현황',
-                  style: TextStyle(
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+              // 제목
+              Text(
+                '냉장고 현황',
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textPrimary,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              // 오른쪽에 배치된 [+] 버튼
-              Positioned(
-                right: 120.w,
-                top: 0,
-                bottom: 0,
-                child: Showcase(
-                  key: homeScreenAddButtonKey,
-                  description: '냉장고에 식재료를 추가하려면 이 버튼을 누르세요!',
-                  onTargetClick: () {
-                    // Showcase에서 클릭 시 부모 위젯의 콜백 호출
-                    final homeState = context.findAncestorStateOfType<_HomeScreenState>();
-                    homeState?._onAddButtonPressed();
-                  },
-                  disposeOnTap: true,
-                  child: SizedBox(
-                    width: 32.w,
-                    height: 32.h,
-                    child: Material(
-                      color: Colors.white,
-                      shape: CircleBorder(
-                        side: BorderSide(
-                          color: AppTheme.primaryOrange,
-                          width: 2.w,
-                        ),
+              SizedBox(width: 8.w), // 제목과 버튼 사이 간격
+              // [+] 버튼
+              Showcase(
+                key: homeScreenAddButtonKey,
+                description: '냉장고에 식재료를 추가하려면 이 버튼을 누르세요!',
+                onTargetClick: () {
+                  // Showcase에서 클릭 시 부모 위젯의 콜백 호출
+                  final homeState = context.findAncestorStateOfType<_HomeScreenState>();
+                  homeState?._onAddButtonPressed();
+                },
+                disposeOnTap: true,
+                child: SizedBox(
+                  width: 32.w,
+                  height: 32.h,
+                  child: Material(
+                    color: Colors.white,
+                    shape: CircleBorder(
+                      side: BorderSide(
+                        color: AppTheme.primaryOrange,
+                        width: 2.w,
                       ),
-                      child: InkWell(
-                        onTap: () {
-                          final homeState = context.findAncestorStateOfType<_HomeScreenState>();
-                          homeState?._onAddButtonPressed();
-                        },
-                        customBorder: const CircleBorder(),
-                        child: Icon(
-                          Icons.add,
-                          color: AppTheme.primaryOrange,
-                          size: 20.sp,
-                        ),
+                    ),
+                    child: InkWell(
+                      onTap: () {
+                        final homeState = context.findAncestorStateOfType<_HomeScreenState>();
+                        homeState?._onAddButtonPressed();
+                      },
+                      customBorder: const CircleBorder(),
+                      child: Icon(
+                        Icons.add,
+                        color: AppTheme.primaryOrange,
+                        size: 20.sp,
                       ),
                     ),
                   ),
