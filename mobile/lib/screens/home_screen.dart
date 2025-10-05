@@ -227,6 +227,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
+        // AppBar 하단에 구분선 추가 (태블릿에서도 명확하게 보이도록)
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(1.h),
+          child: Container(
+            height: 1.h,
+            color: const Color(0xFFE0E0E0),
+          ),
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: _onRefresh,
