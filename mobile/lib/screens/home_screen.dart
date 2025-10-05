@@ -862,17 +862,19 @@ class _RecommendedRecipeCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 이미지 영역
-              Expanded(
-                flex: 3,
+              // 이미지 영역 (고정 크기)
+              SizedBox(
+                width: double.infinity,
+                height: 120.h,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8.r),
                   child: Container(
-                    width: double.infinity,
                     color: Colors.grey[200],
                     child: recipe.imageUrl != null && recipe.imageUrl!.isNotEmpty
                         ? Image.network(
                             recipe.imageUrl!,
+                            width: double.infinity,
+                            height: 120.h,
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) => Center(
                               child: Icon(Icons.restaurant, size: 32.sp, color: Colors.grey),
