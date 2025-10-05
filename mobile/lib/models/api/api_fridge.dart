@@ -34,6 +34,19 @@ class ApiFridge {
   /// 재료명 목록 반환
   List<String> get ingredientNames =>
       ingredients.map((e) => e.name).toList();
+
+  /// 복사 생성자 (Optimistic UI를 위해 필요)
+  ApiFridge copyWith({
+    int? id,
+    List<ApiFridgeIngredient>? ingredients,
+    DateTime? updatedAt,
+  }) {
+    return ApiFridge(
+      id: id ?? this.id,
+      ingredients: ingredients ?? this.ingredients,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 }
 
 /// 냉장고 재료 모델

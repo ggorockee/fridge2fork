@@ -160,7 +160,7 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
             : FloatingActionButton(
                 onPressed: _onAddButtonPressed,
                 backgroundColor: Colors.white,
-                elevation: 2,
+                elevation: 0,
                 heroTag: "fridge_fab",
                 shape: CircleBorder(
                   side: BorderSide(

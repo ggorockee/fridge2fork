@@ -478,9 +478,9 @@ class _SelectedIngredientsSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 2줄까지만 표시 (3개씩 2줄 = 6개)
-    final displayIngredients = ingredients.take(6).toList();
-    final hasMore = ingredients.length > 6;
+    // 3줄까지 표시 (3개씩 약 3줄 = 8개)
+    final displayIngredients = ingredients.take(8).toList();
+    final hasMore = ingredients.length > 8;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingM),
@@ -595,7 +595,7 @@ class _SelectedIngredientsSection extends ConsumerWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        '더보기 +${ingredients.length - 6}',
+                        '더보기 +${ingredients.length - 8}',
                         style: TextStyle(
                           fontSize: 14.sp,
                           color: AppTheme.primaryOrange,
