@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../widgets/widgets.dart';
 import '../providers/ingredients_provider.dart';
 import '../providers/api/ingredient_api_provider.dart';
@@ -315,19 +316,19 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
                         // 검색어 업데이트 (클라이언트 필터링)
                         ref.read(searchTextProvider.notifier).state = value;
                       },
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF27214D),
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        color: const Color(0xFF27214D),
                       ),
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         hintText: '식재료 검색',
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
                         focusedBorder: InputBorder.none,
                         contentPadding: EdgeInsets.symmetric(vertical: 16),
                         hintStyle: TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFFC2BDBD),
+                          fontSize: 14.sp,
+                          color: const Color(0xFFC2BDBD),
                         ),
                       ),
                     ),
