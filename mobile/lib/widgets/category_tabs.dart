@@ -23,50 +23,53 @@ class CategoryTabs extends StatelessWidget {
       constraints: const BoxConstraints(
         minHeight: 34, // 최소 높이 34px, 폰트 크기에 따라 자동으로 늘어남
       ),
-      child: ListView.builder(
+      child: SingleChildScrollView(
         controller: scrollController,
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingM),
-        itemCount: categories.length,
-        shrinkWrap: true, // 내용물 크기에 맞춤
-        itemBuilder: (context, index) {
-          final isSelected = index == selectedIndex;
-          return Padding(
-            padding: EdgeInsets.only(
-              right: index < categories.length - 1 ? AppTheme.spacingL : 0,
-            ),
-            child: GestureDetector(
-              onTap: () => onTap(index),
-              child: IntrinsicWidth(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min, // Column 크기를 자식에 맞춤
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      categories[index],
-                      style: TextStyle(
-                        fontFamily: 'Brandon Grotesque',
-                        fontSize: 16, // 모든 탭 동일한 크기
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: -0.16,
-                      color: isSelected
-                          ? AppTheme.primaryOrange // 선택된 항목은 오렌지 색상
-                          : AppTheme.textPrimary, // 비선택 항목은 진한 색상으로 시인성 향상
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    if (isSelected)
-                      Container(
-                        width: double.infinity, // 텍스트 전체 너비에 맞춤
-                        height: 2,
-                        color: AppTheme.primaryOrange,
-                      ),
-                  ],
+        child: Row(
+          children: List.generate(
+            categories.length,
+            (index) {
+              final isSelected = index == selectedIndex;
+              return Padding(
+                padding: EdgeInsets.only(
+                  right: index < categories.length - 1 ? AppTheme.spacingL : 0,
                 ),
-              ),
-            ),
-          );
-        },
+                child: GestureDetector(
+                  onTap: () => onTap(index),
+                  child: IntrinsicWidth(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min, // Column 크기를 자식에 맞춤
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          categories[index],
+                          style: TextStyle(
+                            fontFamily: 'Brandon Grotesque',
+                            fontSize: 16, // 모든 탭 동일한 크기
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: -0.16,
+                            color: isSelected
+                                ? AppTheme.primaryOrange // 선택된 항목은 오렌지 색상
+                                : AppTheme.textPrimary, // 비선택 항목은 진한 색상으로 시인성 향상
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        if (isSelected)
+                          Container(
+                            width: double.infinity, // 텍스트 전체 너비에 맞춤
+                            height: 2,
+                            color: AppTheme.primaryOrange,
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
       ),
     );
   }

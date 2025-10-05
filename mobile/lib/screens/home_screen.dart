@@ -732,6 +732,7 @@ class _RecipeRecommendationsSectionState extends ConsumerState<_RecipeRecommenda
         }
 
         return Column(
+          mainAxisSize: MainAxisSize.min, // 폰트 크기에 따라 Column 크기 자동 조정
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 추천 제목 (왼쪽 패딩만)
