@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../theme/app_theme.dart';
 import '../widgets/widgets.dart';
 import '../models/recipe.dart';
@@ -83,9 +84,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                     decoration: const BoxDecoration(
                       color: AppTheme.backgroundGray,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.restaurant_menu,
-                      size: 80,
+                      size: 80.sp,
                       color: AppTheme.textGray,
                     ),
                   );
@@ -101,7 +102,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                     const SnackBar(content: Text('공유 기능은 현재 준비 중입니다.')),
                   );
                 },
-                icon: const Icon(Icons.share_outlined),
+                icon: Icon(Icons.share_outlined),
                 tooltip: '공유하기',
               ),
             ],
@@ -120,7 +121,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                     style: AppTheme.headingLarge,
                   ),
                   
-                  const SizedBox(height: AppTheme.spacingS),
+                  SizedBox(height: AppTheme.spacingS),
                   
                   Text(
                     widget.recipe.description,
@@ -129,11 +130,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                     ),
                   ),
                   
-                  const SizedBox(height: AppTheme.spacingL),
+                  SizedBox(height: AppTheme.spacingL),
                   
                   // 요리 기본 정보 카드
                   Container(
-                    padding: const EdgeInsets.all(AppTheme.spacingM),
+                    padding: EdgeInsets.all(AppTheme.spacingM),
                     decoration: AppTheme.cardDecoration(
                       backgroundColor: AppTheme.backgroundGray,
                     ),
@@ -156,19 +157,19 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                     ),
                   ),
                   
-                  const SizedBox(height: AppTheme.spacingXL),
+                  SizedBox(height: AppTheme.spacingXL),
                   
                   // 재료 리스트
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         '준비할 재료',
                         style: AppTheme.headingSmall,
                       ),
                       if (widget.userIngredients.isNotEmpty && missingIngredients.isNotEmpty)
                         Container(
-                          padding: const EdgeInsets.symmetric(
+                          padding: EdgeInsets.symmetric(
                             horizontal: AppTheme.spacingM,
                             vertical: AppTheme.spacingS,
                           ),
@@ -186,7 +187,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                     ],
                   ),
                   
-                  const SizedBox(height: AppTheme.spacingM),
+                  SizedBox(height: AppTheme.spacingM),
                   
                   // 재료 목록
                   ...widget.recipe.ingredients.map((ingredient) {
@@ -196,8 +197,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         missingIngredients.contains(ingredient);
                     
                     return Container(
-                      margin: const EdgeInsets.only(bottom: AppTheme.spacingS),
-                      padding: const EdgeInsets.symmetric(
+                      margin: EdgeInsets.only(bottom: AppTheme.spacingS),
+                      padding: EdgeInsets.symmetric(
                         horizontal: AppTheme.spacingM,
                         vertical: AppTheme.spacingM,
                       ),
@@ -224,14 +225,14 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                 : isMissing 
                                     ? Icons.cancel
                                     : Icons.circle_outlined,
-                            size: 20,
+                            size: 20.sp,
                             color: isAvailable 
                                 ? AppTheme.successGreen
                                 : isMissing 
                                     ? Colors.red
                                     : AppTheme.textGray,
                           ),
-                          const SizedBox(width: AppTheme.spacingM),
+                          SizedBox(width: AppTheme.spacingM),
                           Expanded(
                             child: Text(
                               '${ingredient.name} ${ingredient.amount}',
@@ -252,7 +253,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                   
                   // 부족 재료 가이드 버튼
                   if (widget.userIngredients.isNotEmpty && missingIngredients.isNotEmpty) ...[
-                    const SizedBox(height: AppTheme.spacingM),
+                    SizedBox(height: AppTheme.spacingM),
                     CustomButton(
                       text: '부족한 재료만 모아보기',
                       type: ButtonType.secondary,
@@ -261,19 +262,19 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                     ),
                   ],
                   
-                  const SizedBox(height: AppTheme.spacingXL),
+                  SizedBox(height: AppTheme.spacingXL),
                   
                   // 조리법
-                  const Text(
+                  Text(
                     '따라해보세요',
                     style: AppTheme.headingSmall,
                   ),
                   
-                  const SizedBox(height: AppTheme.spacingM),
+                  SizedBox(height: AppTheme.spacingM),
                   
                   // 조리 단계 페이지뷰
                   SizedBox(
-                    height: 300,
+                    height: 300.h,
                     child: PageView.builder(
                       controller: _stepPageController,
                       onPageChanged: (index) {
@@ -285,13 +286,13 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                       itemBuilder: (context, index) {
                         final step = widget.recipe.steps[index];
                         return Container(
-                          margin: const EdgeInsets.symmetric(horizontal: AppTheme.spacingS),
+                          margin: EdgeInsets.symmetric(horizontal: AppTheme.spacingS),
                           decoration: AppTheme.cardDecoration(),
                           child: Column(
                             children: [
                               // 단계 이미지 영역
                               Container(
-                                height: 180,
+                                height: 180.h,
                                 width: double.infinity,
                                 decoration: BoxDecoration(
                                   color: AppTheme.backgroundGray,
@@ -309,23 +310,23 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                         color: AppTheme.primaryOrange,
                                       ),
                                     ),
-                                    const SizedBox(height: AppTheme.spacingS),
-                                    const Icon(
+                                    SizedBox(height: AppTheme.spacingS),
+                                    Icon(
                                       Icons.restaurant,
-                                      size: 40,
+                                      size: 40.sp,
                                       color: AppTheme.textGray,
                                     ),
                                     if (step.durationMinutes != null) ...[
-                                      const SizedBox(height: AppTheme.spacingS),
+                                      SizedBox(height: AppTheme.spacingS),
                                       Row(
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
-                                          const Icon(
+                                          Icon(
                                             Icons.timer,
-                                            size: 16,
+                                            size: 16.sp,
                                             color: AppTheme.textGray,
                                           ),
-                                          const SizedBox(width: 4),
+                                          SizedBox(width: 4.w),
                                           Text(
                                             '${step.durationMinutes}분',
                                             style: AppTheme.bodySmall.copyWith(
@@ -342,7 +343,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                               // 단계 설명
                               Expanded(
                                 child: Padding(
-                                  padding: const EdgeInsets.all(AppTheme.spacingM),
+                                  padding: EdgeInsets.all(AppTheme.spacingM),
                                   child: Center(
                                     child: Text(
                                       step.description,
@@ -360,15 +361,15 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                   ),
                   
                   // 페이지 인디케이터
-                  const SizedBox(height: AppTheme.spacingM),
+                  SizedBox(height: AppTheme.spacingM),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(
                       widget.recipe.steps.length,
                       (index) => Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        width: 8,
-                        height: 8,
+                        margin: EdgeInsets.symmetric(horizontal: 4),
+                        width: 8.w,
+                        height: 8.h,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: index == _currentStepIndex
@@ -379,7 +380,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                     ),
                   ),
                   
-                  const SizedBox(height: AppTheme.spacingXL),
+                  SizedBox(height: AppTheme.spacingXL),
                   
                   // 관련 레시피 추천
                   FutureBuilder<List<Recipe>>(
@@ -393,22 +394,22 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             '비슷한 재료로 만들 수 있는 다른 요리',
                             style: AppTheme.headingSmall,
                           ),
                           
-                          const SizedBox(height: AppTheme.spacingM),
+                          SizedBox(height: AppTheme.spacingM),
                           
                           SizedBox(
-                            height: 200,
+                            height: 200.h,
                             child: ListView.builder(
                               scrollDirection: Axis.horizontal,
                               itemCount: relatedRecipes.length,
                               itemBuilder: (context, index) {
                                 final relatedRecipe = relatedRecipes[index];
                                 return Container(
-                                  width: 160,
+                                  width: 160.w,
                                   margin: EdgeInsets.only(
                                     right: index < relatedRecipes.length - 1 
                                         ? AppTheme.spacingM 
@@ -423,7 +424,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                         children: [
                                           // 이미지 영역
                                           Container(
-                                            height: 100,
+                                            height: 100.h,
                                             width: double.infinity,
                                             decoration: const BoxDecoration(
                                               borderRadius: BorderRadius.only(
@@ -442,9 +443,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                                 errorBuilder: (context, error, stackTrace) {
                                                   return Container(
                                                     color: AppTheme.backgroundGray,
-                                                    child: const Icon(
+                                                    child: Icon(
                                                       Icons.restaurant,
-                                                      size: 40,
+                                                      size: 40.sp,
                                                       color: AppTheme.textGray,
                                                     ),
                                                   );
@@ -456,7 +457,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                           // 레시피 정보
                                           Expanded(
                                             child: Padding(
-                                              padding: const EdgeInsets.all(AppTheme.spacingM),
+                                              padding: EdgeInsets.all(AppTheme.spacingM),
                                               child: Column(
                                                 crossAxisAlignment: CrossAxisAlignment.start,
                                                 children: [
@@ -471,12 +472,12 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                                   
                                                   Row(
                                                     children: [
-                                                      const Icon(
+                                                      Icon(
                                                         Icons.timer,
-                                                        size: 14,
+                                                        size: 14.sp,
                                                         color: AppTheme.textGray,
                                                       ),
-                                                      const SizedBox(width: 4),
+                                                      SizedBox(width: 4.w),
                                                       Text(
                                                         '${relatedRecipe.cookingTimeMinutes}분',
                                                         style: AppTheme.bodySmall.copyWith(
@@ -502,7 +503,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                     },
                   ),
                   
-                  const SizedBox(height: AppTheme.spacingXXL),
+                  SizedBox(height: AppTheme.spacingXXL),
                 ],
               ),
             ),
@@ -517,10 +518,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       children: [
         Icon(
           icon,
-          size: 24,
+          size: 24.sp,
           color: AppTheme.primaryOrange,
         ),
-        const SizedBox(height: AppTheme.spacingS),
+        SizedBox(height: AppTheme.spacingS),
         Text(
           text,
           style: AppTheme.bodyMedium,
@@ -552,16 +553,16 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
             // 핸들
             Center(
               child: Container(
-                width: 40,
-                height: 4,
+                width: 40.w,
+                height: 4.h,
                 decoration: BoxDecoration(
                   color: AppTheme.textGray,
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.circular(2.r),
                 ),
               ),
             ),
             
-            const SizedBox(height: AppTheme.spacingL),
+            SizedBox(height: AppTheme.spacingL),
             
             // 제목
             Text(
@@ -569,25 +570,25 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               style: AppTheme.headingSmall,
             ),
             
-            const SizedBox(height: AppTheme.spacingM),
+            SizedBox(height: AppTheme.spacingM),
             
             // 부족한 재료 목록
             ...missingIngredients.map((ingredient) {
               return Container(
-                margin: const EdgeInsets.only(bottom: AppTheme.spacingS),
-                padding: const EdgeInsets.all(AppTheme.spacingM),
+                margin: EdgeInsets.only(bottom: AppTheme.spacingS),
+                padding: EdgeInsets.all(AppTheme.spacingM),
                 decoration: BoxDecoration(
                   color: AppTheme.backgroundGray,
                   borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                 ),
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.shopping_cart,
-                      size: 20,
+                      size: 20.sp,
                       color: AppTheme.primaryOrange,
                     ),
-                    const SizedBox(width: AppTheme.spacingM),
+                    SizedBox(width: AppTheme.spacingM),
                     Text(
                       '${ingredient.name} ${ingredient.amount}',
                       style: AppTheme.bodyMedium,
@@ -597,7 +598,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               );
             }).toList(),
             
-            const SizedBox(height: AppTheme.spacingM),
+            SizedBox(height: AppTheme.spacingM),
             
             // 설명 텍스트
             Text(
@@ -607,7 +608,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               ),
             ),
             
-            const SizedBox(height: AppTheme.spacingL),
+            SizedBox(height: AppTheme.spacingL),
             
             // 닫기 버튼
             CustomButton(

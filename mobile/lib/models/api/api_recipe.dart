@@ -394,6 +394,12 @@ class RecipeRecommendation {
     required this.algorithm,
   });
 
+  /// 매칭 퍼센트 계산 (matchScore를 퍼센트로 변환)
+  int? get matchPercentage {
+    if (matchScore <= 0) return null;
+    return (matchScore * 100).round();
+  }
+
   factory RecipeRecommendation.fromJson(Map<String, dynamic> json) {
     return RecipeRecommendation(
       recipeSno: json['recipe_sno']?.toString() ?? '',

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../widgets/widgets.dart';
 import '../providers/recipe_provider.dart';
 import '../providers/ingredients_provider.dart';
 import '../providers/fridge_provider.dart';
 import '../providers/api/recipe_recommendation_provider.dart';
+import '../providers/app_state_provider.dart';
 import '../models/recipe.dart';
 import '../models/api/api_recipe.dart';
 import '../theme/app_theme.dart';
@@ -84,12 +86,20 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
         backgroundColor: AppTheme.backgroundWhite,
         elevation: 0,
         automaticallyImplyLeading: false,
-        title: const Text(
+        title: Text(
           '요리하기',
           style: TextStyle(
             color: AppTheme.textPrimary,
-            fontSize: 20,
+            fontSize: 20.sp,
             fontWeight: FontWeight.w600,
+          ),
+        ),
+        // AppBar 하단에 구분선 추가
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(1.h),
+          child: Container(
+            height: 1.h,
+            color: const Color(0xFFE0E0E0),
           ),
         ),
       ),
@@ -104,40 +114,44 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
       children: [
         // 검색바
         Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: EdgeInsets.all(16.w),
           child: Container(
-            height: 56,
+            height: 56.h,
             decoration: BoxDecoration(
               color: const Color(0xFFF3F4F9),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(16.r),
             ),
             child: Row(
               children: [
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.w),
                   child: Icon(
                     Icons.search,
-                    color: Color(0xFF5D577E),
-                    size: 20,
+                    color: const Color(0xFF5D577E),
+                    size: 22.sp,
                   ),
                 ),
                 Expanded(
-                  child: TextFormField(
+                  child: TextField(
                     onChanged: (value) {
                       ref.read(recipeSearchQueryProvider.notifier).state = value;
                     },
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF27214D),
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      color: const Color(0xFF27214D),
                     ),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: '레시피 검색',
                       border: InputBorder.none,
                       enabledBorder: InputBorder.none,
                       focusedBorder: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(vertical: 16),
+                      disabledBorder: InputBorder.none,
+                      errorBorder: InputBorder.none,
+                      focusedErrorBorder: InputBorder.none,
+                      contentPadding: EdgeInsets.zero,
+                      isDense: true,
                       hintStyle: TextStyle(
-                        fontSize: 14,
+                        fontSize: 16.sp,
                         color: Color(0xFFC2BDBD),
                       ),
                     ),
@@ -146,12 +160,6 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
               ],
             ),
           ),
-        ),
-
-        // 구분선
-        Container(
-          height: 1,
-          color: AppTheme.borderGray,
         ),
 
         // 콘텐츠
@@ -202,10 +210,10 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
       },
       child: ListView.separated(
         controller: _scrollController,
-        padding: const EdgeInsets.all(AppTheme.spacingM),
+        padding: EdgeInsets.all(AppTheme.spacingM),
         itemCount: filteredRecipes.length,
         separatorBuilder: (context, index) {
-          return const SizedBox(height: AppTheme.spacingM);
+          return SizedBox(height: AppTheme.spacingM);
         },
         itemBuilder: (context, index) {
           final recipe = filteredRecipes[index];
@@ -222,51 +230,51 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
   Widget _buildEmptyFridgeState() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(AppTheme.spacingXL),
+        padding: EdgeInsets.all(AppTheme.spacingXL),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 120,
-              height: 120,
+              width: 120.w,
+              height: 120.h,
               decoration: BoxDecoration(
                 color: AppTheme.lightOrange,
                 borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.kitchen_outlined,
-                size: 60,
+                size: 60.sp,
                 color: AppTheme.primaryOrange,
               ),
             ),
-            const SizedBox(height: AppTheme.spacingXL),
-            const Text(
+            SizedBox(height: AppTheme.spacingXL),
+            Text(
               '냉장고가 비어있어요',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 20.sp,
                 fontWeight: FontWeight.w600,
                 color: AppTheme.textPrimary,
               ),
             ),
-            const SizedBox(height: AppTheme.spacingM),
-            const Text(
+            SizedBox(height: AppTheme.spacingM),
+            Text(
               '냉장고에 재료를 추가하면\n그 재료로 만들 수 있는 레시피를 추천해드려요!',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 16.sp,
                 color: AppTheme.textSecondary,
                 height: 1.5,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: AppTheme.spacingXL),
+            SizedBox(height: AppTheme.spacingXL),
             CustomButton(
               text: '냉장고에 재료 추가하기',
               onPressed: () {
-                // 냉장고 탭으로 이동
-                DefaultTabController.of(context).animateTo(1);
+                // 냉장고 탭으로 이동 (탭 인덱스 1)
+                ref.read(selectedTabIndexProvider.notifier).state = 1;
               },
               type: ButtonType.primary,
-              height: 48,
+              height: 48.h,
             ),
           ],
         ),
@@ -278,40 +286,41 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
   Widget _buildNoRecommendationsState() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(AppTheme.spacingXL),
+        padding: EdgeInsets.all(AppTheme.spacingXL),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            Icon(
               Icons.restaurant_outlined,
-              size: 64,
+              size: 64.sp,
               color: AppTheme.textSecondary,
             ),
-            const SizedBox(height: AppTheme.spacingM),
-            const Text(
+            SizedBox(height: AppTheme.spacingM),
+            Text(
               '추천할 레시피가 없어요',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 18.sp,
                 fontWeight: FontWeight.w600,
                 color: AppTheme.textPrimary,
               ),
             ),
-            const SizedBox(height: AppTheme.spacingS),
-            const Text(
+            SizedBox(height: AppTheme.spacingS),
+            Text(
               '냉장고에 다른 재료를 추가해보세요',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 14.sp,
                 color: AppTheme.textSecondary,
               ),
             ),
-            const SizedBox(height: AppTheme.spacingXL),
+            SizedBox(height: AppTheme.spacingXL),
             CustomButton(
               text: '냉장고에 재료 추가하기',
               onPressed: () {
-                DefaultTabController.of(context).animateTo(1);
+                // 냉장고 탭으로 이동 (탭 인덱스 1)
+                ref.read(selectedTabIndexProvider.notifier).state = 1;
               },
               type: ButtonType.secondary,
-              height: 48,
+              height: 48.h,
             ),
           ],
         ),
@@ -323,7 +332,7 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
   /// 로딩 아이템
   Widget _buildLoadingItem() {
     return Container(
-      height: 120,
+      height: 120.h,
       decoration: BoxDecoration(
         color: Colors.grey.withOpacity(0.1),
         borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
@@ -340,34 +349,34 @@ class _RecipeScreenState extends ConsumerState<RecipeScreen> {
   Widget _buildErrorState(String error) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(AppTheme.spacingXL),
+        padding: EdgeInsets.all(AppTheme.spacingXL),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            Icon(
               Icons.error_outline,
-              size: 64,
+              size: 64.sp,
               color: AppTheme.textSecondary,
             ),
-            const SizedBox(height: AppTheme.spacingM),
-            const Text(
+            SizedBox(height: AppTheme.spacingM),
+            Text(
               '오류가 발생했습니다',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 18.sp,
                 fontWeight: FontWeight.w600,
                 color: AppTheme.textPrimary,
               ),
             ),
-            const SizedBox(height: AppTheme.spacingS),
+            SizedBox(height: AppTheme.spacingS),
             Text(
               error,
-              style: const TextStyle(
-                fontSize: 14,
+              style: TextStyle(
+                fontSize: 14.sp,
                 color: AppTheme.textSecondary,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: AppTheme.spacingL),
+            SizedBox(height: AppTheme.spacingL),
             CustomButton(
               text: '다시 시도',
               onPressed: () {
@@ -418,13 +427,13 @@ class RecommendationRecipeCard extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            blurRadius: 10.r,
+            offset: Offset(0.w, 2.h),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(AppTheme.spacingM),
+        padding: EdgeInsets.all(AppTheme.spacingM),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -434,8 +443,8 @@ class RecommendationRecipeCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     recipe.title.isNotEmpty ? recipe.title : recipe.name,
-                    style: const TextStyle(
-                      fontSize: 16,
+                    style: TextStyle(
+                      fontSize: 16.sp,
                       fontWeight: FontWeight.w600,
                       color: AppTheme.textPrimary,
                     ),
@@ -443,44 +452,44 @@ class RecommendationRecipeCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const Icon(
+                Icon(
                   Icons.open_in_new,
-                  size: 18,
+                  size: 18.sp,
                   color: AppTheme.textSecondary,
                 ),
               ],
             ),
-            const SizedBox(height: AppTheme.spacingS),
+            SizedBox(height: AppTheme.spacingS),
 
             // 재료 일치율
             Text(
               _getMatchScoreText(recipe.matchScore),
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 12.sp,
                 fontWeight: FontWeight.w600,
                 color: _getMatchScoreColor(recipe.matchScore),
               ),
             ),
-            const SizedBox(height: AppTheme.spacingS),
+            SizedBox(height: AppTheme.spacingS),
 
             // 매칭 재료 정보
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   '보유 재료',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 12.sp,
                     color: AppTheme.textSecondary,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(width: AppTheme.spacingM),
+                SizedBox(width: AppTheme.spacingM),
                 Expanded(
                   child: Text(
                     '${recipe.matchedCount}개 / 총 ${recipe.totalCount}개',
-                    style: const TextStyle(
-                      fontSize: 12,
+                    style: TextStyle(
+                      fontSize: 12.sp,
                       color: AppTheme.textPrimary,
                     ),
                   ),
@@ -490,11 +499,11 @@ class RecommendationRecipeCard extends StatelessWidget {
 
             // 소개글 (있을 경우에만 표시)
             if (recipe.introduction != null && recipe.introduction!.isNotEmpty) ...[
-              const SizedBox(height: AppTheme.spacingS),
+              SizedBox(height: AppTheme.spacingS),
               Text(
                 recipe.introduction!,
-                style: const TextStyle(
-                  fontSize: 12,
+                style: TextStyle(
+                  fontSize: 12.sp,
                   color: AppTheme.textSecondary,
                 ),
                 maxLines: 2,
@@ -504,37 +513,37 @@ class RecommendationRecipeCard extends StatelessWidget {
 
             // 조리 정보
             if (recipe.cookingTime != null || recipe.difficulty != null) ...[
-              const SizedBox(height: AppTheme.spacingS),
+              SizedBox(height: AppTheme.spacingS),
               Row(
                 children: [
                   if (recipe.cookingTime != null) ...[
-                    const Icon(
+                    Icon(
                       Icons.timer,
-                      size: 14,
+                      size: 14.sp,
                       color: AppTheme.textSecondary,
                     ),
-                    const SizedBox(width: 4),
+                    SizedBox(width: 4.w),
                     Text(
                       recipe.cookingTime!,
-                      style: const TextStyle(
-                        fontSize: 12,
+                      style: TextStyle(
+                        fontSize: 12.sp,
                         color: AppTheme.textSecondary,
                       ),
                     ),
                   ],
                   if (recipe.cookingTime != null && recipe.difficulty != null)
-                    const SizedBox(width: AppTheme.spacingM),
+                    SizedBox(width: AppTheme.spacingM),
                   if (recipe.difficulty != null) ...[
-                    const Icon(
+                    Icon(
                       Icons.analytics_outlined,
-                      size: 14,
+                      size: 14.sp,
                       color: AppTheme.textSecondary,
                     ),
-                    const SizedBox(width: 4),
+                    SizedBox(width: 4.w),
                     Text(
                       recipe.difficulty!,
-                      style: const TextStyle(
-                        fontSize: 12,
+                      style: TextStyle(
+                        fontSize: 12.sp,
                         color: AppTheme.textSecondary,
                       ),
                     ),
@@ -573,8 +582,8 @@ class RecipeCard extends ConsumerWidget {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            blurRadius: 8.r,
+            offset: Offset(0.w, 2.h),
           ),
         ],
       ),
@@ -608,10 +617,10 @@ class RecipeCard extends ConsumerWidget {
                       errorBuilder: (context, error, stackTrace) {
                         return Container(
                           color: AppTheme.lightOrange,
-                          child: const Center(
+                          child: Center(
                             child: Icon(
                               Icons.restaurant,
-                              size: 40,
+                              size: 40.sp,
                               color: AppTheme.primaryOrange,
                             ),
                           ),
@@ -641,22 +650,22 @@ class RecipeCard extends ConsumerWidget {
                       ref.read(favoriteRecipesProvider.notifier).toggleFavorite(recipe.id);
                     },
                     child: Container(
-                      width: 32,
-                      height: 32,
+                      width: 32.w,
+                      height: 32.h,
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.9),
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.1),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
+                            blurRadius: 4.r,
+                            offset: Offset(0.w, 2.h),
                           ),
                         ],
                       ),
                       child: Icon(
                         isFavorite ? Icons.favorite : Icons.favorite_border,
-                        size: 18,
+                        size: 18.sp,
                         color: isFavorite ? AppTheme.primaryOrange : AppTheme.textSecondary,
                       ),
                     ),
@@ -667,49 +676,49 @@ class RecipeCard extends ConsumerWidget {
           ),
           // 레시피 정보
           Container(
-            height: 100,
-            padding: const EdgeInsets.all(12),
+            height: 100.h,
+            padding: EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // 레시피 이름
                 Text(
                   recipe.name,
-                  style: const TextStyle(
-                    fontSize: 16,
+                  style: TextStyle(
+                    fontSize: 16.sp,
                     fontWeight: FontWeight.w600,
                     color: AppTheme.textPrimary,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4.h),
                 // 레시피 설명
                 Expanded(
                   child: Text(
                     recipe.description,
-                    style: const TextStyle(
-                      fontSize: 12,
+                    style: TextStyle(
+                      fontSize: 12.sp,
                       color: AppTheme.textSecondary,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8.h),
                 // 재료 현황 및 조리 시간
                 Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.kitchen,
-                      size: 14,
+                      size: 14.sp,
                       color: AppTheme.textSecondary,
                     ),
-                    const SizedBox(width: 4),
+                    SizedBox(width: 4.w),
                     Text(
                       '$availableCount/$totalCount개',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 12.sp,
                         color: availableCount == totalCount
                             ? AppTheme.primaryOrange
                             : AppTheme.textSecondary,
@@ -720,16 +729,16 @@ class RecipeCard extends ConsumerWidget {
                     ),
                     const Spacer(),
                     // 조리 시간
-                    const Icon(
+                    Icon(
                       Icons.access_time,
-                      size: 14,
+                      size: 14.sp,
                       color: AppTheme.textSecondary,
                     ),
-                    const SizedBox(width: 2),
+                    SizedBox(width: 2.w),
                     Text(
                       '${recipe.cookingTimeMinutes}분',
-                      style: const TextStyle(
-                        fontSize: 12,
+                      style: TextStyle(
+                        fontSize: 12.sp,
                         color: AppTheme.textSecondary,
                       ),
                     ),
@@ -791,13 +800,13 @@ class RecipeListCard extends ConsumerWidget {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            blurRadius: 10.r,
+            offset: Offset(0.w, 2.h),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(AppTheme.spacingM),
+        padding: EdgeInsets.all(AppTheme.spacingM),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -807,8 +816,8 @@ class RecipeListCard extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     recipe.name,
-                    style: const TextStyle(
-                      fontSize: 16,
+                    style: TextStyle(
+                      fontSize: 16.sp,
                       fontWeight: FontWeight.w600,
                       color: AppTheme.textPrimary,
                     ),
@@ -823,43 +832,43 @@ class RecipeListCard extends ConsumerWidget {
                   child: Icon(
                     isFavorite ? Icons.favorite : Icons.favorite_border,
                     color: isFavorite ? AppTheme.primaryOrange : AppTheme.textSecondary,
-                    size: 20,
+                    size: 20.sp,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: AppTheme.spacingS),
+            SizedBox(height: AppTheme.spacingS),
             
             // 재료 보유 상태
             Text(
               _getIngredientStatusText(availableCount, totalCount),
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 12.sp,
                 fontWeight: FontWeight.w600,
                 color: _getIngredientStatusColor(availableCount, totalCount),
               ),
             ),
-            const SizedBox(height: AppTheme.spacingS),
+            SizedBox(height: AppTheme.spacingS),
             
             // 없는 재료 (있을 경우에만 표시)
             if (unavailableIngredients.isNotEmpty) ...[
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     '없는 재료',
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 12.sp,
                       color: AppTheme.textSecondary,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  const SizedBox(width: AppTheme.spacingM),
+                  SizedBox(width: AppTheme.spacingM),
                   Expanded(
                     child: Text(
                       unavailableIngredients.map((ing) => ing.name).join(', '),
-                      style: const TextStyle(
-                        fontSize: 12,
+                      style: TextStyle(
+                        fontSize: 12.sp,
                         color: AppTheme.textPrimary,
                       ),
                       maxLines: 1,
@@ -868,29 +877,29 @@ class RecipeListCard extends ConsumerWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: 4.h),
             ],
             
             // 보유 재료
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   '보유 재료',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 12.sp,
                     color: AppTheme.textSecondary,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(width: AppTheme.spacingM),
+                SizedBox(width: AppTheme.spacingM),
                 Expanded(
                   child: Text(
                     availableIngredients.isNotEmpty 
                         ? availableIngredients.map((ing) => ing.name).join(', ')
                         : '보유한 재료가 없습니다',
-                    style: const TextStyle(
-                      fontSize: 12,
+                    style: TextStyle(
+                      fontSize: 12.sp,
                       color: AppTheme.textPrimary,
                     ),
                     maxLines: 1,

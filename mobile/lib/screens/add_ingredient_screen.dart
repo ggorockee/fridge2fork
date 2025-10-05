@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../widgets/widgets.dart';
 import '../providers/ingredients_provider.dart';
 import '../providers/api/ingredient_api_provider.dart';
 import '../providers/api_ingredients_provider.dart';
+import '../utils/responsive_utils.dart';
 
 /// 식재료 추가 화면 (Modal Bottom Sheet)
 /// 사용자가 냉장고에 추가할 식재료를 선택할 수 있는 화면
@@ -90,8 +92,12 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
         final selectedIngredients = ref.watch(tempSelectedIngredientsProvider);
         
         return GridView.builder(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: ResponsiveUtils.getGridColumns(
+              context,
+              mobileColumns: 3,
+              tabletColumns: 5,
+            ),
             childAspectRatio: 3.0, // 고정 높이 38px에 맞춘 비율 조정
             crossAxisSpacing: AppTheme.spacingS,
             mainAxisSpacing: AppTheme.spacingS,
@@ -168,8 +174,12 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
                 GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: ResponsiveUtils.getGridColumns(
+                      context,
+                      mobileColumns: 3,
+                      tabletColumns: 5,
+                    ),
                     childAspectRatio: 3.0, // 고정 높이 38px에 맞춘 비율 조정
                     crossAxisSpacing: AppTheme.spacingS,
                     mainAxisSpacing: AppTheme.spacingS,
@@ -315,19 +325,19 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
                         // 검색어 업데이트 (클라이언트 필터링)
                         ref.read(searchTextProvider.notifier).state = value;
                       },
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF27214D),
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        color: const Color(0xFF27214D),
                       ),
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         hintText: '식재료 검색',
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
                         focusedBorder: InputBorder.none,
                         contentPadding: EdgeInsets.symmetric(vertical: 16),
                         hintStyle: TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFFC2BDBD),
+                          fontSize: 14.sp,
+                          color: const Color(0xFFC2BDBD),
                         ),
                       ),
                     ),
@@ -519,7 +529,7 @@ class _AddIngredientScreenState extends ConsumerState<AddIngredientScreen> {
                       text: '냉장고에 추가하기 (${selectedIngredients.length})',
                       onPressed: _addIngredientsToFridge,
                       type: ButtonType.primary,
-                      height: 56,
+                      height: 36.h,
                       icon: Icons.add,
                     ),
                   ),

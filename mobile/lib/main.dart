@@ -3,10 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart'; // Firebase Core 패키지 임포트
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'config/app_config.dart';
 import 'providers/app_state_provider.dart';
 import 'providers/api/api_connection_provider.dart';
-import 'screens/splash_screen.dart';
+import 'screens/main_screen.dart';
 import 'screens/recipe_detail_screen.dart';
 import 'models/recipe.dart';
 import 'theme/app_theme.dart';
@@ -15,24 +16,23 @@ import 'services/interstitial_ad_manager.dart';
 import 'services/cache_service.dart';
 import 'services/offline_service.dart';
 import 'services/session_service.dart';
-import 'widgets/async_performance_monitor.dart';
 
 void main() async {
   // Flutter 엔진과 위젯 바인딩 초기화
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Firebase 초기화 (네이티브 설정 파일 사용)
-  await Firebase.initializeApp();
-  debugPrint('🔥 Firebase Initialized successfully!');
-  
-  // 환경 설정 초기화
-  final environment = kReleaseMode ? AppEnvironment.production : AppEnvironment.development;
-  await AppConfig.initialize(environment);
-  
-  // 디버그 모드에서 설정 정보 출력
-  if (AppConfig.debugMode) {
-    AppConfig.printConfig();
+  // 🔧 환경 설정 초기화 (.env 파일의 ENVIRONMENT 값에 따라 자동 결정)
+  try {
+    await AppConfig.initialize();
+    debugPrint('✅ AppConfig initialized successfully');
+    if (AppConfig.debugMode) {
+      AppConfig.printConfig();
+    }
+  } catch (e) {
+    debugPrint('⚠️ AppConfig initialization failed: $e');
+    debugPrint('ℹ️ Using default configuration');
   }
+<<<<<<< HEAD
   
   // AdMob 초기화 및 전면 광고 프리로드 (수익성 극대화)
   final adService = AdService();
@@ -51,9 +51,65 @@ void main() async {
   // 세션 서비스 초기화 (API 호출을 위한 세션 관리)
   await SessionService.initialize();
 
-  // SharedPreferences 인스턴스 로드
+  // 🔥 Firebase 초기화 (운영 환경에서만)
+  if (AppConfig.isProduction) {
+    try {
+      await Firebase.initializeApp();
+      debugPrint('✅ Firebase initialized successfully (Production)');
+    } catch (e) {
+      debugPrint('⚠️ Firebase initialization failed: $e');
+      debugPrint('ℹ️ App will run without Firebase features');
+    }
+  } else {
+    debugPrint('ℹ️ Firebase disabled in development mode');
+  }
+
+  // 📱 AdMob 초기화 및 전면 광고 프리로드 (운영 환경에서만)
+  if (AppConfig.isProduction) {
+    try {
+      final adService = AdService();
+      await adService.initialize();
+      await adService.preloadInterstitialAd();
+      debugPrint('✅ AdMob initialized successfully (Production)');
+
+      // 전면 광고 관리자 초기화 (앱 시작 후 광고 기회 제공)
+      InterstitialAdManager().onAppLaunched();
+    } catch (e) {
+      debugPrint('⚠️ AdMob initialization failed: $e');
+      debugPrint('ℹ️ App will run without ads');
+    }
+  } else {
+    debugPrint('ℹ️ AdMob disabled in development mode');
+  }
+
+  // 🗄️ 캐시 서비스 초기화
+  try {
+    await CacheService.initialize();
+    debugPrint('✅ CacheService initialized successfully');
+  } catch (e) {
+    debugPrint('⚠️ CacheService initialization failed: $e');
+  }
+
+  // 📴 오프라인 서비스 초기화
+  try {
+    await OfflineService.initialize();
+    debugPrint('✅ OfflineService initialized successfully');
+  } catch (e) {
+    debugPrint('⚠️ OfflineService initialization failed: $e');
+  }
+
+  // 🔐 세션 서비스 초기화 (API 호출을 위한 세션 관리)
+  try {
+    await SessionService.initialize();
+    debugPrint('✅ SessionService initialized successfully');
+  } catch (e) {
+    debugPrint('⚠️ SessionService initialization failed: $e');
+  }
+
+  // 💾 SharedPreferences 인스턴스 로드
+>>>>>>> develop
   final prefs = await SharedPreferences.getInstance();
-  
+
   bool isFirstLaunch;
 
   if (AppConfig.isProduction) {
@@ -63,6 +119,8 @@ void main() async {
     // 개발 모드: 테스트를 위해 앱을 재시작할 때마다 온보딩 표시
     isFirstLaunch = false; // 온보딩 비활성화
   }
+
+  debugPrint('🚀 App initialization completed');
 
   runApp(
     ProviderScope(
@@ -90,6 +148,7 @@ class MyApp extends ConsumerWidget {
       }
     });
 
+<<<<<<< HEAD
     return MaterialApp(
       title: AppConfig.appName,
       debugShowCheckedModeBanner: false,
@@ -108,6 +167,34 @@ class MyApp extends ConsumerWidget {
           default:
             return null;
         }
+=======
+    // ScreenUtil을 사용하여 반응형 디자인 구현
+    return ScreenUtilInit(
+      // 디자인 기준 사이즈 (일반적인 모바일 디자인 기준)
+      designSize: const Size(375, 812),
+      // 최소 텍스트 크기 배율 (접근성 고려)
+      minTextAdapt: true,
+      // 분할 화면 모드 지원
+      splitScreenMode: true,
+      builder: (context, child) {
+        return MaterialApp(
+          title: AppConfig.appName,
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          home: const MainScreen(),
+          onGenerateRoute: (settings) {
+            switch (settings.name) {
+              case '/recipe-detail':
+                final recipe = settings.arguments as Recipe;
+                return MaterialPageRoute(
+                  builder: (context) => RecipeDetailScreen(recipe: recipe),
+                );
+              default:
+                return null;
+            }
+          },
+        );
+>>>>>>> develop
       },
     );
   }

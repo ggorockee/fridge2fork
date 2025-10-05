@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/async_state_manager.dart';
 import '../services/api/api_client.dart';
@@ -18,26 +19,26 @@ class AsyncPerformanceMonitor extends ConsumerWidget {
     final apiRequestStatus = ApiClient.getRequestStatus();
 
     return Container(
-      margin: const EdgeInsets.all(8.0),
-      padding: const EdgeInsets.all(12.0),
+      margin: EdgeInsets.all(8.0.w),
+      padding: EdgeInsets.all(12.0.w),
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.8),
-        borderRadius: BorderRadius.circular(8.0),
-        border: Border.all(color: Colors.green, width: 1),
+        borderRadius: BorderRadius.circular(8.0.r),
+        border: Border.all(color: Colors.green, width: 1.w),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
+          Text(
             '🔍 비동기 성능 모니터',
             style: TextStyle(
               color: Colors.green,
-              fontSize: 14,
+              fontSize: 14.sp,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.h),
 
           // API 클라이언트 상태
           _buildSection(
@@ -49,7 +50,7 @@ class AsyncPerformanceMonitor extends ConsumerWidget {
             ],
           ),
 
-          const SizedBox(height: 8),
+          SizedBox(height: 8.h),
 
           // 비동기 작업 상태
           _buildSection(
@@ -64,7 +65,7 @@ class AsyncPerformanceMonitor extends ConsumerWidget {
 
           // 실행 중인 작업 목록
           if (runningTasks.isNotEmpty) ...[
-            const SizedBox(height: 8),
+            SizedBox(height: 8.h),
             _buildSection(
               '🏃 실행 중인 작업',
               runningTasks.entries.map((entry) {
@@ -78,7 +79,7 @@ class AsyncPerformanceMonitor extends ConsumerWidget {
             ),
           ],
 
-          const SizedBox(height: 8),
+          SizedBox(height: 8.h),
 
           // 컨트롤 버튼들
           Row(
@@ -87,7 +88,7 @@ class AsyncPerformanceMonitor extends ConsumerWidget {
                 '🔄 새로고침',
                 () => ref.invalidate(asyncPerformanceStatsProvider),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8.w),
               _buildControlButton(
                 '❌ 모든 작업 취소',
                 () => AsyncStateManager.cancelAllTasks(),
@@ -105,18 +106,18 @@ class AsyncPerformanceMonitor extends ConsumerWidget {
       children: [
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.yellow,
-            fontSize: 12,
+            fontSize: 12.sp,
             fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: 4.h),
         ...items.map((item) => Text(
           '  • $item',
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.white,
-            fontSize: 11,
+            fontSize: 11.sp,
           ),
         )),
       ],
@@ -125,20 +126,20 @@ class AsyncPerformanceMonitor extends ConsumerWidget {
 
   Widget _buildControlButton(String text, VoidCallback onPressed) {
     return SizedBox(
-      height: 24,
+      height: 24.h,
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.green.withValues(alpha: 0.7),
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
           minimumSize: Size.zero,
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
         child: Text(
           text,
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.white,
-            fontSize: 10,
+            fontSize: 10.sp,
           ),
         ),
       ),
@@ -223,24 +224,24 @@ class AsyncTaskStatusWidget<T> extends ConsumerWidget {
 
   Widget _buildDefaultLoading() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16.w),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           const CircularProgressIndicator(),
           if (loadingMessage != null) ...[
-            const SizedBox(height: 8),
+            SizedBox(height: 8.h),
             Text(
               loadingMessage!,
-              style: const TextStyle(fontSize: 14),
+              style: TextStyle(fontSize: 14.sp),
             ),
           ],
           if (state.retryCount > 0) ...[
-            const SizedBox(height: 4),
+            SizedBox(height: 4.h),
             Text(
               '재시도 중... (${state.retryCount}회)',
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 12.sp,
                 color: Colors.grey[600],
               ),
             ),
@@ -252,38 +253,38 @@ class AsyncTaskStatusWidget<T> extends ConsumerWidget {
 
   Widget _buildDefaultError(String error) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16.w),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
+          Icon(
             Icons.error_outline,
             color: Colors.red,
-            size: 48,
+            size: 48.sp,
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.h),
           Text(
             '오류가 발생했습니다',
-            style: const TextStyle(
-              fontSize: 16,
+            style: TextStyle(
+              fontSize: 16.sp,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 4.h),
           Text(
             error,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 14.sp,
               color: Colors.grey[600],
             ),
           ),
           if (state.retryCount > 0) ...[
-            const SizedBox(height: 4),
+            SizedBox(height: 4.h),
             Text(
               '${state.retryCount}회 재시도 후 실패',
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 12.sp,
                 color: Colors.grey[600],
               ),
             ),
@@ -295,20 +296,20 @@ class AsyncTaskStatusWidget<T> extends ConsumerWidget {
 
   Widget _buildDefaultEmpty() {
     return Container(
-      padding: const EdgeInsets.all(16),
-      child: const Column(
+      padding: EdgeInsets.all(16.w),
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             Icons.inbox_outlined,
             color: Colors.grey,
-            size: 48,
+            size: 48.sp,
           ),
-          SizedBox(height: 8),
+          SizedBox(height: 8.h),
           Text(
             '데이터가 없습니다',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 16.sp,
               color: Colors.grey,
             ),
           ),
@@ -319,20 +320,20 @@ class AsyncTaskStatusWidget<T> extends ConsumerWidget {
 
   Widget _buildDefaultCancelled() {
     return Container(
-      padding: const EdgeInsets.all(16),
-      child: const Column(
+      padding: EdgeInsets.all(16.w),
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             Icons.cancel_outlined,
             color: Colors.orange,
-            size: 48,
+            size: 48.sp,
           ),
-          SizedBox(height: 8),
+          SizedBox(height: 8.h),
           Text(
             '작업이 취소되었습니다',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 16.sp,
               color: Colors.orange,
             ),
           ),
@@ -343,20 +344,20 @@ class AsyncTaskStatusWidget<T> extends ConsumerWidget {
 
   Widget _buildDefaultIdle() {
     return Container(
-      padding: const EdgeInsets.all(16),
-      child: const Column(
+      padding: EdgeInsets.all(16.w),
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             Icons.play_circle_outline,
             color: Colors.grey,
-            size: 48,
+            size: 48.sp,
           ),
-          SizedBox(height: 8),
+          SizedBox(height: 8.h),
           Text(
             '시작 대기 중',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 16.sp,
               color: Colors.grey,
             ),
           ),

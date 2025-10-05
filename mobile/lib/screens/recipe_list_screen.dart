@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../theme/app_theme.dart';
 import '../widgets/widgets.dart';
 import '../widgets/ad_banner_widget.dart';
@@ -116,14 +117,14 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
             
             // 정렬 옵션
             Container(
-              padding: const EdgeInsets.all(AppTheme.spacingM),
+              padding: EdgeInsets.all(AppTheme.spacingM),
               decoration: BoxDecoration(
                 color: AppTheme.backgroundWhite,
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
+                    blurRadius: 10.r,
+                    offset: Offset(0.w, 2.h),
                   ),
                 ],
               ),
@@ -139,15 +140,15 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
                           color: AppTheme.textGray,
                         ),
                       ),
-                      const Icon(
+                      Icon(
                         Icons.tune,
                         color: AppTheme.textGray,
-                        size: 20,
+                        size: 20.sp,
                       ),
                     ],
                   ),
                   
-                  const SizedBox(height: AppTheme.spacingM),
+                  SizedBox(height: AppTheme.spacingM),
                   
                   // 정렬 옵션 칩들
                   SingleChildScrollView(
@@ -185,7 +186,7 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
                         // 레시피 목록 (네이티브 광고 포함)
                         Expanded(
                           child: ListView.builder(
-                            padding: const EdgeInsets.all(AppTheme.spacingM),
+                            padding: EdgeInsets.all(AppTheme.spacingM),
                             itemCount: _getItemCount(),
                             itemBuilder: (context, index) {
                               return _buildListItem(index);
@@ -222,7 +223,7 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
     
     if (adPositions.contains(index)) {
       // 네이티브 광고 표시
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.only(bottom: AppTheme.spacingM),
         child: AdNativeWidget(),
       );
@@ -245,17 +246,17 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
+          Icon(
             Icons.search_off,
-            size: 64,
+            size: 64.sp,
             color: AppTheme.textGray,
           ),
-          const SizedBox(height: AppTheme.spacingL),
-          const Text(
+          SizedBox(height: AppTheme.spacingL),
+          Text(
             '레시피를 찾을 수 없습니다',
             style: AppTheme.headingSmall,
           ),
-          const SizedBox(height: AppTheme.spacingS),
+          SizedBox(height: AppTheme.spacingS),
           Text(
             '다른 재료나 카테고리를 시도해보세요',
             style: AppTheme.bodyMedium.copyWith(
@@ -275,19 +276,19 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
     final missingIngredients = recipe.getMissingIngredients(widget.userIngredients);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: AppTheme.spacingM),
+      margin: EdgeInsets.only(bottom: AppTheme.spacingM),
       child: GestureDetector(
         onTap: () => _navigateToRecipeDetail(recipe),
         child: Container(
           decoration: AppTheme.cardDecoration(),
           child: Padding(
-            padding: const EdgeInsets.all(AppTheme.spacingM),
+            padding: EdgeInsets.all(AppTheme.spacingM),
             child: Row(
               children: [
                 // 레시피 이미지
                 Container(
-                  width: 80,
-                  height: 80,
+                  width: 80.w,
+                  height: 80.h,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                   ),
@@ -299,9 +300,9 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
                       errorBuilder: (context, error, stackTrace) {
                         return Container(
                           color: AppTheme.backgroundGray,
-                          child: const Icon(
+                          child: Icon(
                             Icons.restaurant,
-                            size: 32,
+                            size: 32.sp,
                             color: AppTheme.textGray,
                           ),
                         );
@@ -310,7 +311,7 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
                   ),
                 ),
                 
-                const SizedBox(width: AppTheme.spacingM),
+                SizedBox(width: AppTheme.spacingM),
                 
                 // 레시피 정보
                 Expanded(
@@ -329,13 +330,13 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
                             ),
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(
+                            padding: EdgeInsets.symmetric(
                               horizontal: AppTheme.spacingS,
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
                               color: AppTheme.lightOrange,
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(12.r),
                             ),
                             child: Text(
                               recipe.category.displayName,
@@ -347,19 +348,19 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
                         ],
                       ),
                       
-                      const SizedBox(height: AppTheme.spacingXS),
+                      SizedBox(height: AppTheme.spacingXS),
                       
                       // 재료 매칭 정보
                       if (widget.userIngredients.isNotEmpty) ...[
                         Row(
                           children: [
                             if (availableIngredients.isNotEmpty) ...[
-                              const Icon(
+                              Icon(
                                 Icons.check_circle,
-                                size: 14,
+                                size: 14.sp,
                                 color: AppTheme.successGreen,
                               ),
-                              const SizedBox(width: 4),
+                              SizedBox(width: 4.w),
                               Expanded(
                                 child: Text(
                                   availableIngredients.map((i) => i.name).take(2).join(', '),
@@ -375,15 +376,15 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
                         ),
                         
                         if (missingIngredients.isNotEmpty) ...[
-                          const SizedBox(height: 2),
+                          SizedBox(height: 2.h),
                           Row(
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.cancel,
-                                size: 14,
+                                size: 14.sp,
                                 color: AppTheme.textGray,
                               ),
-                              const SizedBox(width: 4),
+                              SizedBox(width: 4.w),
                               Expanded(
                                 child: Text(
                                   missingIngredients.map((i) => i.name).take(2).join(', '),
@@ -399,7 +400,7 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
                         ],
                       ],
                       
-                      const SizedBox(height: AppTheme.spacingS),
+                      SizedBox(height: AppTheme.spacingS),
                       
                       // 부가 정보
                       Row(
@@ -407,13 +408,13 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
                           // 매칭율
                           if (widget.userIngredients.isNotEmpty && matchingRate > 0) ...[
                             Container(
-                              padding: const EdgeInsets.symmetric(
+                              padding: EdgeInsets.symmetric(
                                 horizontal: AppTheme.spacingS,
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
                                 color: AppTheme.cardGreen,
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(12.r),
                               ),
                               child: Text(
                                 '일치율 ${matchingRate.toInt()}%',
@@ -422,16 +423,16 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: AppTheme.spacingS),
+                            SizedBox(width: AppTheme.spacingS),
                           ],
                           
                           // 조리시간
-                          const Icon(
+                          Icon(
                             Icons.timer,
-                            size: 14,
+                            size: 14.sp,
                             color: AppTheme.textGray,
                           ),
-                          const SizedBox(width: 4),
+                          SizedBox(width: 4.w),
                           Text(
                             '${recipe.cookingTimeMinutes}분',
                             style: AppTheme.bodySmall.copyWith(
@@ -439,7 +440,7 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
                             ),
                           ),
                           
-                          const SizedBox(width: AppTheme.spacingM),
+                          SizedBox(width: AppTheme.spacingM),
                           
                           // 난이도
                           RatingDisplay(

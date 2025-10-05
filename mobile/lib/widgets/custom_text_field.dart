@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../theme/app_theme.dart';
 
 /// 커스텀 텍스트 필드 위젯
@@ -45,7 +46,7 @@ class CustomTextField extends StatelessWidget {
             labelText!,
             style: AppTheme.headingSmall,
           ),
-          const SizedBox(height: AppTheme.spacingS),
+          SizedBox(height: AppTheme.spacingS),
         ],
         TextFormField(
           controller: controller,
@@ -56,9 +57,9 @@ class CustomTextField extends StatelessWidget {
           onFieldSubmitted: onSubmitted,
           maxLines: maxLines,
           enabled: enabled,
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'Brandon Grotesque',
-            fontSize: 20,
+            fontSize: 20.sp,
             fontWeight: FontWeight.w400,
             letterSpacing: -0.2,
             color: AppTheme.textPrimary,
@@ -77,27 +78,27 @@ class CustomTextField extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppTheme.radiusButton),
-              borderSide: const BorderSide(
+              borderSide: BorderSide(
                 color: AppTheme.primaryOrange,
-                width: 2,
+                width: 2.w,
               ),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppTheme.radiusButton),
-              borderSide: const BorderSide(
+              borderSide: BorderSide(
                 color: Colors.red,
-                width: 2,
+                width: 2.w,
               ),
             ),
-            contentPadding: const EdgeInsets.symmetric(
+            contentPadding: EdgeInsets.symmetric(
               horizontal: AppTheme.spacingL,
               vertical: AppTheme.spacingM,
             ),
             prefixIcon: prefixIcon,
             suffixIcon: suffixIcon,
-            hintStyle: const TextStyle(
+            hintStyle: TextStyle(
               fontFamily: 'Brandon Grotesque',
-              fontSize: 20,
+              fontSize: 20.sp,
               fontWeight: FontWeight.w400,
               letterSpacing: -0.2,
               color: AppTheme.textPlaceholder,
@@ -130,7 +131,7 @@ class SearchTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 56,
+      height: 56.h,
       decoration: BoxDecoration(
         color: AppTheme.backgroundGray,
         borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
@@ -142,9 +143,9 @@ class SearchTextField extends StatelessWidget {
               controller: controller,
               onChanged: onChanged,
               onSubmitted: onSubmitted,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Brandon Grotesque',
-                fontSize: 14,
+                fontSize: 14.sp,
                 fontWeight: FontWeight.w400,
                 letterSpacing: 0,
                 color: AppTheme.textPrimary,
@@ -152,18 +153,18 @@ class SearchTextField extends StatelessWidget {
               decoration: InputDecoration(
                 hintText: hintText ?? 'Search for fruit salad combos',
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
+                contentPadding: EdgeInsets.symmetric(
                   horizontal: AppTheme.spacingL,
                   vertical: AppTheme.spacingM,
                 ),
-                prefixIcon: const Icon(
+                prefixIcon: Icon(
                   Icons.search,
                   color: AppTheme.textGray,
-                  size: 16,
+                  size: 16.sp,
                 ),
-                hintStyle: const TextStyle(
+                hintStyle: TextStyle(
                   fontFamily: 'Brandon Grotesque',
-                  fontSize: 14,
+                  fontSize: 14.sp,
                   fontWeight: FontWeight.w400,
                   letterSpacing: 0,
                   color: AppTheme.textSearch,
@@ -172,36 +173,36 @@ class SearchTextField extends StatelessWidget {
             ),
           ),
           if (onFilterTap != null) ...[
-            const SizedBox(width: AppTheme.spacingS),
+            SizedBox(width: AppTheme.spacingS),
             GestureDetector(
               onTap: onFilterTap,
               child: Container(
-                width: 26,
-                height: 17,
-                margin: const EdgeInsets.only(right: AppTheme.spacingM),
+                width: 26.w,
+                height: 17.h,
+                margin: EdgeInsets.only(right: AppTheme.spacingM),
                 child: Column(
                   children: [
                     Container(
-                      height: 1,
+                      height: 1.h,
                       color: AppTheme.textPrimary,
                     ),
-                    const SizedBox(height: 7),
+                    SizedBox(height: 7.h),
                     Container(
-                      height: 1,
+                      height: 1.h,
                       color: AppTheme.textPrimary,
                     ),
-                    const SizedBox(height: 7),
+                    SizedBox(height: 7.h),
                     Row(
                       children: [
                         Container(
-                          width: 8,
-                          height: 1,
+                          width: 8.w,
+                          height: 1.h,
                           color: AppTheme.textPrimary,
                         ),
-                        const SizedBox(width: 10),
+                        SizedBox(width: 10.w),
                         Container(
-                          width: 8,
-                          height: 1,
+                          width: 8.w,
+                          height: 1.h,
                           color: AppTheme.textPrimary,
                         ),
                       ],

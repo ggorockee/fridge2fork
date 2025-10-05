@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../widgets/widgets.dart';
 import '../models/feedback.dart' as feedback_model;
@@ -21,17 +22,25 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
         backgroundColor: AppTheme.backgroundWhite,
         elevation: 0,
         automaticallyImplyLeading: false,
-        title: const Text(
+        title: Text(
           '의견보내기',
           style: TextStyle(
             color: AppTheme.textPrimary,
-            fontSize: 20,
+            fontSize: 20.sp,
             fontWeight: FontWeight.w600,
+          ),
+        ),
+        // AppBar 하단에 구분선 추가
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(1.h),
+          child: Container(
+            height: 1.h,
+            color: const Color(0xFFE0E0E0),
           ),
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppTheme.spacingM),
+        padding: EdgeInsets.all(AppTheme.spacingM),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -42,7 +51,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
               title: '식재료 추가 요청',
               onTap: () => _showFeedbackForm('식재료 추가 요청'),
             ),
-            const SizedBox(height: AppTheme.spacingM),
+            SizedBox(height: AppTheme.spacingM),
             
             _buildFeedbackItem(
               icon: Icons.restaurant_menu,
@@ -50,7 +59,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
               title: '레시피 추가 요청',
               onTap: () => _showFeedbackForm('레시피 추가 요청'),
             ),
-            const SizedBox(height: AppTheme.spacingM),
+            SizedBox(height: AppTheme.spacingM),
             
             _buildFeedbackItem(
               icon: Icons.bug_report,
@@ -59,44 +68,44 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
               onTap: () => _showFeedbackForm('의견 보내기'),
             ),
             
-            const SizedBox(height: AppTheme.spacingXL),
+            SizedBox(height: AppTheme.spacingXL),
             
             // 하단 안내 메시지
             SizedBox(
               width: double.infinity,
               child: Container(
-                padding: const EdgeInsets.all(AppTheme.spacingL),
+                padding: EdgeInsets.all(AppTheme.spacingL),
                 decoration: BoxDecoration(
                   color: AppTheme.lightOrange,
                   borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                   border: Border.all(
                     color: AppTheme.primaryOrange.withValues(alpha: 0.3),
-                    width: 1,
+                    width: 1.w,
                   ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       '어떤 의견이든 환영해요! 😊',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 16.sp,
                         fontWeight: FontWeight.w600,
                         color: AppTheme.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: AppTheme.spacingS),
-                    const Text(
+                    SizedBox(height: AppTheme.spacingS),
+                    Text(
                       '냉장고 털기 앱이 처음이라 서툴 수 있어요.',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 14.sp,
                         color: AppTheme.textSecondary,
                       ),
                     ),
-                    const Text(
+                    Text(
                       '여러분의 따뜻한 응원과 조언으로 더 나아질게요! 💪',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 14.sp,
                         color: AppTheme.textSecondary,
                       ),
                     ),
@@ -120,23 +129,23 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(AppTheme.spacingM),
+        padding: EdgeInsets.all(AppTheme.spacingM),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
+              blurRadius: 10.r,
+              offset: Offset(0.w, 2.h),
             ),
           ],
         ),
         child: Row(
           children: [
             Container(
-              width: 48,
-              height: 48,
+              width: 48.w,
+              height: 48.h,
               decoration: BoxDecoration(
                 color: AppTheme.backgroundGray,
                 borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
@@ -144,24 +153,24 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
               child: Icon(
                 icon,
                 color: iconColor,
-                size: 24,
+                size: 24.sp,
               ),
             ),
-            const SizedBox(width: AppTheme.spacingM),
+            SizedBox(width: AppTheme.spacingM),
             Expanded(
               child: Text(
                 title,
-                style: const TextStyle(
-                  fontSize: 16,
+                style: TextStyle(
+                  fontSize: 16.sp,
                   fontWeight: FontWeight.w500,
                   color: AppTheme.textPrimary,
                 ),
               ),
             ),
-            const Icon(
+            Icon(
               Icons.arrow_forward_ios,
               color: AppTheme.textSecondary,
-              size: 16,
+              size: 16.sp,
             ),
           ],
         ),
@@ -235,25 +244,25 @@ class _FeedbackFormModalState extends ConsumerState<FeedbackFormModal> {
         children: [
           // Modal 상단 핸들 바
           Container(
-            width: 40,
-            height: 4,
-            margin: const EdgeInsets.symmetric(vertical: AppTheme.spacingM),
+            width: 40.w,
+            height: 4.h,
+            margin: EdgeInsets.symmetric(vertical: AppTheme.spacingM),
             decoration: BoxDecoration(
               color: AppTheme.textSecondary.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: BorderRadius.circular(2.r),
             ),
           ),
           
           // 헤더
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingM),
+            padding: EdgeInsets.symmetric(horizontal: AppTheme.spacingM),
             child: Row(
               children: [
                 Expanded(
                   child: Text(
                     widget.category,
-                    style: const TextStyle(
-                      fontSize: 20,
+                    style: TextStyle(
+                      fontSize: 20.sp,
                       fontWeight: FontWeight.w600,
                       color: AppTheme.textPrimary,
                     ),
@@ -261,7 +270,7 @@ class _FeedbackFormModalState extends ConsumerState<FeedbackFormModal> {
                 ),
                 IconButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.close,
                     color: AppTheme.textSecondary,
                   ),
@@ -275,34 +284,34 @@ class _FeedbackFormModalState extends ConsumerState<FeedbackFormModal> {
           // 폼 내용
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingM),
+              padding: EdgeInsets.symmetric(horizontal: AppTheme.spacingM),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // 제목 입력 필드
-                  const Text(
+                  Text(
                     '제목',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 16.sp,
                       fontWeight: FontWeight.w600,
                       color: AppTheme.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: AppTheme.spacingS),
+                  SizedBox(height: AppTheme.spacingS),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingM),
+                    padding: EdgeInsets.symmetric(horizontal: AppTheme.spacingM),
                     decoration: BoxDecoration(
                       color: AppTheme.backgroundGray,
                       borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                       border: Border.all(
                         color: AppTheme.textPlaceholder.withValues(alpha: 0.3),
-                        width: 1,
+                        width: 1.w,
                       ),
                     ),
                     child: TextField(
                       controller: _titleController,
-                      style: const TextStyle(
-                        fontSize: 14,
+                      style: TextStyle(
+                        fontSize: 14.sp,
                         color: AppTheme.textPrimary,
                       ),
                       decoration: const InputDecoration(
@@ -315,27 +324,27 @@ class _FeedbackFormModalState extends ConsumerState<FeedbackFormModal> {
                     ),
                   ),
 
-                  const SizedBox(height: AppTheme.spacingL),
+                  SizedBox(height: AppTheme.spacingL),
 
                   // 내용 입력 필드
-                  const Text(
+                  Text(
                     '내용',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 16.sp,
                       fontWeight: FontWeight.w600,
                       color: AppTheme.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: AppTheme.spacingS),
+                  SizedBox(height: AppTheme.spacingS),
                   Expanded(
                     child: Container(
-                      padding: const EdgeInsets.all(AppTheme.spacingM),
+                      padding: EdgeInsets.all(AppTheme.spacingM),
                       decoration: BoxDecoration(
                         color: AppTheme.backgroundGray,
                         borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                         border: Border.all(
                           color: AppTheme.textPlaceholder.withValues(alpha: 0.3),
-                          width: 1,
+                          width: 1.w,
                         ),
                       ),
                       child: TextField(
@@ -343,8 +352,8 @@ class _FeedbackFormModalState extends ConsumerState<FeedbackFormModal> {
                         maxLines: null,
                         expands: true,
                         textAlignVertical: TextAlignVertical.top,
-                        style: const TextStyle(
-                          fontSize: 14,
+                        style: TextStyle(
+                          fontSize: 14.sp,
                           color: AppTheme.textPrimary,
                         ),
                         decoration: const InputDecoration(
@@ -358,33 +367,33 @@ class _FeedbackFormModalState extends ConsumerState<FeedbackFormModal> {
                     ),
                   ),
 
-                  const SizedBox(height: AppTheme.spacingL),
+                  SizedBox(height: AppTheme.spacingL),
 
                   // 이메일 입력 필드 (선택사항)
-                  const Text(
+                  Text(
                     '답변 받을 이메일 (선택)',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 16.sp,
                       fontWeight: FontWeight.w600,
                       color: AppTheme.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: AppTheme.spacingS),
+                  SizedBox(height: AppTheme.spacingS),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingM),
+                    padding: EdgeInsets.symmetric(horizontal: AppTheme.spacingM),
                     decoration: BoxDecoration(
                       color: AppTheme.backgroundGray,
                       borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                       border: Border.all(
                         color: AppTheme.textPlaceholder.withValues(alpha: 0.3),
-                        width: 1,
+                        width: 1.w,
                       ),
                     ),
                     child: TextField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
-                      style: const TextStyle(
-                        fontSize: 14,
+                      style: TextStyle(
+                        fontSize: 14.sp,
                         color: AppTheme.textPrimary,
                       ),
                       decoration: const InputDecoration(
@@ -397,7 +406,7 @@ class _FeedbackFormModalState extends ConsumerState<FeedbackFormModal> {
                     ),
                   ),
                   
-                  const SizedBox(height: AppTheme.spacingL),
+                  SizedBox(height: AppTheme.spacingL),
                   
                   // 제출 버튼
                   Consumer(
@@ -411,7 +420,7 @@ class _FeedbackFormModalState extends ConsumerState<FeedbackFormModal> {
                           text: isSubmitting ? '전송 중...' : '의견 보내기',
                           onPressed: isSubmitting ? null : _submitFeedback,
                           type: ButtonType.primary,
-                          height: 56,
+                          height: 56.h,
                           icon: Icons.send,
                         ),
                       );

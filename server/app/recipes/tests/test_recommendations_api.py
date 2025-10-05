@@ -157,21 +157,16 @@ class RecipeRecommendationsAPITest(CategoryTestCase):
 
     def test_cosine_similarity_calculation(self):
         """
-        TC-2: Cosine 유사도 계산
+        TC-2: 매칭률 계산 (algorithm 파라미터는 호환성용, 실제로는 Jaccard 매칭률 사용)
 
         사용자 재료: [돼지고기, 배추]
         레시피1(김치찌개): [돼지고기, 배추, 김치]
 
-        사용자 벡터: [1, 1, 0] (돼지고기=1, 배추=1, 김치=0)
-        레시피 벡터: [1, 1, 1]
-        내적 = 1*1 + 1*1 + 0*1 = 2
-        ||A|| = sqrt(1 + 1) = sqrt(2)
-        ||B|| = sqrt(1 + 1 + 1) = sqrt(3)
-        Cosine = 2 / (sqrt(2) * sqrt(3)) ≈ 0.816
+        매칭률 = 보유 재료 수 / 레시피 전체 재료 수 = 2/3 ≈ 0.667
         """
         response = self.client.get(self.url, {
             'ingredients': '돼지고기,배추',
-            'algorithm': 'cosine'
+            'algorithm': 'cosine'  # 호환성용 파라미터, 실제로는 무시됨
         })
 
         self.assertEqual(response.status_code, 200)
@@ -180,8 +175,8 @@ class RecipeRecommendationsAPITest(CategoryTestCase):
         recipe1_result = next((r for r in data['recipes'] if r['recipe_sno'] == 'RCP700'), None)
         self.assertIsNotNone(recipe1_result)
 
-        # Cosine = 2 / sqrt(6) ≈ 0.816
-        expected_score = 2.0 / math.sqrt(2 * 3)
+        # 매칭률 = 2/3 ≈ 0.667
+        expected_score = 2.0 / 3.0
         self.assertAlmostEqual(recipe1_result['match_score'], expected_score, places=2)
 
     def test_limit_parameter(self):

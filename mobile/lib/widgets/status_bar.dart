@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../theme/app_theme.dart';
 
 /// 커스텀 상태 바 위젯
@@ -25,10 +26,10 @@ class CustomStatusBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     return Container(
       color: backgroundColor,
-      padding: const EdgeInsets.only(top: 44), // 상태바 높이 고려
+      padding: EdgeInsets.only(top: 44.h), // 상태바 높이 고려
       child: Container(
-        height: 44,
-        padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingM),
+        height: 44.h,
+        padding: EdgeInsets.symmetric(horizontal: AppTheme.spacingM),
         child: Row(
           children: [
             // 뒤로가기 버튼
@@ -36,25 +37,25 @@ class CustomStatusBar extends StatelessWidget implements PreferredSizeWidget {
               GestureDetector(
                 onTap: onBackPressed ?? () => Navigator.of(context).pop(),
                 child: Container(
-                  width: 80,
-                  height: 32,
+                  width: 80.w,
+                  height: 32.h,
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(AppTheme.radiusCircle),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
                         Icons.arrow_back_ios,
-                        size: 16,
+                        size: 16.sp,
                         color: AppTheme.iconPrimary,
                       ),
                       Text(
                         'Go back',
                         style: TextStyle(
                           fontFamily: 'Brandon Grotesque',
-                          fontSize: 16,
+                          fontSize: 16.sp,
                           fontWeight: FontWeight.w400,
                           letterSpacing: 0,
                           color: AppTheme.textPrimary,
@@ -67,13 +68,13 @@ class CustomStatusBar extends StatelessWidget implements PreferredSizeWidget {
             
             // 제목
             if (title != null) ...[
-              if (showBackButton) const SizedBox(width: AppTheme.spacingM),
+              if (showBackButton) SizedBox(width: AppTheme.spacingM),
               Expanded(
                 child: Text(
                   title!,
                   style: TextStyle(
                     fontFamily: 'Brandon Grotesque',
-                    fontSize: 24,
+                    fontSize: 24.sp,
                     fontWeight: FontWeight.w500,
                     letterSpacing: -0.24,
                     color: textColor,
@@ -92,7 +93,7 @@ class CustomStatusBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(88); // 44 + 44 (상태바 + 앱바)
+  Size get preferredSize => Size.fromHeight(88.h); // 44 + 44 (상태바 + 앱바)
 }
 
 /// 배송 상태 표시 위젯
@@ -117,32 +118,32 @@ class DeliveryStatusItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 64,
+    return SizedBox(
+      height: 64.h,
       child: Row(
         children: [
           // 상태 아이콘
           Container(
-            width: 65,
-            height: 64,
+            width: 65.w,
+            height: 64.h,
             decoration: BoxDecoration(
               color: _getBackgroundColor(),
               borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
             ),
             child: Center(
-              child: customIcon ?? 
+              child: customIcon ??
                 Icon(
                   icon ?? _getDefaultIcon(),
-                  size: 24,
-                  color: status == DeliveryStatus.completed 
-                      ? Colors.white 
+                  size: 24.sp,
+                  color: status == DeliveryStatus.completed
+                      ? Colors.white
                       : AppTheme.primaryOrange,
                 ),
             ),
           ),
-          
-          const SizedBox(width: AppTheme.spacingM),
-          
+
+          SizedBox(width: AppTheme.spacingM),
+
           // 상태 텍스트
           Expanded(
             child: Column(
@@ -154,7 +155,7 @@ class DeliveryStatusItem extends StatelessWidget {
                   style: AppTheme.bodyMedium,
                 ),
                 if (subtitle != null) ...[
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4.h),
                   Text(
                     subtitle!,
                     style: AppTheme.bodySmall,
@@ -163,19 +164,19 @@ class DeliveryStatusItem extends StatelessWidget {
               ],
             ),
           ),
-          
+
           // 완료 체크마크
           if (status == DeliveryStatus.completed)
             Container(
-              width: 24,
-              height: 24,
-              decoration: const BoxDecoration(
+              width: 24.w,
+              height: 24.h,
+              decoration: BoxDecoration(
                 color: AppTheme.successGreen,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.check,
-                size: 16,
+                size: 16.sp,
                 color: Colors.white,
               ),
             ),

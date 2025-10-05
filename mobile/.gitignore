@@ -261,3 +261,5 @@ firebase_options.dart
 *.dSYM.zip
 
 my_request.txt
+.mcp.jsonscripts/
+android/key.properties

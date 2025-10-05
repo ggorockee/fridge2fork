@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../theme/app_theme.dart';
 
 /// 수량 선택 위젯
@@ -26,43 +27,44 @@ class QuantitySelector extends StatelessWidget {
       children: [
         // 감소 버튼
         GestureDetector(
-          onTap: quantity > minQuantity 
+          onTap: quantity > minQuantity
               ? () => onChanged(quantity - 1)
               : null,
           child: Container(
-            width: size,
-            height: size,
+            width: size.w,
+            height: size.h,
             decoration: BoxDecoration(
-              color: quantity > minQuantity 
+              color: quantity > minQuantity
                   ? Colors.transparent
                   : AppTheme.backgroundGray,
               border: Border.all(
-                color: quantity > minQuantity 
+                color: quantity > minQuantity
                     ? AppTheme.textPrimary
                     : AppTheme.textGray,
+                width: 1.w,
               ),
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.remove,
-              size: size * 0.5,
-              color: quantity > minQuantity 
+              size: (size * 0.5).sp,
+              color: quantity > minQuantity
                   ? AppTheme.textPrimary
                   : AppTheme.textGray,
             ),
           ),
         ),
-        
-        const SizedBox(width: AppTheme.spacingM),
-        
+
+        SizedBox(width: AppTheme.spacingM),
+
         // 수량 표시
         SizedBox(
-          width: size,
+          width: size.w,
           child: Text(
             quantity.toString(),
             style: TextStyle(
               fontFamily: 'Brandon Grotesque',
-              fontSize: size * 0.75,
+              fontSize: (size * 0.75).sp,
               fontWeight: FontWeight.w400,
               letterSpacing: -0.24,
               color: AppTheme.textPrimary,
@@ -70,27 +72,27 @@ class QuantitySelector extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
         ),
-        
-        const SizedBox(width: AppTheme.spacingM),
-        
+
+        SizedBox(width: AppTheme.spacingM),
+
         // 증가 버튼
         GestureDetector(
-          onTap: quantity < maxQuantity 
+          onTap: quantity < maxQuantity
               ? () => onChanged(quantity + 1)
               : null,
           child: Container(
-            width: size,
-            height: size,
+            width: size.w,
+            height: size.h,
             decoration: BoxDecoration(
-              color: quantity < maxQuantity 
+              color: quantity < maxQuantity
                   ? AppTheme.lightOrange
                   : AppTheme.backgroundGray,
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.add,
-              size: size * 0.5,
-              color: quantity < maxQuantity 
+              size: (size * 0.5).sp,
+              color: quantity < maxQuantity
                   ? AppTheme.primaryOrange
                   : AppTheme.textGray,
             ),
@@ -124,10 +126,10 @@ class PriceDisplay extends StatelessWidget {
       children: [
         Icon(
           Icons.currency_exchange,
-          size: iconSize,
+          size: iconSize.sp,
           color: iconColor ?? AppTheme.darkOrange,
         ),
-        const SizedBox(width: 4),
+        SizedBox(width: 4.w),
         Text(
           price,
           style: textStyle ?? AppTheme.bodySmall.copyWith(
@@ -164,28 +166,28 @@ class RatingDisplay extends StatelessWidget {
         Row(
           children: List.generate(5, (index) {
             return Icon(
-              index < rating.floor() 
+              index < rating.floor()
                   ? Icons.star
-                  : index < rating 
+                  : index < rating
                       ? Icons.star_half
                       : Icons.star_border,
-              size: starSize,
+              size: starSize.sp,
               color: starColor ?? AppTheme.primaryOrange,
             );
           }),
         ),
-        
-        const SizedBox(width: AppTheme.spacingXS),
-        
+
+        SizedBox(width: AppTheme.spacingXS),
+
         // 평점 숫자
         Text(
           rating.toStringAsFixed(1),
           style: AppTheme.bodySmall,
         ),
-        
+
         // 리뷰 수
         if (reviewCount > 0) ...[
-          const SizedBox(width: AppTheme.spacingXS),
+          SizedBox(width: AppTheme.spacingXS),
           Text(
             '($reviewCount)',
             style: AppTheme.bodySmall.copyWith(
