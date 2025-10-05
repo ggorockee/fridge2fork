@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../widgets/widgets.dart';
@@ -224,15 +225,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         centerTitle: true,
         surfaceTintColor: AppTheme.backgroundWhite, // 스크롤 시 색상 변경 방지
         scrolledUnderElevation: 0, // 스크롤 시 elevation 변경 방지
-        title: const Text(
+        title: Text(
           '냉털레시피',
           style: TextStyle(
             fontFamily: 'Brandon Grotesque',
-            fontSize: 24,
+            fontSize: 24.sp,
             fontWeight: FontWeight.w500,
             letterSpacing: -0.24,
             color: AppTheme.textPrimary,
           ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
       ),
       body: RefreshIndicator(
@@ -252,12 +255,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     // 냉장고 + 상태
                     ConstrainedBox(
                       constraints: BoxConstraints(
-                        minHeight: MediaQuery.of(context).size.height - 350,
+                        minHeight: MediaQuery.of(context).size.height - 350.h,
                       ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const SizedBox(height: 80), // 더 아래로 내리기
+                          SizedBox(height: 80.h), // 더 아래로 내리기
                           const _FridgeIcon(),
                           const SizedBox(height: AppTheme.spacingM),
                           fridgeState.when(
@@ -277,7 +280,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 295), // 레시피 영역 차지할 공간 확보
+                    SizedBox(height: 295.h), // 레시피 영역 차지할 공간 확보
                   ],
                 ),
               ),
@@ -287,9 +290,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Positioned(
               left: 0,
               right: 0,
-              bottom: 16, // 바텀 네비게이션 바와 16px 간격
+              bottom: 16.h, // 바텀 네비게이션 바와 16px 간격
               child: Container(
-                height: 295,
+                height: 295.h,
                 color: AppTheme.backgroundWhite,
                 child: selectedIngredients.isEmpty
                     ? const _RecipeRecommendationSection()
@@ -310,8 +313,8 @@ class _FridgeIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 120,
-      height: 120,
+      width: 120.w,
+      height: 120.h,
       decoration: const BoxDecoration(
         color: AppTheme.backgroundWhite,
         borderRadius: BorderRadius.all(Radius.circular(AppTheme.radiusMedium)),
@@ -320,8 +323,8 @@ class _FridgeIcon extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
         child: Image.asset(
           'assets/logos/app_logo.png',
-          width: 120,
-          height: 120,
+          width: 120.w,
+          height: 120.h,
           fit: BoxFit.contain,
         ),
       ),
@@ -340,26 +343,30 @@ class _EmptyStateMessage extends StatelessWidget {
     return Column(
       children: [
         // 메인 메시지
-        const Text(
+        Text(
           '냉장고가 비어있어요',
           style: TextStyle(
-            fontSize: 20,
+            fontSize: 20.sp,
             fontWeight: FontWeight.w600,
             color: AppTheme.textPrimary,
           ),
           textAlign: TextAlign.center,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
         ),
 
         const SizedBox(height: AppTheme.spacingM),
 
         // 서브 메시지
-        const Text(
+        Text(
           '식재료를 추가해 보세요',
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 14.sp,
             color: AppTheme.textPrimary,
           ),
           textAlign: TextAlign.center,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
         ),
 
         const SizedBox(height: AppTheme.spacingL),
@@ -371,23 +378,23 @@ class _EmptyStateMessage extends StatelessWidget {
           onTargetClick: onAddPressed,
           disposeOnTap: true,
           child: SizedBox(
-            width: 56,
-            height: 56,
+            width: 56.w,
+            height: 56.h,
             child: Material(
               color: Colors.white,
-              shape: const CircleBorder(
+              shape: CircleBorder(
                 side: BorderSide(
                   color: AppTheme.primaryOrange,
-                  width: 2,
+                  width: 2.w,
                 ),
               ),
               child: InkWell(
                 onTap: onAddPressed,
                 customBorder: const CircleBorder(),
-                child: const Icon(
+                child: Icon(
                   Icons.add,
                   color: AppTheme.primaryOrange,
-                  size: 32,
+                  size: 32.sp,
                 ),
               ),
             ),
@@ -410,38 +417,42 @@ class _RecipeRecommendationSection extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 섹션 제목
-          const Padding(
-            padding: EdgeInsets.only(bottom: AppTheme.spacingM),
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppTheme.spacingM),
             child: Text(
               '추천 레시피',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 18.sp,
                 fontWeight: FontWeight.w600,
                 color: AppTheme.textPrimary,
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
 
           // 가로 스크롤 레시피 카드들
           SizedBox(
-            height: 160, // 카드 높이와 동일하게 고정
+            height: 160.h, // 카드 높이와 동일하게 고정
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
                     Icons.restaurant_menu,
-                    size: 48,
+                    size: 48.sp,
                     color: AppTheme.primaryOrange.withValues(alpha: 0.5),
                   ),
                   const SizedBox(height: AppTheme.spacingS),
-                  const Text(
+                  Text(
                     '냉장고에 재료를 추가하면\n맛있는 레시피를 추천해드려요!',
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 12.sp,
                       color: AppTheme.textSecondary,
                     ),
                     textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
@@ -481,19 +492,21 @@ class _SelectedIngredientsSection extends StatelessWidget {
           Stack(
             children: [
               // 중앙 정렬된 제목
-              const Center(
+              Center(
                 child: Text(
                   '냉장고 현황',
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 18.sp,
                     fontWeight: FontWeight.w600,
                     color: AppTheme.textPrimary,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               // 오른쪽에 배치된 [+] 버튼
               Positioned(
-                right: 120,
+                right: 120.w,
                 top: 0,
                 bottom: 0,
                 child: Showcase(
@@ -506,14 +519,14 @@ class _SelectedIngredientsSection extends StatelessWidget {
                   },
                   disposeOnTap: true,
                   child: SizedBox(
-                    width: 32,
-                    height: 32,
+                    width: 32.w,
+                    height: 32.h,
                     child: Material(
                       color: Colors.white,
-                      shape: const CircleBorder(
+                      shape: CircleBorder(
                         side: BorderSide(
                           color: AppTheme.primaryOrange,
-                          width: 2,
+                          width: 2.w,
                         ),
                       ),
                       child: InkWell(
@@ -522,10 +535,10 @@ class _SelectedIngredientsSection extends StatelessWidget {
                           homeState?._onAddButtonPressed();
                         },
                         customBorder: const CircleBorder(),
-                        child: const Icon(
+                        child: Icon(
                           Icons.add,
                           color: AppTheme.primaryOrange,
-                          size: 20,
+                          size: 20.sp,
                         ),
                       ),
                     ),
@@ -540,10 +553,12 @@ class _SelectedIngredientsSection extends StatelessWidget {
           // 선택된 재료 개수
           Text(
             '총 ${ingredients.length}개의 식재료',
-            style: const TextStyle(
-              fontSize: 14,
+            style: TextStyle(
+              fontSize: 14.sp,
               color: AppTheme.textSecondary,
             ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
 
           const SizedBox(height: AppTheme.spacingM),
@@ -563,16 +578,16 @@ class _SelectedIngredientsSection extends StatelessWidget {
                 GestureDetector(
                   onTap: onToggleShowAll,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 12.w,
                       vertical: AppTheme.spacingS,
                     ),
                     decoration: BoxDecoration(
                       color: AppTheme.lightOrange,
-                      borderRadius: BorderRadius.circular(50),
+                      borderRadius: BorderRadius.circular(50.r),
                       border: Border.all(
                         color: AppTheme.primaryOrange,
-                        width: 1,
+                        width: 1.w,
                       ),
                     ),
                     child: Row(
@@ -580,16 +595,18 @@ class _SelectedIngredientsSection extends StatelessWidget {
                       children: [
                         Text(
                           showAll ? '접기' : '더보기 +${ingredients.length - 12}',
-                          style: const TextStyle(
-                            fontSize: 14,
+                          style: TextStyle(
+                            fontSize: 14.sp,
                             color: AppTheme.primaryOrange,
                             fontWeight: FontWeight.w600,
                           ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(width: 4),
+                        SizedBox(width: 4.w),
                         Icon(
                           showAll ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                          size: 16,
+                          size: 16.sp,
                           color: AppTheme.primaryOrange,
                         ),
                       ],
@@ -617,16 +634,16 @@ class _IngredientChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 12,
+      padding: EdgeInsets.symmetric(
+        horizontal: 12.w,
         vertical: AppTheme.spacingS,
       ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(50),
+        borderRadius: BorderRadius.circular(50.r),
         border: Border.all(
           color: const Color(0xFFD7D7D7),
-          width: 1,
+          width: 1.w,
         ),
       ),
       child: Row(
@@ -634,19 +651,21 @@ class _IngredientChip extends StatelessWidget {
         children: [
           Text(
             ingredient,
-            style: const TextStyle(
-              fontSize: 14,
+            style: TextStyle(
+              fontSize: 14.sp,
               color: AppTheme.iconPrimary,
               fontWeight: FontWeight.w600,
             ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12.w),
           GestureDetector(
             onTap: onRemove,
-            child: const Icon(
+            child: Icon(
               Icons.close,
-              size: 14,
-              color: Color(0xFF999999),
+              size: 14.sp,
+              color: const Color(0xFF999999),
             ),
           ),
         ],
@@ -717,36 +736,42 @@ class _RecipeRecommendationsSectionState extends ConsumerState<_RecipeRecommenda
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     '맞춤 레시피 추천',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 18.sp,
                       fontWeight: FontWeight.w600,
                       color: AppTheme.textPrimary,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   Text(
                     '${response.total}개',
-                    style: const TextStyle(
-                      fontSize: 14,
+                    style: TextStyle(
+                      fontSize: 14.sp,
                       color: AppTheme.textSecondary,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8.h),
               // 요약
               Text(
                 response.summary,
-                style: const TextStyle(
-                  fontSize: 12,
+                style: TextStyle(
+                  fontSize: 12.sp,
                   color: AppTheme.textSecondary,
                 ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: AppTheme.spacingM),
               // 레시피 카드 리스트 (가로 스크롤)
               SizedBox(
-                height: 195,
+                height: 195.h,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   itemCount: response.recipes.take(10).length,
@@ -821,9 +846,9 @@ class _RecommendedRecipeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const double cardHeight = 195.0;
-    const double imageHeight = cardHeight * 2 / 3; // 130px (2/3)
-    const double textHeight = cardHeight - imageHeight;  // 65px (나머지)
+    final double cardHeight = 195.0.h;
+    final double imageHeight = cardHeight * 2 / 3; // 130px (2/3)
+    final double textHeight = cardHeight - imageHeight;  // 65px (나머지)
 
     return GestureDetector(
       onTap: () => _openRecipeUrl(context),
@@ -831,18 +856,18 @@ class _RecommendedRecipeCard extends StatelessWidget {
         minScaleFactor: 1.0,
         maxScaleFactor: 1.0, // 시스템 폰트 크기 변경 무시
         child: Container(
-          width: 160,
+          width: 160.w,
           height: cardHeight,
           margin: const EdgeInsets.only(right: AppTheme.spacingM),
           clipBehavior: Clip.hardEdge, // 하드 클리핑으로 변경
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(12.r),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
+                blurRadius: 4.r,
+                offset: Offset(0, 2.h),
               ),
             ],
           ),
@@ -851,31 +876,31 @@ class _RecommendedRecipeCard extends StatelessWidget {
               // 이미지 영역 (2/3 = 130px)
               SizedBox(
                 height: imageHeight,
-                width: 160,
+                width: 160.w,
                 child: recipe.imageUrl != null && recipe.imageUrl!.isNotEmpty
                     ? Image.network(
                         recipe.imageUrl!,
                         height: imageHeight,
-                        width: 160,
+                        width: 160.w,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) => Container(
                           height: imageHeight,
-                          width: 160,
+                          width: 160.w,
                           color: Colors.grey[200],
-                          child: const Icon(Icons.restaurant, size: 40, color: Colors.grey),
+                          child: Icon(Icons.restaurant, size: 40.sp, color: Colors.grey),
                         ),
                       )
                     : Container(
                         height: imageHeight,
-                        width: 160,
+                        width: 160.w,
                         color: Colors.grey[200],
-                        child: const Icon(Icons.restaurant, size: 40, color: Colors.grey),
+                        child: Icon(Icons.restaurant, size: 40.sp, color: Colors.grey),
                       ),
               ),
               // 텍스트 영역 (나머지 = 65px)
               Container(
                 height: textHeight,
-                padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
+                padding: EdgeInsets.fromLTRB(8.w, 6.h, 8.w, 6.h),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -884,8 +909,8 @@ class _RecommendedRecipeCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         recipe.title,
-                        style: const TextStyle(
-                          fontSize: 11,
+                        style: TextStyle(
+                          fontSize: 11.sp,
                           fontWeight: FontWeight.w600,
                           height: 1.2,
                         ),
@@ -895,19 +920,19 @@ class _RecommendedRecipeCard extends StatelessWidget {
                     ),
                     // 매칭률 (하단 고정)
                     SizedBox(
-                      height: 18,
+                      height: 18.h,
                       child: Align(
                         alignment: Alignment.centerRight,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
                           decoration: BoxDecoration(
                             color: AppTheme.lightOrange,
-                            borderRadius: BorderRadius.circular(4),
+                            borderRadius: BorderRadius.circular(4.r),
                           ),
                           child: Text(
                             '${(recipe.matchScore * 100).toInt()}% 일치',
-                            style: const TextStyle(
-                              fontSize: 9,
+                            style: TextStyle(
+                              fontSize: 9.sp,
                               color: AppTheme.primaryOrange,
                               fontWeight: FontWeight.w600,
                             ),
