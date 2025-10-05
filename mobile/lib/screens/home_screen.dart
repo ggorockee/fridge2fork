@@ -277,7 +277,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ],
                       ),
                     ),
-                    SizedBox(height: 380.h), // 레시피 영역 차지할 공간 확보 (겹침 방지)
                   ],
                 ),
               ),
@@ -484,7 +483,11 @@ class _SelectedIngredientsSection extends ConsumerWidget {
     final hasMore = ingredients.length > 6;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingM),
+      padding: EdgeInsets.only(
+        left: AppTheme.spacingM,
+        right: AppTheme.spacingM,
+        bottom: 380.h, // 레시피 추천 섹션 영역까지 확장 (겹침 방지)
+      ),
       child: Column(
         children: [
           // "냉장고 현황" 텍스트만 중앙 정렬, (+) 버튼은 오른쪽에
