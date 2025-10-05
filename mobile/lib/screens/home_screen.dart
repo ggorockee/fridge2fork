@@ -770,20 +770,18 @@ class _RecipeRecommendationsSectionState extends ConsumerState<_RecipeRecommenda
             // 레시피 가로 스크롤 리스트
             SizedBox(
               height: 200.h,
-              child: ListView.separated(
+              child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: EdgeInsets.only(left: 16.w, right: 16.w),
                 itemCount: response.recipes.take(10).length,
-                separatorBuilder: (context, index) => Container(
-                  width: 1.w,
-                  margin: EdgeInsets.symmetric(horizontal: 8.w, vertical: 60.h),
-                  color: const Color(0xFF999999), // 진한 회색
-                ),
                 itemBuilder: (context, index) {
                   final recipe = response.recipes[index];
-                  return SizedBox(
-                    width: 140.w,
-                    child: _RecommendedRecipeCard(recipe: recipe),
+                  return Padding(
+                    padding: EdgeInsets.only(right: index < response.recipes.take(10).length - 1 ? 8.w : 0),
+                    child: SizedBox(
+                      width: 140.w,
+                      child: _RecommendedRecipeCard(recipe: recipe),
+                    ),
                   );
                 },
               ),
