@@ -483,11 +483,7 @@ class _SelectedIngredientsSection extends ConsumerWidget {
     final hasMore = ingredients.length > 6;
 
     return Padding(
-      padding: EdgeInsets.only(
-        left: AppTheme.spacingM,
-        right: AppTheme.spacingM,
-        bottom: 380.h, // 레시피 추천 섹션 영역까지 확장 (겹침 방지)
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingM),
       child: Column(
         children: [
           // "냉장고 현황" 텍스트만 중앙 정렬, (+) 버튼은 오른쪽에
@@ -621,6 +617,12 @@ class _SelectedIngredientsSection extends ConsumerWidget {
             ),
             SizedBox(height: 24.h), // 레시피 추천 섹션과의 간격 확보
           ],
+
+          // 레시피 추천 섹션 영역 보호 (투명 padding 가림)
+          Container(
+            height: 380.h,
+            color: AppTheme.backgroundWhite,
+          ),
         ],
       ),
     );
