@@ -767,19 +767,6 @@ class _RecipeRecommendationsSectionState extends ConsumerState<_RecipeRecommenda
                 ],
               ),
             ),
-            // 요약 (왼쪽 패딩만)
-            Padding(
-              padding: EdgeInsets.only(left: 16.w, bottom: 8.h),
-              child: Text(
-                response.summary,
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  color: AppTheme.textSecondary,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
             // 레시피 가로 스크롤 리스트
             SizedBox(
               height: 200.h,
@@ -878,23 +865,48 @@ class _RecommendedRecipeCard extends StatelessWidget {
               // 이미지 영역
               Expanded(
                 flex: 3,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8.r),
-                  child: Container(
-                    width: double.infinity,
-                    color: Colors.grey[200],
-                    child: recipe.imageUrl != null && recipe.imageUrl!.isNotEmpty
-                        ? Image.network(
-                            recipe.imageUrl!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Center(
-                              child: Icon(Icons.restaurant, size: 32.sp, color: Colors.grey),
-                            ),
-                          )
-                        : Center(
-                            child: Icon(Icons.restaurant, size: 32.sp, color: Colors.grey),
+                child: Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8.r),
+                      child: Container(
+                        width: double.infinity,
+                        color: Colors.grey[200],
+                        child: recipe.imageUrl != null && recipe.imageUrl!.isNotEmpty
+                            ? Image.network(
+                                recipe.imageUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => Center(
+                                  child: Icon(Icons.restaurant, size: 32.sp, color: Colors.grey),
+                                ),
+                              )
+                            : Center(
+                                child: Icon(Icons.restaurant, size: 32.sp, color: Colors.grey),
+                              ),
+                      ),
+                    ),
+                    // 매칭 퍼센트 배지
+                    if (recipe.matchPercentage != null && recipe.matchPercentage! > 0)
+                      Positioned(
+                        top: 6.h,
+                        right: 6.w,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryOrange,
+                            borderRadius: BorderRadius.circular(12.r),
                           ),
-                  ),
+                          child: Text(
+                            '${recipe.matchPercentage}%',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 9.sp,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
               SizedBox(height: 6.h),
