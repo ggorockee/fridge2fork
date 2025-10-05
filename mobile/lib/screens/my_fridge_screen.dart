@@ -327,7 +327,7 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
                   ),
                 ),
                 Expanded(
-                  child: TextFormField(
+                  child: TextField(
                     onChanged: (value) {
                       setState(() {
                         _searchText = value;
@@ -337,15 +337,19 @@ class _MyFridgeScreenState extends ConsumerState<MyFridgeScreen> {
                       fontSize: 14.sp,
                       color: const Color(0xFF27214D),
                     ),
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       hintText: '식재료 검색...',
                       border: InputBorder.none,
                       enabledBorder: InputBorder.none,
                       focusedBorder: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(vertical: 16.h),
+                      disabledBorder: InputBorder.none,
+                      errorBorder: InputBorder.none,
+                      focusedErrorBorder: InputBorder.none,
+                      contentPadding: EdgeInsets.zero,
+                      isDense: true,
                       hintStyle: TextStyle(
-                        fontSize: 14.sp,
-                        color: const Color(0xFFC2BDBD),
+                        fontSize: 14,
+                        color: Color(0xFFC2BDBD),
                       ),
                     ),
                   ),
