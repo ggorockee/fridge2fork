@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'api_client.dart';
 import '../../models/api/api_response.dart';
+import '../../models/api/api_ad_config.dart';
+import '../../models/api/api_version_check.dart';
 
 /// 시스템 API 서비스
 class SystemApiService {
@@ -168,7 +171,7 @@ class SystemApiService {
 
     while (attempt < maxRetries) {
       attempt++;
-      
+
       final stopwatch = Stopwatch()..start();
       try {
         final response = await getHealth();
@@ -206,7 +209,7 @@ class SystemApiService {
         }
       } catch (e) {
         stopwatch.stop();
-        
+
         results.add({
           'attempt': attempt,
           'success': false,
@@ -230,6 +233,58 @@ class SystemApiService {
         'attempts': results,
         'total_attempts': maxRetries,
       },
+    );
+  }
+
+  /// 광고 설정 조회
+  ///
+  /// 플랫폼별 AdMob 광고 ID를 서버에서 가져옵니다.
+  ///
+  /// Args:
+  ///   platform: 'android' 또는 'ios' (소문자)
+  ///
+  /// Returns:
+  ///   ApiResponse<AdConfigResponse>: 광고 설정 정보
+  static Future<ApiResponse<AdConfigResponse>> getAdConfig({
+    String? platform,
+  }) async {
+    // 플랫폼 자동 감지 (platform이 null인 경우)
+    final targetPlatform = platform ?? (Platform.isAndroid ? 'android' : 'ios');
+
+    return await ApiClient.get<AdConfigResponse>(
+      ApiEndpoints.adsConfig,
+      queryParams: {
+        'platform': targetPlatform,
+      },
+      fromJson: (json) => AdConfigResponse.fromJson(json),
+    );
+  }
+
+  /// 앱 버전 체크
+  ///
+  /// 현재 앱 버전과 서버의 최신 버전을 비교하여
+  /// 업데이트 필요 여부를 확인합니다.
+  ///
+  /// Args:
+  ///   currentVersion: 현재 앱 버전 (예: '1.2.0')
+  ///   platform: 'android' 또는 'ios' (소문자, 선택사항)
+  ///
+  /// Returns:
+  ///   ApiResponse<VersionCheckResponse>: 버전 체크 결과
+  static Future<ApiResponse<VersionCheckResponse>> checkVersion({
+    required String currentVersion,
+    String? platform,
+  }) async {
+    // 플랫폼 자동 감지 (platform이 null인 경우)
+    final targetPlatform = platform ?? (Platform.isAndroid ? 'android' : 'ios');
+
+    return await ApiClient.get<VersionCheckResponse>(
+      ApiEndpoints.versionCheck,
+      queryParams: {
+        'platform': targetPlatform,
+        'current_version': currentVersion,
+      },
+      fromJson: (json) => VersionCheckResponse.fromJson(json),
     );
   }
 }

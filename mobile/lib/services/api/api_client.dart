@@ -567,6 +567,8 @@ class ApiEndpoints {
   static const String systemPlatforms = '/fridge2fork/v1/system/platforms';
   static const String systemStats = '/fridge2fork/v1/system/stats';
   static const String submitFeedback = '/fridge2fork/v1/system/feedback'; // POST 피드백 전송
+  static const String adsConfig = '/fridge2fork/v1/system/ads/config'; // GET 광고 설정 조회
+  static const String versionCheck = '/fridge2fork/v1/system/version/check'; // GET 버전 체크
 
   // 냉장고 관리 (회원/비회원 모두 가능, 세션 기반)
   static const String fridge = '/fridge2fork/v1/recipes/fridge'; // GET 냉장고 조회

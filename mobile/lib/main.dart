@@ -12,6 +12,7 @@ import 'screens/recipe_detail_screen.dart';
 import 'models/recipe.dart';
 import 'theme/app_theme.dart';
 import 'services/ad_service.dart';
+import 'services/ad_config_manager.dart';
 import 'services/interstitial_ad_manager.dart';
 import 'services/cache_service.dart';
 import 'services/offline_service.dart';
@@ -32,24 +33,6 @@ void main() async {
     debugPrint('⚠️ AppConfig initialization failed: $e');
     debugPrint('ℹ️ Using default configuration');
   }
-<<<<<<< HEAD
-  
-  // AdMob 초기화 및 전면 광고 프리로드 (수익성 극대화)
-  final adService = AdService();
-  await adService.initialize();
-  await adService.preloadInterstitialAd();
-  
-  // 전면 광고 관리자 초기화 (앱 시작 후 광고 기회 제공)
-  InterstitialAdManager().onAppLaunched();
-  
-  // 캐시 서비스 초기화
-  await CacheService.initialize();
-  
-  // 오프라인 서비스 초기화
-  await OfflineService.initialize();
-
-  // 세션 서비스 초기화 (API 호출을 위한 세션 관리)
-  await SessionService.initialize();
 
   // 🔥 Firebase 초기화 (운영 환경에서만)
   if (AppConfig.isProduction) {
@@ -62,6 +45,19 @@ void main() async {
     }
   } else {
     debugPrint('ℹ️ Firebase disabled in development mode');
+  }
+
+  // 🎯 AdMob 광고 설정 로드 (서버에서 동적으로 광고 ID 가져오기)
+  try {
+    final adConfigManager = AdConfigManager();
+    await adConfigManager.initialize();
+    debugPrint('✅ AdConfigManager initialized successfully');
+    if (AppConfig.debugMode) {
+      adConfigManager.printDebugInfo();
+    }
+  } catch (e) {
+    debugPrint('⚠️ AdConfigManager initialization failed: $e');
+    debugPrint('ℹ️ Will use fallback ad IDs from environment variables');
   }
 
   // 📱 AdMob 초기화 및 전면 광고 프리로드 (운영 환경에서만)
@@ -107,7 +103,6 @@ void main() async {
   }
 
   // 💾 SharedPreferences 인스턴스 로드
->>>>>>> develop
   final prefs = await SharedPreferences.getInstance();
 
   bool isFirstLaunch;
@@ -148,26 +143,6 @@ class MyApp extends ConsumerWidget {
       }
     });
 
-<<<<<<< HEAD
-    return MaterialApp(
-      title: AppConfig.appName,
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      home: const AsyncPerformanceOverlay(
-        showMonitor: kDebugMode,
-        child: SplashScreen(),
-      ),
-      onGenerateRoute: (settings) {
-        switch (settings.name) {
-          case '/recipe-detail':
-            final recipe = settings.arguments as Recipe;
-            return MaterialPageRoute(
-              builder: (context) => RecipeDetailScreen(recipe: recipe),
-            );
-          default:
-            return null;
-        }
-=======
     // ScreenUtil을 사용하여 반응형 디자인 구현
     return ScreenUtilInit(
       // 디자인 기준 사이즈 (일반적인 모바일 디자인 기준)
@@ -194,7 +169,6 @@ class MyApp extends ConsumerWidget {
             }
           },
         );
->>>>>>> develop
       },
     );
   }

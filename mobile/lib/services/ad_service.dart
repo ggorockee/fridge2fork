@@ -1,19 +1,26 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import '../config/app_config.dart';
+import 'ad_config_manager.dart';
 
 /// AdMob 광고 서비스
-/// 
+///
 /// 🚨 중요: iOS/Android 광고 정책 준수 필수
 /// - 사용자 경험을 해치지 않는 광고 배치
 /// - 적절한 광고 빈도 유지
 /// - 무효 클릭 방지
+///
+/// 🎯 동적 광고 ID 지원:
+/// - 서버에서 광고 ID를 동적으로 로드
+/// - 앱 재배포 없이 광고 ID 변경 가능
+/// - AdConfigManager를 통한 캐싱 및 fallback 지원
 class AdService {
   static final AdService _instance = AdService._internal();
   factory AdService() => _instance;
   AdService._internal();
+
+  final AdConfigManager _adConfigManager = AdConfigManager();
 
   // 광고 인스턴스 (수익성 극대화: 4가지 타입 모두 활용)
   BannerAd? _bannerTopAd;
@@ -26,42 +33,18 @@ class AdService {
   bool _isInterstitialLoaded = false;
   DateTime? _lastInterstitialShown;
   
-  // 광고 ID 가져오기 (플랫폼별) - 수익성 극대화: 모든 타입 지원
-  String get _bannerTopAdUnitId {
-    if (Platform.isAndroid) {
-      return AppConfig.admobAndroidBannerTopId;
-    } else if (Platform.isIOS) {
-      return AppConfig.admobIosBannerTopId;
-    }
-    return '';
-  }
-  
-  String get _bannerBottomAdUnitId {
-    if (Platform.isAndroid) {
-      return AppConfig.admobAndroidBannerBottomId;
-    } else if (Platform.isIOS) {
-      return AppConfig.admobIosBannerBottomId;
-    }
-    return '';
-  }
-  
-  String get _interstitialAdUnitId {
-    if (Platform.isAndroid) {
-      return AppConfig.admobAndroidInterstitialId;
-    } else if (Platform.isIOS) {
-      return AppConfig.admobIosInterstitialId;
-    }
-    return '';
-  }
-  
-  String get _nativeAdUnitId {
-    if (Platform.isAndroid) {
-      return AppConfig.admobAndroidNativeId;
-    } else if (Platform.isIOS) {
-      return AppConfig.admobIosNativeId;
-    }
-    return '';
-  }
+  // 광고 ID 가져오기 (동적 로드 + Fallback 지원)
+  /// 상단 배너 광고 ID (서버 우선, 환경 변수 fallback)
+  String get _bannerTopAdUnitId => _adConfigManager.bannerTopId;
+
+  /// 하단 배너 광고 ID (서버 우선, 환경 변수 fallback)
+  String get _bannerBottomAdUnitId => _adConfigManager.bannerBottomId;
+
+  /// 전면 광고 ID (서버 우선, 환경 변수 fallback)
+  String get _interstitialAdUnitId => _adConfigManager.interstitial1Id;
+
+  /// 네이티브 광고 ID (서버 우선, 환경 변수 fallback)
+  String get _nativeAdUnitId => _adConfigManager.native1Id;
 
   /// AdMob 초기화
   Future<void> initialize() async {
