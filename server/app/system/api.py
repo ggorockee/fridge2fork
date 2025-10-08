@@ -10,9 +10,11 @@ from .schemas import (
     SystemVersionResponseSchema,
     HealthCheckResponseSchema,
     FeedbackCreateSchema,
-    FeedbackResponseSchema
+    FeedbackResponseSchema,
+    AdConfigResponseSchema,
+    VersionCheckResponseSchema
 )
-from .models import Feedback, FeedbackType
+from .models import Feedback, FeedbackType, AdConfig, AppVersion, Platform, AdType
 from users.auth import decode_access_token
 from django.contrib.auth import get_user_model
 
@@ -137,3 +139,165 @@ async def create_feedback(request, data: FeedbackCreateSchema):
 
     # 피드백 생성
     return await sync_to_async(_create_feedback_sync)(user, session_key, data)
+
+
+def version_name_to_code(version_name: str) -> int:
+    """
+    버전명을 버전 코드로 변환
+
+    Args:
+        version_name: 버전명 (예: "1.2.3")
+
+    Returns:
+        버전 코드 (예: 10203)
+    """
+    try:
+        parts = version_name.split('.')
+        major = int(parts[0]) * 10000
+        minor = int(parts[1]) * 100 if len(parts) > 1 else 0
+        patch = int(parts[2]) if len(parts) > 2 else 0
+        return major + minor + patch
+    except (ValueError, IndexError):
+        return 0
+
+
+@router.get("/ads/config", response=AdConfigResponseSchema)
+async def get_ads_config(request, platform: str):
+    """
+    광고 설정 조회 (Flutter용)
+
+    Args:
+        platform: 플랫폼 (ANDROID 또는 IOS)
+
+    Returns:
+        AdConfigResponseSchema: {
+            banner_top: 배너 광고 상단 ID,
+            banner_bottom: 배너 광고 하단 ID,
+            interstitial_1: 전면 광고 1 ID,
+            interstitial_2: 전면 광고 2 ID,
+            native_1: 네이티브 광고 1 ID,
+            native_2: 네이티브 광고 2 ID
+        }
+    """
+    # 플랫폼 검증
+    platform_upper = platform.upper()
+    if platform_upper not in [Platform.ANDROID, Platform.IOS]:
+        return JsonResponse(
+            {
+                'error': 'InvalidPlatform',
+                'message': f'platform은 "ANDROID" 또는 "IOS"여야 합니다.'
+            },
+            status=400
+        )
+
+    # 활성화된 광고 설정 조회
+    ad_configs = await sync_to_async(list)(
+        AdConfig.objects.filter(platform=platform_upper, is_active=True)
+    )
+
+    # ad_type별로 딕셔너리 생성
+    ad_map = {
+        'banner_top': None,
+        'banner_bottom': None,
+        'interstitial_1': None,
+        'interstitial_2': None,
+        'native_1': None,
+        'native_2': None
+    }
+
+    for config in ad_configs:
+        if config.ad_type == AdType.BANNER_TOP:
+            ad_map['banner_top'] = config.ad_unit_id
+        elif config.ad_type == AdType.BANNER_BOTTOM:
+            ad_map['banner_bottom'] = config.ad_unit_id
+        elif config.ad_type == AdType.INTERSTITIAL_1:
+            ad_map['interstitial_1'] = config.ad_unit_id
+        elif config.ad_type == AdType.INTERSTITIAL_2:
+            ad_map['interstitial_2'] = config.ad_unit_id
+        elif config.ad_type == AdType.NATIVE_1:
+            ad_map['native_1'] = config.ad_unit_id
+        elif config.ad_type == AdType.NATIVE_2:
+            ad_map['native_2'] = config.ad_unit_id
+
+    return ad_map
+
+
+@router.get("/version/check", response=VersionCheckResponseSchema)
+async def check_version(request, platform: str, current_version: str):
+    """
+    앱 버전 체크 (Flutter용)
+
+    Args:
+        platform: 플랫폼 (ANDROID 또는 IOS)
+        current_version: 현재 앱 버전 (예: "1.2.0")
+
+    Returns:
+        VersionCheckResponseSchema: {
+            update_required: 업데이트 필요 여부,
+            force_update: 강제 업데이트 여부,
+            latest_version: 최신 버전명,
+            current_version_code: 현재 버전 코드,
+            latest_version_code: 최신 버전 코드,
+            min_supported_version_code: 최소 지원 버전 코드,
+            update_message: 업데이트 메시지,
+            download_url: 앱 스토어 URL
+        }
+    """
+    # 플랫폼 검증
+    platform_upper = platform.upper()
+    if platform_upper not in [Platform.ANDROID, Platform.IOS]:
+        return JsonResponse(
+            {
+                'error': 'InvalidPlatform',
+                'message': f'platform은 "ANDROID" 또는 "IOS"여야 합니다.'
+            },
+            status=400
+        )
+
+    # 현재 버전 코드 변환
+    current_version_code = version_name_to_code(current_version)
+
+    # 최신 버전 조회 (is_active=True인 버전)
+    try:
+        latest_version = await AppVersion.objects.filter(
+            platform=platform_upper,
+            is_active=True
+        ).afirst()
+
+        if not latest_version:
+            return JsonResponse(
+                {
+                    'error': 'NoActiveVersion',
+                    'message': f'{platform_upper} 플랫폼의 활성화된 버전이 없습니다.'
+                },
+                status=404
+            )
+
+        # 업데이트 필요 여부 판단
+        update_required = current_version_code < latest_version.version_code
+
+        # 강제 업데이트 여부 판단
+        force_update = (
+            current_version_code < latest_version.min_supported_version_code or
+            (update_required and latest_version.force_update)
+        )
+
+        return {
+            'update_required': update_required,
+            'force_update': force_update,
+            'latest_version': latest_version.version_name,
+            'current_version_code': current_version_code,
+            'latest_version_code': latest_version.version_code,
+            'min_supported_version_code': latest_version.min_supported_version_code,
+            'update_message': latest_version.update_message,
+            'download_url': latest_version.download_url
+        }
+
+    except Exception as e:
+        return JsonResponse(
+            {
+                'error': 'InternalError',
+                'message': f'버전 체크 중 오류가 발생했습니다: {str(e)}'
+            },
+            status=500
+        )

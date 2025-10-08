@@ -120,4 +120,4 @@ EXPOSE 8000
 ENTRYPOINT ["/entrypoint.sh"]
 
 # Default command for production (gunicorn with --frozen flag)
-CMD ["/usr/local/bin/uv", "run", "--frozen", "gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--chdir", "app", "settings.wsgi:application"]
+CMD ["/usr/local/bin/uv", "run", "--frozen", "gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "--chdir", "app", "settings.wsgi:application"]
