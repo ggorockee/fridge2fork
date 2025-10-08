@@ -68,6 +68,8 @@ RUN chmod -R 755 /app && \
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
+RUN uv run --frozen python app/manage.py collectstatic --noinput
+
 # Expose port
 EXPOSE 8000
 
@@ -94,7 +96,7 @@ ENV PYTHONUNBUFFERED=1 \
 RUN mkdir -p /tmp/.uv-cache && chmod -R 777 /tmp/.uv-cache
 
 # Install dependencies with uv (production only, no dev dependencies, frozen mode)
-RUN uv sync --frozen --no-dev --no-install-project
+RUN uv sync --frozen --no-install-project
 
 # Copy application code
 COPY . .
