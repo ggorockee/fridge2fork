@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from core.models import CommonModel
 
 User = get_user_model()
 
@@ -85,7 +86,7 @@ class Feedback(models.Model):
         return f'[{self.get_feedback_type_display()}] {self.title} - {user_info}'
 
 
-class AdConfig(models.Model):
+class AdConfig(CommonModel):
     """AdMob 광고 설정"""
     ad_type = models.CharField(
         max_length=50,
@@ -108,14 +109,6 @@ class AdConfig(models.Model):
         db_index=True,
         verbose_name='활성화 여부'
     )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='생성일시'
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='수정일시'
-    )
 
     class Meta:
         db_table = 'system_ad_config'
@@ -131,7 +124,7 @@ class AdConfig(models.Model):
         return f'[{self.get_platform_display()}] {self.get_ad_type_display()}'
 
 
-class AppVersion(models.Model):
+class AppVersion(CommonModel):
     """앱 버전 관리"""
     platform = models.CharField(
         max_length=20,
@@ -173,14 +166,6 @@ class AppVersion(models.Model):
     )
     release_date = models.DateTimeField(
         verbose_name='출시 일시'
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='생성일시'
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='수정일시'
     )
 
     class Meta:
